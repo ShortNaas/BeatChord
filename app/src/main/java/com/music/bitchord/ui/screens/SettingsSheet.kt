@@ -339,6 +339,24 @@ fun SettingsScreen(
             )
         }
     }
+    var musicoletImportStatus by remember { mutableStateOf<String?>(null) }
+    val musicoletPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { source ->
+        if (source == null) return@rememberLauncherForActivityResult
+        backupScope.launch {
+            runCatching {
+                com.music.bitchord.data.musicolet.MusicoletManager.importIntoBitChord(context, source)
+            }.fold(
+                onSuccess = { summary ->
+                    musicoletImportStatus = "Imported ${summary.playlistsImported} playlists & ${summary.totalPlaysImported} plays (${summary.songsWithHistory} tracks)"
+                },
+                onFailure = {
+                    musicoletImportStatus = "Import failed: ${it.message ?: "Unknown error"}"
+                }
+            )
+        }
+    }
     var showListenBrainzTokenDialog by remember { mutableStateOf(false) }
     var showLastfmLoginDialog by remember { mutableStateOf(false) }
     val scrobbleScope = rememberCoroutineScope()
@@ -1217,6 +1235,15 @@ fun SettingsScreen(
                     title = importDataTitle,
                     subtitle = importStatus ?: stringResource(R.string.import_data_subtitle),
                     onClick = { confirmImport = true },
+                )
+            }
+            val musicoletTitle = "Import from Musicolet"
+            row(musicoletTitle, "musicolet", "backup", "playlist", "mpl", "stats") {
+                SettingsRow(
+                    icon = Icons.Rounded.FileDownload,
+                    title = musicoletTitle,
+                    subtitle = musicoletImportStatus ?: "Import .mpl playlists, .m3u8, or encrypted Musicolet backups (.zip)",
+                    onClick = { musicoletPicker.launch(arrayOf("*/*")) },
                 )
             }
         }

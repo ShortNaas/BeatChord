@@ -1786,11 +1786,13 @@ private fun BitChordApp(
      */
     val shelfSong: (ShelfItem) -> Song? = { item ->
         item.videoId?.let { videoId ->
+            val isLocal = videoId.startsWith("content://") || videoId.startsWith("file://") || videoId.startsWith("/")
             Song(
                 videoId = videoId,
                 title = item.title,
                 artist = InnertubeParser.artistFromSubtitle(item.subtitle),
                 thumbnailUrl = item.thumbnailUrl,
+                localUri = if (isLocal) videoId else null,
             )
         }
     }
@@ -1902,6 +1904,64 @@ private fun BitChordApp(
             viewModel.loadLibrarySongs()
         } else {
             Toast.makeText(context, context.getString(R.string.storage_required_read), Toast.LENGTH_SHORT).show()
+        }
+    }
+    var pendingExportPlaylist by remember { mutableStateOf<com.music.bitchord.data.spotify.LocalPlaylist?>(null) }
+    var pendingExportFormat by remember { mutableStateOf("m3u8") }
+    val playlistExportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/octet-stream"),
+    ) { destinationUri ->
+        if (destinationUri == null) return@rememberLauncherForActivityResult
+        val pl = pendingExportPlaylist ?: return@rememberLauncherForActivityResult
+        scope.launch(Dispatchers.IO) {
+            runCatching {
+                context.contentResolver.openOutputStream(destinationUri, "wt")?.use { out ->
+                    if (pendingExportFormat == "mpl") {
+                        val bytes = com.music.bitchord.data.musicolet.MusicoletManager.writeMpl(pl.title, pl.songs, encrypt = false)
+                        out.write(bytes)
+                    } else {
+                        val text = com.music.bitchord.data.musicolet.MusicoletManager.writeM3u8(pl.title, pl.songs)
+                        out.write(text.toByteArray(Charsets.UTF_8))
+                    }
+                }
+            }.fold(
+                onSuccess = {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, "Playlist exported successfully", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onFailure = {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, "Export failed: ${it.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            )
+        }
+    }
+
+    val playlistImportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch(Dispatchers.IO) {
+            val result = runCatching {
+                com.music.bitchord.data.musicolet.MusicoletManager.importIntoBitChord(context, uri)
+            }
+            withContext(Dispatchers.Main) {
+                result.fold(
+                    onSuccess = { summary ->
+                        viewModel.loadLibrary()
+                        Toast.makeText(
+                            context,
+                            "Imported ${summary.playlistsImported} playlist(s) & ${summary.totalPlaysImported} play(s)",
+                            Toast.LENGTH_LONG,
+                        ).show()
+                    },
+                    onFailure = {
+                        Toast.makeText(context, "Import failed: ${it.message ?: "Unknown error"}", Toast.LENGTH_SHORT).show()
+                    }
+                )
+            }
         }
     }
     val mediaPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -3228,7 +3288,7 @@ private fun BitChordApp(
                             // does nothing; see [onBrowseLongPress].
                             onShelfItemLongPress = onBrowseLongPress,
                             onNewPlaylist = { creatingPlaylist = true },
-                            onImportSpotifyPlaylist = { showSpotifyImportDialog = true },
+                            onImportSpotifyPlaylist = { playlistImportLauncher.launch(arrayOf("*/*")) },
                             onShowAll = { shelf -> libraryShowAll = shelf },
                             replay = {
                                 LibraryReplayEntry(
@@ -4554,6 +4614,28 @@ private fun BitChordApp(
                             browseActions = null
                         }
                     },
+                onExportM3u8 = act { songs ->
+                    val pl = com.music.bitchord.data.spotify.LocalPlaylist(
+                        id = target.browseId ?: "export",
+                        title = target.title,
+                        songs = songs,
+                    )
+                    pendingExportPlaylist = pl
+                    pendingExportFormat = "m3u8"
+                    val suggested = "${pl.title.replace(Regex("[^a-zA-Z0-9_-]"), "_")}.m3u8"
+                    playlistExportLauncher.launch(suggested)
+                }.takeIf { target.type == BrowseType.PLAYLIST },
+                onExportMpl = act { songs ->
+                    val pl = com.music.bitchord.data.spotify.LocalPlaylist(
+                        id = target.browseId ?: "export",
+                        title = target.title,
+                        songs = songs,
+                    )
+                    pendingExportPlaylist = pl
+                    pendingExportFormat = "mpl"
+                    val suggested = "${pl.title.replace(Regex("[^a-zA-Z0-9_-]"), "_")}.mpl"
+                    playlistExportLauncher.launch(suggested)
+                }.takeIf { target.type == BrowseType.PLAYLIST },
                 isPinned = pinnableId != null && pinnableId in pinnedPlaylists,
                 onTogglePin = pinnableId?.let { id ->
                     {

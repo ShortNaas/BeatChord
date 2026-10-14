@@ -75,6 +75,12 @@ import java.util.Locale
  * "More" still opens the chooser, because the row is only ever the handful that
  * fit and the right app is sometimes the twelfth one.
  */
+enum class SharePosterStyle(val label: String) {
+    WRAPPED("Wrapped Poster"),
+    MOST_PLAYED_SONGS("Top Songs"),
+    MOST_PLAYED_ARTISTS("Top Artists"),
+}
+
 @Composable
 fun ReplayShareSheet(
     summary: ReplaySummary,
@@ -86,14 +92,20 @@ fun ReplayShareSheet(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    var style by remember { mutableStateOf(SharePosterStyle.WRAPPED) }
     var poster by remember { mutableStateOf<Bitmap?>(null) }
     var failed by remember { mutableStateOf(false) }
     var saved by remember { mutableStateOf(false) }
 
-    LaunchedEffect(summary, page) {
-        poster = runCatching { renderReplayPoster(context, summary, holder, memberSince, page) }
-            .onFailure { failed = true }
-            .getOrNull()
+    LaunchedEffect(summary, page, style) {
+        poster = null
+        poster = runCatching {
+            when (style) {
+                SharePosterStyle.WRAPPED -> renderReplayPoster(context, summary, holder, memberSince, page)
+                SharePosterStyle.MOST_PLAYED_SONGS -> renderMusicoletCard(context, summary, MusicoletCardType.SONGS)
+                SharePosterStyle.MOST_PLAYED_ARTISTS -> renderMusicoletCard(context, summary, MusicoletCardType.ARTISTS)
+            }
+        }.onFailure { failed = true }.getOrNull()
     }
 
     Column(
@@ -119,7 +131,33 @@ fun ReplayShareSheet(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Spacer(Modifier.height(16.dp))
+
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 10.dp),
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            SharePosterStyle.entries.forEach { opt ->
+                val active = opt == style
+                Box(
+                    Modifier
+                        .padding(horizontal = 4.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable { style = opt }
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                ) {
+                    Text(
+                        text = opt.label,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = if (active) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.height(8.dp))
 
         // Small enough that the row of apps under it is on screen with it. A
         // preview that pushes the share targets below the fold is a preview

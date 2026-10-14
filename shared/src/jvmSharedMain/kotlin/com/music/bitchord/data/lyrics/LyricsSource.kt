@@ -95,11 +95,13 @@ enum class LyricsSource(
         label = "YouTube captions",
         detail = "Timed captions matched to the exact playing video",
         wordSynced = false,
+        hidden = true,
     ),
     YOUTUBE_MUSIC(
         label = "YouTube Music",
         detail = "Plain lyrics from the playing video's Lyrics tab",
         wordSynced = false,
+        hidden = true,
     ),
     MEGALOBIZ(
         label = "Megalobiz",

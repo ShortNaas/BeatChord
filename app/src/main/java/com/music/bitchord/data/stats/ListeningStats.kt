@@ -414,6 +414,64 @@ object ListeningStats {
         }
     }
 
+    /**
+     * Ingests historical play records from Musicolet (DB_SONGS_LOG / PCs_* tables)
+     * directly into the corresponding calendar buckets.
+     */
+    fun importMusicoletRecords(records: List<com.music.bitchord.data.musicolet.MusicoletSongRecord>) {
+        if (!ready || records.isEmpty()) return
+        synchronized(lock) {
+            val now = System.currentTimeMillis()
+            val today = LocalDate.now()
+
+            records.forEach { record ->
+                if (record.totalPlays <= 0 && record.weeklyPlays <= 0 && record.monthlyPlays <= 0) return@forEach
+                val epoch = if (record.lastPlayedEpochMs > 0) record.lastPlayedEpochMs else now
+                val at = Instant.ofEpochMilli(epoch).atZone(ZoneId.systemDefault())
+                val bucket = bucketFor(YearMonth.from(at))
+
+                val id = record.path.ifBlank { "${record.title}:${record.artist}" }
+                val track = bucket.tracks.getOrPut(id) {
+                    TrackEntry(
+                        id = id,
+                        title = record.title,
+                        artist = record.artist,
+                        album = record.album,
+                        art = null,
+                    )
+                }
+                val estMs = if (record.durationMs > 0) record.durationMs * record.totalPlays else 180_000L * record.totalPlays
+                track.ms = maxOf(track.ms, estMs)
+                track.plays = maxOf(track.plays, record.totalPlays)
+                track.last = maxOf(track.last, epoch)
+
+                // Lead artist
+                primaryArtist(record.artist)?.let { name ->
+                    ArtistFacts.noticed(name)
+                    val artist = bucket.artists.getOrPut(name.lowercase(Locale.ROOT)) {
+                        NameEntry(name = name, art = null)
+                    }
+                    artist.ms = maxOf(artist.ms, estMs)
+                    artist.plays = maxOf(artist.plays, record.totalPlays)
+                }
+
+                // Album
+                record.album?.takeIf { it.isNotBlank() }?.let { albumName ->
+                    val key = albumKey(albumName, record.artist)
+                    val alb = bucket.albums.getOrPut(key) {
+                        NameEntry(name = albumName, sub = record.artist, art = null)
+                    }
+                    alb.ms = maxOf(alb.ms, estMs)
+                    alb.plays = maxOf(alb.plays, record.totalPlays)
+                }
+            }
+            dirty = true
+            version++
+            cached = null
+            flush()
+        }
+    }
+
     // ── Shapes ──────────────────────────────────────────────────────────────
 
     /**
@@ -488,7 +546,16 @@ object ListeningStats {
         }
 
         fun toSummary(period: ReplayPeriod, today: LocalDate): ReplaySummary {
-            val rankedSongs = tracks.values
+            val startOfWeek = today.minusDays((today.dayOfWeek.value - 1).toLong())
+            val startOfWeekEpochMs = startOfWeek.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            val candidateTracks = if (period == ReplayPeriod.THIS_WEEK) {
+                val weekTracks = tracks.values.filter { it.last >= startOfWeekEpochMs }
+                if (weekTracks.isNotEmpty()) weekTracks else tracks.values
+            } else {
+                tracks.values
+            }
+
+            val rankedSongs = candidateTracks
                 .sortedWith(compareByDescending<TrackEntry> { it.ms }.thenByDescending { it.plays })
                 .map {
                     RankedSong(
@@ -500,6 +567,7 @@ object ListeningStats {
                             artistId = it.artistId,
                             albumId = it.albumId,
                             albumName = it.album,
+                            localUri = if (it.id.startsWith("/") || it.id.startsWith("content://") || it.id.startsWith("file://")) it.id else null,
                         ),
                         ms = it.ms,
                         plays = it.plays,
@@ -746,18 +814,30 @@ data class RankedSong(val song: Song, val ms: Long, val plays: Int)
 
 /** How far back a Replay reaches. */
 enum class ReplayPeriod(val chip: String) {
+    THIS_WEEK("This week"),
     THIS_MONTH("This month"),
     THIS_YEAR("This year"),
     ALL_TIME("All time"),
     ;
 
     fun covers(month: YearMonth, today: LocalDate): Boolean = when (this) {
+        THIS_WEEK -> {
+            val startOfWeek = today.minusDays((today.dayOfWeek.value - 1).toLong())
+            val endOfWeek = startOfWeek.plusDays(6)
+            month == YearMonth.from(startOfWeek) || month == YearMonth.from(endOfWeek)
+        }
         THIS_MONTH -> month == YearMonth.from(today)
         THIS_YEAR -> month.year == today.year
         ALL_TIME -> true
     }
 
     fun label(today: LocalDate): String = when (this) {
+        THIS_WEEK -> {
+            val startOfWeek = today.minusDays((today.dayOfWeek.value - 1).toLong())
+            val endOfWeek = startOfWeek.plusDays(6)
+            val dtf = java.time.format.DateTimeFormatter.ofPattern("MMM d", Locale.ROOT)
+            "${startOfWeek.format(dtf)} – ${endOfWeek.format(dtf)}, ${today.year}"
+        }
         THIS_MONTH -> YearMonth.from(today).month.name.lowercase(Locale.ROOT)
             .replaceFirstChar { it.uppercase(Locale.ROOT) } + " ${today.year}"
         THIS_YEAR -> today.year.toString()

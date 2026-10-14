@@ -171,6 +171,8 @@ fun BrowseActionsSheet(
      * also happens to be downloaded.
      */
     onDeleteDownload: (() -> Unit)? = null,
+    onExportM3u8: (() -> Unit)? = null,
+    onExportMpl: (() -> Unit)? = null,
     /**
      * [SongActionsPresentation.Menu] draws only the rows, compact, for the
      * popup a held card lifts into — [HeldContextMenu] shows the card itself,
@@ -293,6 +295,12 @@ fun BrowseActionsSheet(
             }
             onReorder?.let {
                 ActionRow(Icons.Rounded.SwapVert, stringResource(R.string.reorder_songs), onClick = it)
+            }
+            onExportM3u8?.let {
+                ActionRow(Icons.Rounded.Share, "Export as M3U8", onClick = it)
+            }
+            onExportMpl?.let {
+                ActionRow(Icons.Rounded.Share, "Export as Musicolet (.mpl)", onClick = it)
             }
             if (onDelete != null) {
                 if (confirmingDelete) {

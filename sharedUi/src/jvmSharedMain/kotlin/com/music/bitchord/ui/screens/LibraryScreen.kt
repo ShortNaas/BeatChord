@@ -155,27 +155,7 @@ fun LibraryScreen(
                     )
                 }
             }
-            if (!signedIn) {
-                item(key = "shelf:$PLAYLISTS") {
-                    val emptyPlaylists = HomeShelf(PLAYLISTS, emptyList())
-                    PlaylistShelf(
-                        shelf = emptyPlaylists,
-                        onItemClick = onShelfItemClick,
-                        onItemLongPress = onShelfItemLongPress,
-                        onNewPlaylist = onNewPlaylist,
-                        onImportSpotifyPlaylist = onImportSpotifyPlaylist,
-                        onShowAll = { onShowAll(emptyPlaylists) },
-                    )
-                }
-                item {
-                    MessageState(
-                        message = stringResource(Res.string.library_sign_in_description),
-                        actionLabel = stringResource(Res.string.sign_in),
-                        onAction = onSignIn,
-                    )
-                }
-                return@LazyColumn
-            }
+
             when (state) {
                 is UiState.Loading -> librarySkeleton()
                 is UiState.Error -> item {
@@ -323,16 +303,15 @@ private fun PlaylistShelf(
                 NewShelfCard(
                     icon = BitChordIcons.Plus,
                     label = stringResource(Res.string.new_playlist),
-                    subtitle = stringResource(Res.string.saved_to_youtube_music),
+                    subtitle = "Saved locally",
                     onClick = onNewPlaylist,
                 )
                 if (onImportSpotifyPlaylist != null) {
                     NewShelfCard(
                         icon = BitChordIcons.Download,
-                        label = stringResource(Res.string.import_spotify),
-                        subtitle = stringResource(Res.string.import_spotify_subtitle),
+                        label = "Import Playlist",
+                        subtitle = ".mpl, .m3u8, or backup",
                         onClick = onImportSpotifyPlaylist,
-                        logo = Res.drawable.spotify_logo,
                     )
                 }
             }
@@ -426,7 +405,7 @@ fun LibraryGridPage(
                     NewShelfCard(
                         icon = BitChordIcons.Plus,
                         label = stringResource(Res.string.new_playlist),
-                        subtitle = stringResource(Res.string.saved_to_youtube_music),
+                        subtitle = "Saved locally",
                         onClick = onNewPlaylist,
                         modifier = Modifier.fillMaxWidth(),
                     )

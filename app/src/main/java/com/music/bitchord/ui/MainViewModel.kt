@@ -24,6 +24,8 @@ import com.music.bitchord.data.lyrics.EmbeddedLyrics
 import com.music.bitchord.data.lyrics.LyricLine
 import com.music.bitchord.data.lyrics.LyricsRepository
 import com.music.bitchord.data.lyrics.LyricsSource
+import com.music.bitchord.data.stats.ListeningStats
+import com.music.bitchord.data.stats.ReplayPeriod
 import com.music.bitchord.data.settings.AppSettings
 import com.music.bitchord.data.innertube.Innertube
 import com.music.bitchord.data.innertube.PlaybackTracker
@@ -192,7 +194,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val typeaheadResults: StateFlow<List<SearchResult>> = _typeaheadResults.asStateFlow()
 
     /** Where the Search tab looks — see [setSearchSource]. */
-    private val _searchSource = MutableStateFlow(SearchSource.YOUTUBE)
+    private val _searchSource = MutableStateFlow(SearchSource.LIBRARY)
     val searchSource: StateFlow<SearchSource> = _searchSource.asStateFlow()
 
     /** Every track in the Local Music folder, read when the Library source is picked. */
@@ -1391,11 +1393,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         startTypeaheadMediaPipeline()
         loadHome()
         loadExplore()
-        if (_signedIn.value) {
-            loadLibrary()
-            loadAccount()
-            loadPlaylists()
-        }
+        loadLibrary()
+        loadLibrarySongs()
         viewModelScope.launch {
             // drop(1): the current value is just the count so far, not a play.
             PlaybackTracker.registeredPlays.drop(1).collect { homeStale = true }
@@ -1526,61 +1525,78 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private suspend fun fetchExplore() {
-        val state = YtMusicRepository.moodAndGenres().fold(
-            onSuccess = { sections ->
-                if (sections.isEmpty()) {
-                    UiState.Error(text(R.string.nothing_to_explore))
-                } else {
-                    UiState.Success(sections)
-                }
-            },
-            onFailure = { UiState.Error(it.friendly()) },
-        )
-        _explore.value = state
-        (state as? UiState.Success)?.data?.let(::loadMoodGenreArtwork)
-    }
-
-    /**
-     * Category buttons do not carry thumbnails themselves. Resolve a small
-     * number at a time from the shelves they open, so the grid gains real art
-     * without saturating the browse client or delaying the category list.
-     */
-    private fun loadMoodGenreArtwork(sections: List<MoodGenreSection>) {
-        viewModelScope.launch {
-            val limiter = Semaphore(4)
-            coroutineScope {
-                sections.flatMap(MoodGenreSection::items).forEach { item ->
-                    launch {
-                        val artwork = limiter.withPermit {
-                            YtMusicRepository.moodGenreArtwork(item.browseId, item.params).getOrNull()
-                        } ?: return@launch
-                        val current = (_explore.value as? UiState.Success)?.data ?: return@launch
-                        _explore.value = UiState.Success(current.map { section ->
-                            section.copy(items = section.items.map { currentItem ->
-                                if (currentItem.browseId == item.browseId && currentItem.params == item.params) {
-                                    currentItem.copy(thumbnailUrl = artwork)
-                                } else {
-                                    currentItem
-                                }
-                            })
-                        })
-                    }
-                }
-            }
+        val context = getApplication<Application>()
+        if (!LocalMediaRepository.hasStoragePermission(context)) {
+            _explore.value = UiState.Error(text(R.string.storage_required_read))
+            return
         }
+        val songs = runCatching { LocalMediaRepository.getLocalMusic(context) }.getOrDefault(emptyList())
+        if (songs.isEmpty()) {
+            _explore.value = UiState.Error(text(R.string.no_local_audio_found))
+            return
+        }
+
+        val folders = songs.mapNotNull { it.localPath?.let { p -> java.io.File(p).parentFile } }
+            .distinctBy { it.absolutePath }
+            .map { dir ->
+                val folderSongs = songs.filter { it.localPath?.startsWith(dir.absolutePath) == true }
+                MoodGenre(
+                    title = dir.name,
+                    browseId = "local:folder:${dir.absolutePath}",
+                    params = null,
+                    thumbnailUrl = folderSongs.firstOrNull { !it.thumbnailUrl.isNullOrBlank() }?.thumbnailUrl,
+                )
+            }
+
+        val formats = songs.mapNotNull { it.localPath?.substringAfterLast('.')?.lowercase(Locale.ROOT) }
+            .distinct()
+            .map { ext ->
+                val extSongs = songs.filter { it.localPath?.endsWith(ext, ignoreCase = true) == true }
+                MoodGenre(
+                    title = ext.uppercase(Locale.ROOT),
+                    browseId = "local:format:$ext",
+                    params = null,
+                    thumbnailUrl = extSongs.firstOrNull { !it.thumbnailUrl.isNullOrBlank() }?.thumbnailUrl,
+                )
+            }
+
+        val sections = mutableListOf<MoodGenreSection>()
+        if (folders.isNotEmpty()) {
+            sections.add(MoodGenreSection(title = "Folders", items = folders))
+        }
+        if (formats.isNotEmpty()) {
+            sections.add(MoodGenreSection(title = "Audio Formats", items = formats))
+        }
+
+        _explore.value = UiState.Success(sections)
     }
 
     fun openMoodGenre(item: MoodGenre) {
         _selectedMoodGenre.value = item
         _moodGenreShelves.value = UiState.Loading
         viewModelScope.launch {
-            _moodGenreShelves.value = YtMusicRepository.moodGenreShelves(item.browseId, item.params).fold(
-                onSuccess = { shelves ->
-                    if (shelves.isEmpty()) UiState.Error(text(R.string.nothing_to_explore))
-                    else UiState.Success(shelves)
-                },
-                onFailure = { UiState.Error(it.friendly()) },
-            )
+            val context = getApplication<Application>()
+            val allSongs = runCatching { LocalMediaRepository.getLocalMusic(context) }.getOrDefault(emptyList())
+            val matchingSongs = when {
+                item.browseId.startsWith("local:folder:") -> {
+                    val folderPath = item.browseId.removePrefix("local:folder:")
+                    allSongs.filter { it.localPath?.startsWith(folderPath) == true }
+                }
+                item.browseId.startsWith("local:format:") -> {
+                    val ext = item.browseId.removePrefix("local:format:")
+                    allSongs.filter { it.localPath?.endsWith(ext, ignoreCase = true) == true }
+                }
+                else -> allSongs
+            }
+            if (matchingSongs.isEmpty()) {
+                _moodGenreShelves.value = UiState.Error(text(R.string.nothing_to_explore))
+            } else {
+                val shelf = HomeShelf(
+                    title = item.title,
+                    items = matchingSongs.map { it.toLocalShelfItem() },
+                )
+                _moodGenreShelves.value = UiState.Success(listOf(shelf))
+            }
         }
     }
 
@@ -1602,61 +1618,118 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         homeContinuation = null
         homeSeenTitles.clear()
         _homeLoadingMore.value = false
-        _homeRecentlyPlayedLoading.value = _signedIn.value
-        // The core feed plus one browse per supplement. Recently played is left
-        // out: it has its own skeleton at the head of the page rather than the
-        // one at the tail.
-        _homePendingShelves.value = 1 + YtMusicRepository.HOME_SUPPLEMENT_BROWSE_IDS.size
+        _homeRecentlyPlayedLoading.value = false
+        _homePendingShelves.value = 0
+
         viewModelScope.launch {
-            launch {
-                try {
-                    YtMusicRepository.home()
-                        .onSuccess { feed ->
-                            if (!isCurrentHomeLoad(identity, generation)) return@onSuccess
-                            homeContinuation = feed.continuation
-                            publishHomeShelves(feed.shelves)
-                        }
-                        .onFailure { failure ->
-                            if (isCurrentHomeLoad(identity, generation) && _home.value !is UiState.Success) {
-                                _home.value = UiState.Error(failure.friendly())
-                            }
-                        }
-                } finally {
-                    homeShelfRequestSettled(identity, generation)
+            val context = getApplication<Application>()
+            if (!LocalMediaRepository.hasStoragePermission(context)) {
+                if (isCurrentHomeLoad(identity, generation)) {
+                    _home.value = UiState.Error(text(R.string.storage_required_read))
                 }
+                return@launch
             }
-            if (_signedIn.value) {
-                launch {
-                    YtMusicRepository.homeRecentlyPlayed()
-                        .onSuccess { shelf ->
-                            if (isCurrentHomeLoad(identity, generation)) {
-                                _homeRecentlyPlayedLoading.value = false
-                                shelf?.let { publishHomeShelves(listOf(it), prepend = true) }
-                            }
-                        }
-                        .onFailure {
-                            if (isCurrentHomeLoad(identity, generation)) _homeRecentlyPlayedLoading.value = false
-                        }
+            val localSongs = runCatching { LocalMediaRepository.getLocalMusic(context) }.getOrDefault(emptyList())
+            if (localSongs.isEmpty()) {
+                if (isCurrentHomeLoad(identity, generation)) {
+                    _home.value = UiState.Error(text(R.string.no_local_audio_found))
                 }
+                return@launch
             }
-            YtMusicRepository.HOME_SUPPLEMENT_BROWSE_IDS.forEach { browseId ->
-                launch {
-                    try {
-                        YtMusicRepository.homeSupplement(browseId).onSuccess { shelves ->
-                            if (isCurrentHomeLoad(identity, generation)) publishHomeShelves(shelves)
-                        }
-                    } finally {
-                        homeShelfRequestSettled(identity, generation)
-                    }
+
+            val shelves = mutableListOf<HomeShelf>()
+
+            // 1. Recently Played (from local listening stats)
+            val summary = runCatching { ListeningStats.summary(ReplayPeriod.THIS_MONTH) }.getOrNull()
+            val recentSongs = summary?.songs?.map { it.song }?.take(15).orEmpty()
+            if (recentSongs.isNotEmpty()) {
+                shelves.add(
+                    HomeShelf(
+                        title = "Recently Played",
+                        items = recentSongs.map { it.toLocalShelfItem() },
+                    )
+                )
+            }
+
+            // 2. Most Played
+            val mostPlayed = summary?.songs?.filter { it.plays > 0 }?.sortedByDescending { it.plays }?.map { it.song }?.take(15).orEmpty()
+            if (mostPlayed.isNotEmpty()) {
+                shelves.add(
+                    HomeShelf(
+                        title = "Most Played",
+                        items = mostPlayed.map { it.toLocalShelfItem() },
+                    )
+                )
+            }
+
+            // 3. Recently Added (sorted by localDateAddedSeconds DESC)
+            val recentlyAdded = localSongs.sortedByDescending { it.localDateAddedSeconds ?: 0L }.take(15)
+            if (recentlyAdded.isNotEmpty()) {
+                shelves.add(
+                    HomeShelf(
+                        title = "Recently Added",
+                        items = recentlyAdded.map { it.toLocalShelfItem() },
+                    )
+                )
+            }
+
+            // 4. Artists
+            val artists = localSongs.groupBy { it.artist }
+                .filterKeys { it.isNotBlank() && it != "Unknown Artist" }
+                .map { (artist, songs) ->
+                    ShelfItem(
+                        title = artist,
+                        subtitle = "${songs.size} tracks",
+                        thumbnailUrl = songs.firstOrNull { !it.thumbnailUrl.isNullOrBlank() }?.thumbnailUrl,
+                        videoId = null,
+                        browseId = "local:artist:$artist",
+                    )
                 }
+                .sortedByDescending { it.title }
+                .take(15)
+            if (artists.isNotEmpty()) {
+                shelves.add(HomeShelf(title = "Artists", items = artists))
+            }
+
+            // 5. Albums
+            val albums = localSongs.groupBy { it.albumName }
+                .filterKeys { !it.isNullOrBlank() }
+                .map { (album, songs) ->
+                    ShelfItem(
+                        title = album!!,
+                        subtitle = songs.firstOrNull()?.artist ?: "",
+                        thumbnailUrl = songs.firstOrNull { !it.thumbnailUrl.isNullOrBlank() }?.thumbnailUrl,
+                        videoId = null,
+                        browseId = "local:album:$album",
+                    )
+                }
+                .take(15)
+            if (albums.isNotEmpty()) {
+                shelves.add(HomeShelf(title = "Albums", items = albums))
+            }
+
+            // 6. Quick Picks
+            shelves.add(
+                HomeShelf(
+                    title = "Quick Picks",
+                    items = localSongs.shuffled().take(15).map { it.toLocalShelfItem() },
+                )
+            )
+
+            if (isCurrentHomeLoad(identity, generation)) {
+                _home.value = UiState.Success(shelves)
             }
         }
     }
 
-    /**
-     * One of the parallel first-page requests has finished. Ignored once a newer
-     * load has taken over, which has already reset the count for its own fan-out.
-     */
+    private fun Song.toLocalShelfItem(): ShelfItem = ShelfItem(
+        title = title,
+        subtitle = artist,
+        thumbnailUrl = thumbnailUrl,
+        videoId = videoId,
+        browseId = null,
+    )
+
     private fun homeShelfRequestSettled(identity: String?, generation: Long) {
         if (!isCurrentHomeLoad(identity, generation)) return
         _homePendingShelves.value = (_homePendingShelves.value - 1).coerceAtLeast(0)
@@ -1668,8 +1741,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private fun publishHomeShelves(shelves: List<HomeShelf>, prepend: Boolean = false) {
         val existing = (_home.value as? UiState.Success)?.data.orEmpty()
         if (prepend) {
-            // YouTube's core home can also contain a stale "Recently played"
-            // shelf. The dedicated history endpoint wins and replaces it.
             val replacing = shelves.map { it.title.lowercase(Locale.ROOT) }.toSet()
             homeSeenTitles.addAll(replacing)
             _home.value = UiState.Success(shelves + existing.filterNot {
@@ -1682,70 +1753,82 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (added.isNotEmpty()) _home.value = UiState.Success(existing + added)
     }
 
-    /** Refreshes the core feed without blanking the current Play page first. */
-    private suspend fun refreshHome(identity: String?) = coroutineScope {
-        val recent = if (_signedIn.value) async { YtMusicRepository.homeRecentlyPlayed() } else null
-        YtMusicRepository.home().onSuccess { feed ->
-            if (identity != listenerKey()) return@onSuccess
-            homeContinuation = feed.continuation
-            homeSeenTitles.clear()
-            val shelves = feed.shelves.withoutRepeatsOf(emptyList())
-                .filter { homeSeenTitles.add(it.title.lowercase(Locale.ROOT)) }
-            if (shelves.isNotEmpty()) _home.value = UiState.Success(shelves)
-        }
-        recent?.await()?.onSuccess { shelf ->
-            if (identity == listenerKey()) shelf?.let { publishHomeShelves(listOf(it), prepend = true) }
-        }
+    private suspend fun refreshHome(identity: String?) {
+        loadHome()
     }
 
-    /**
-     * Called as the Home list nears its end. A no-op while a page is already
-     * in flight, once the feed is exhausted, or before the first page has
-     * loaded — [homeContinuation] covers all three by construction.
-     */
     fun loadMoreHome() {
-        val token = homeContinuation ?: return
-        if (_homeLoadingMore.value) return
-        val identity = listenerKey()
-        _homeLoadingMore.value = true
-        viewModelScope.launch {
-            YtMusicRepository.moreHome(token).onSuccess { feed ->
-                if (identity == listenerKey()) {
-                    val existing = (_home.value as? UiState.Success)?.data ?: emptyList()
-                    val added = feed.shelves.withoutRepeatsOf(existing)
-                        .filter { homeSeenTitles.add(it.title.lowercase(Locale.ROOT)) }
-                    // A page with nothing new signals the feed has looped back on
-                    // itself rather than run dry with a token still attached —
-                    // treat it the same as exhausted so scrolling can't spin here.
-                    homeContinuation = feed.continuation.takeIf { added.isNotEmpty() }
-                    if (added.isNotEmpty()) _home.value = UiState.Success(existing + added)
-                }
-            }
-            if (identity == listenerKey()) _homeLoadingMore.value = false
-        }
+        // Complete
     }
 
     fun loadLibrary() {
-        if (!_signedIn.value) return
         val identity = listenerKey()
         _library.value = UiState.Loading
         viewModelScope.launch { fetchLibrary(identity) }
     }
 
     private suspend fun fetchLibrary(identity: String?) {
-        val next = YtMusicRepository.library().fold(
-            onSuccess = { page ->
-                // Liked Music is published with just its first page on the tab;
-                // the rest of the collection is synced into LikeState here, in
-                // this ViewModel's scope, so it is cancelled with the screen and
-                // a liked track past the first page still reads as liked.
-                page.likedContinuation?.let { token -> syncLikedMusic(identity, token) }
-                if (page.isEmpty) UiState.Error(text(R.string.library_empty))
-                else UiState.Success(page.copy(likedContinuation = null))
-            },
-            onFailure = { UiState.Error(it.friendly()) },
+        val context = getApplication<Application>()
+        if (!LocalMediaRepository.hasStoragePermission(context)) {
+            _library.value = UiState.Error(text(R.string.storage_required_read))
+            return
+        }
+        val localSongs = runCatching { LocalMediaRepository.getLocalMusic(context) }.getOrDefault(emptyList())
+
+        val shelves = mutableListOf<HomeShelf>()
+
+        // 1. Playlists shelf
+        val localPlaylists = com.music.bitchord.data.spotify.LocalPlaylistStore.playlists.value
+        val playlistItems = localPlaylists.map { pl ->
+            ShelfItem(
+                title = pl.title,
+                subtitle = "${pl.songs.size} tracks",
+                thumbnailUrl = pl.songs.firstOrNull { !it.thumbnailUrl.isNullOrBlank() }?.thumbnailUrl,
+                videoId = null,
+                browseId = pl.id,
+            )
+        }
+        shelves.add(HomeShelf(title = YtMusicRepository.PLAYLISTS_SHELF, items = playlistItems))
+
+        // 2. Albums shelf
+        val albums = localSongs.groupBy { it.albumName }
+            .filterKeys { !it.isNullOrBlank() }
+            .map { (album, songs) ->
+                ShelfItem(
+                    title = album!!,
+                    subtitle = songs.firstOrNull()?.artist ?: "",
+                    thumbnailUrl = songs.firstOrNull { !it.thumbnailUrl.isNullOrBlank() }?.thumbnailUrl,
+                    videoId = null,
+                    browseId = "local:album:$album",
+                )
+            }
+        if (albums.isNotEmpty()) {
+            shelves.add(HomeShelf(title = "Albums", items = albums))
+        }
+
+        // 3. Artists shelf
+        val artists = localSongs.groupBy { it.artist }
+            .filterKeys { it.isNotBlank() && it != "Unknown Artist" }
+            .map { (artist, songs) ->
+                ShelfItem(
+                    title = artist,
+                    subtitle = "${songs.size} tracks",
+                    thumbnailUrl = songs.firstOrNull { !it.thumbnailUrl.isNullOrBlank() }?.thumbnailUrl,
+                    videoId = null,
+                    browseId = "local:artist:$artist",
+                )
+            }
+        if (artists.isNotEmpty()) {
+            shelves.add(HomeShelf(title = "Artists", items = artists))
+        }
+
+        _library.value = UiState.Success(
+            LibraryPage(
+                likedSongs = emptyList(),
+                librarySongs = localSongs,
+                shelves = shelves,
+            )
         )
-        if (identity == listenerKey()) _library.value = next
     }
 
     /**
@@ -2516,6 +2599,50 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         if (songs.isEmpty()) UiState.Error(text(R.string.no_local_audio_found))
                         else UiState.Success(songs)
                     }
+                }
+                browseId.startsWith("local:artist:") -> {
+                    val artistName = browseId.removePrefix("local:artist:")
+                    val context = getApplication<Application>()
+                    val allSongs = runCatching { LocalMediaRepository.getLocalMusic(context) }.getOrDefault(emptyList())
+                    val artistSongs = allSongs.filter { it.artist.equals(artistName, ignoreCase = true) }
+                    name = artistName
+                    credit = "${artistSongs.size} tracks"
+                    artwork = artistSongs.firstOrNull { !it.thumbnailUrl.isNullOrBlank() }?.thumbnailUrl
+                    if (artistSongs.isEmpty()) UiState.Error(text(R.string.no_local_audio_found))
+                    else UiState.Success(artistSongs)
+                }
+                browseId.startsWith("local:album:") -> {
+                    val albumTitle = browseId.removePrefix("local:album:")
+                    val context = getApplication<Application>()
+                    val allSongs = runCatching { LocalMediaRepository.getLocalMusic(context) }.getOrDefault(emptyList())
+                    val albumSongs = allSongs.filter { it.albumName.equals(albumTitle, ignoreCase = true) }
+                    name = albumTitle
+                    credit = albumSongs.firstOrNull()?.artist ?: ""
+                    artwork = albumSongs.firstOrNull { !it.thumbnailUrl.isNullOrBlank() }?.thumbnailUrl
+                    if (albumSongs.isEmpty()) UiState.Error(text(R.string.no_local_audio_found))
+                    else UiState.Success(albumSongs)
+                }
+                browseId.startsWith("local:folder:") -> {
+                    val folderPath = browseId.removePrefix("local:folder:")
+                    val context = getApplication<Application>()
+                    val allSongs = runCatching { LocalMediaRepository.getLocalMusic(context) }.getOrDefault(emptyList())
+                    val folderSongs = allSongs.filter { it.localPath?.startsWith(folderPath) == true }
+                    name = folderPath.substringAfterLast('/')
+                    credit = "${folderSongs.size} tracks"
+                    artwork = folderSongs.firstOrNull { !it.thumbnailUrl.isNullOrBlank() }?.thumbnailUrl
+                    if (folderSongs.isEmpty()) UiState.Error(text(R.string.no_local_audio_found))
+                    else UiState.Success(folderSongs)
+                }
+                browseId.startsWith("local:format:") -> {
+                    val ext = browseId.removePrefix("local:format:")
+                    val context = getApplication<Application>()
+                    val allSongs = runCatching { LocalMediaRepository.getLocalMusic(context) }.getOrDefault(emptyList())
+                    val formatSongs = allSongs.filter { it.localPath?.endsWith(ext, ignoreCase = true) == true }
+                    name = ext.uppercase(Locale.ROOT)
+                    credit = "${formatSongs.size} tracks"
+                    artwork = formatSongs.firstOrNull { !it.thumbnailUrl.isNullOrBlank() }?.thumbnailUrl
+                    if (formatSongs.isEmpty()) UiState.Error(text(R.string.no_local_audio_found))
+                    else UiState.Success(formatSongs)
                 }
                 resolved == BrowseType.ARTIST -> {
                     YtMusicRepository.artistPage(browseId).fold(

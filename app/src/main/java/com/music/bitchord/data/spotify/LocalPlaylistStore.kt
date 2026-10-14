@@ -54,6 +54,8 @@ object LocalPlaylistStore {
                         albumId = sObj.optString("albumId", null).takeIf { !it.isNullOrBlank() && it != "null" },
                         albumName = sObj.optString("albumName", null).takeIf { !it.isNullOrBlank() && it != "null" },
                         isVideo = sObj.optBoolean("isVideo", false),
+                        localUri = sObj.optString("localUri", null).takeIf { !it.isNullOrBlank() && it != "null" }
+                            ?: sObj.optString("videoId", "").takeIf { it.startsWith("/") || it.startsWith("content://") || it.startsWith("file://") },
                     )
                     songs.add(song)
                 }
@@ -114,6 +116,8 @@ object LocalPlaylistStore {
                     sObj.put("albumId", song.albumId)
                     sObj.put("albumName", song.albumName)
                     sObj.put("isVideo", song.isVideo)
+                    val uri = song.localUri ?: if (song.videoId.startsWith("/") || song.videoId.startsWith("content://") || song.videoId.startsWith("file://")) song.videoId else null
+                    if (uri != null) sObj.put("localUri", uri)
                     songsArray.put(sObj)
                 }
                 pObj.put("songs", songsArray)
@@ -121,5 +125,31 @@ object LocalPlaylistStore {
             }
             prefs.edit().putString(KEY_PLAYLISTS, jsonArray.toString()).apply()
         }
+    }
+
+    fun addSongsToPlaylist(id: String, newSongs: List<Song>) {
+        val cleanId = id.removePrefix("local:playlist:").removePrefix("VL")
+        val updated = _playlists.value.map {
+            if (it.id == cleanId || it.id == id || it.browseId == id) {
+                it.copy(songs = it.songs + newSongs)
+            } else it
+        }
+        _playlists.value = updated
+        persist(updated)
+    }
+
+    fun removeSongFromPlaylist(id: String, index: Int) {
+        val cleanId = id.removePrefix("local:playlist:").removePrefix("VL")
+        val updated = _playlists.value.map {
+            if (it.id == cleanId || it.id == id || it.browseId == id) {
+                if (index in it.songs.indices) {
+                    val mutable = it.songs.toMutableList()
+                    mutable.removeAt(index)
+                    it.copy(songs = mutable)
+                } else it
+            } else it
+        }
+        _playlists.value = updated
+        persist(updated)
     }
 }
