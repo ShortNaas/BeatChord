@@ -73,6 +73,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Locale
+import androidx.compose.ui.res.painterResource
 
 /** Which dot Discord draws on the avatar, and what it tells other people. */
 enum class DiscordPresenceStatus(val value: String, val label: String, val detail: String) {
@@ -452,6 +453,8 @@ private fun DiscordAccountCard(
         Box(Modifier.size(52.dp)) {
             if (avatar.isNotEmpty()) {
                 AsyncImage(
+                    error = painterResource(R.drawable.ic_logo),
+                    fallback = painterResource(R.drawable.ic_logo),
                     model = avatar,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
@@ -598,6 +601,8 @@ private fun RichPresencePreview(
             val artShape = RoundedCornerShape(6.dp)
             if (song?.thumbnailUrl != null) {
                 AsyncImage(
+                    error = painterResource(R.drawable.ic_logo),
+                    fallback = painterResource(R.drawable.ic_logo),
                     model = song.artworkAt(CARD_ART_PX),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,

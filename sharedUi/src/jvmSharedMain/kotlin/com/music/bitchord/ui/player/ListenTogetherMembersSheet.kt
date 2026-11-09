@@ -38,6 +38,7 @@ import com.music.bitchord.data.listentogether.PartyMember
 import com.music.bitchord.ui.haptics.Haptic
 import com.music.bitchord.ui.haptics.rememberHaptics
 import dev.chrisbanes.haze.HazeState
+import org.jetbrains.compose.resources.painterResource
 
 /**
  * Who's in the party right now, from the same button that used to drop
@@ -98,6 +99,8 @@ private fun MemberDrawerRow(member: PartyMember, isYou: Boolean) {
         ) {
             if (member.avatarUrl != null) {
                 AsyncImage(
+                    error = painterResource(Res.drawable.ic_logo),
+                    fallback = painterResource(Res.drawable.ic_logo),
                     model = member.avatarUrl,
                     contentDescription = null,
                     modifier = Modifier.size(40.dp).clip(CircleShape),

@@ -97,6 +97,7 @@ import com.music.bitchord.data.listentogether.ServerConnectionState
 import com.music.bitchord.data.listentogether.ServerUrlError
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.painterResource
 
 internal fun ServerUrlError.toMessageRes(): Int = when (this) {
     ServerUrlError.Whitespace -> R.string.listen_together_err_whitespace
@@ -1012,6 +1013,8 @@ private fun connectionLine(state: ListenTogether.State): String = when {
 private fun PartyAvatar(url: String?, size: Dp = ICON_SIZE) {
     if (url != null) {
         AsyncImage(
+            error = painterResource(R.drawable.ic_logo),
+            fallback = painterResource(R.drawable.ic_logo),
             model = url,
             contentDescription = null,
             contentScale = ContentScale.Crop,
@@ -1045,6 +1048,8 @@ private fun MemberRow(member: PartyMember, isYou: Boolean, canKick: Boolean = fa
         ) {
             if (member.avatarUrl != null) {
                 AsyncImage(
+                    error = painterResource(R.drawable.ic_logo),
+                    fallback = painterResource(R.drawable.ic_logo),
                     model = member.avatarUrl,
                     contentDescription = null,
                     modifier = Modifier.size(32.dp).clip(CircleShape),

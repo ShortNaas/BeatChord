@@ -54,6 +54,7 @@ import com.music.bitchord.data.model.Song
 import com.music.bitchord.data.model.UiState
 import com.music.bitchord.data.model.UserPlaylist
 import com.music.bitchord.data.model.artworkAt
+import androidx.compose.ui.res.painterResource
 
 /**
  * Rearranges one of the account's playlists: every entry with a handle to drag
@@ -278,6 +279,8 @@ private fun ReorderRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         AsyncImage(
+            error = painterResource(R.drawable.ic_logo),
+            fallback = painterResource(R.drawable.ic_logo),
             model = song.artworkAt(ROW_ART_PX),
             contentDescription = null,
             modifier = Modifier

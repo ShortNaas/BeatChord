@@ -65,6 +65,7 @@ import com.music.bitchord.data.model.artworkAt
 import com.music.bitchord.ui.components.thumbnailBorder
 import com.music.bitchord.ui.icons.BitChordIcons
 import java.util.Locale
+import androidx.compose.ui.res.painterResource
 
 /**
  * Where a track goes: one of the account's playlists, or a new one.
@@ -199,6 +200,8 @@ private fun PlaylistRow(playlist: UserPlaylist, selected: Boolean, onClick: () -
         verticalAlignment = Alignment.CenterVertically,
     ) {
         AsyncImage(
+            error = painterResource(R.drawable.ic_logo),
+            fallback = painterResource(R.drawable.ic_logo),
             model = playlist.thumbnailUrl.artworkAt(ROW_ART_PX),
             contentDescription = null,
             modifier = Modifier

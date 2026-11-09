@@ -54,6 +54,7 @@ import com.music.bitchord.data.listentogether.ListenTogether
 import com.music.bitchord.data.listentogether.PartyPreview
 import com.music.bitchord.ui.components.PillTextField
 import com.music.bitchord.ui.components.QrCode
+import androidx.compose.ui.res.painterResource
 
 /**
  * Which of the party sheets is up, if any.
@@ -155,6 +156,8 @@ internal fun GlowingAvatar(
         )
         if (url != null) {
             AsyncImage(
+                error = painterResource(R.drawable.ic_logo),
+                fallback = painterResource(R.drawable.ic_logo),
                 model = url,
                 contentDescription = null,
                 modifier = Modifier
@@ -398,6 +401,8 @@ private fun StepperButton(label: String, enabled: Boolean, onClick: () -> Unit) 
 private fun PartySheetAvatar(url: String?, size: Dp = 40.dp) {
     if (url != null) {
         AsyncImage(
+            error = painterResource(R.drawable.ic_logo),
+            fallback = painterResource(R.drawable.ic_logo),
             model = url,
             contentDescription = null,
             modifier = Modifier.size(size).clip(CircleShape),
@@ -503,6 +508,8 @@ internal fun MemberAvatarStack(
             ) {
                 if (avatar != null) {
                     AsyncImage(
+                        error = painterResource(R.drawable.ic_logo),
+                        fallback = painterResource(R.drawable.ic_logo),
                         model = avatar,
                         contentDescription = null,
                         modifier = Modifier.size(faceSize).clip(CircleShape),

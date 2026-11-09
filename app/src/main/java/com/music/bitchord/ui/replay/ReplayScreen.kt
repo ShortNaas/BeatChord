@@ -61,6 +61,7 @@ import com.music.bitchord.ui.icons.BitChordIcons
 import com.music.bitchord.ui.player.MeshGradientBackground
 import com.music.bitchord.ui.player.rememberArtworkColors
 import com.music.bitchord.ui.theme.AccentRed
+import androidx.compose.ui.res.painterResource
 
 /** Whether the Replay page is being shown in dark mode (vs light). */
 @Composable
@@ -288,6 +289,7 @@ private fun PeriodPicker(selected: ReplayPeriod, onSelect: (ReplayPeriod) -> Uni
     val textColor = if (dark) Color.White else Color.Black
     Row(
         Modifier
+            .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(textColor.copy(alpha = 0.10f))
             .padding(3.dp),
@@ -300,17 +302,27 @@ private fun PeriodPicker(selected: ReplayPeriod, onSelect: (ReplayPeriod) -> Uni
                 tween(160),
                 label = "periodChip",
             )
-            Text(
-                text = period.localizedChip(context),
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.W700,
-                color = if (active) if (dark) Color.Black else Color.White else textColor.copy(alpha = 0.75f),
+            Box(
                 modifier = Modifier
+                    .weight(1f)
                     .clip(RoundedCornerShape(10.dp))
                     .background(background)
                     .clickable { onSelect(period) }
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
-            )
+                    .padding(horizontal = 4.dp, vertical = 7.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = period.localizedChip(context),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.W700,
+                    ),
+                    color = if (active) if (dark) Color.Black else Color.White else textColor.copy(alpha = 0.75f),
+                    maxLines = 1,
+                    softWrap = false,
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
     }
 }
@@ -463,6 +475,8 @@ private fun ReplayChartRow(row: ReplayRow, circular: Boolean, dark: Boolean, onC
         RankBadge(row.rank, AccentRed)
         if (row.artworkUrl != null) {
             AsyncImage(
+                error = painterResource(R.drawable.ic_logo),
+                fallback = painterResource(R.drawable.ic_logo),
                 model = row.artworkUrl.artworkAt(ROW_ART_PX),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,

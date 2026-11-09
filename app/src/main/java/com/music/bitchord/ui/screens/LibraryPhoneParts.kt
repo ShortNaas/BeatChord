@@ -37,66 +37,7 @@ import com.music.bitchord.ui.replay.ReplayStoryPage
  * libraries it can reach.
  */
 @Composable
-fun libraryLinks(): List<LibraryLink> {
-    val webdavConfigured by AppSettings.webdavUrl.collectAsStateWithLifecycle()
-    val smbHost by AppSettings.smbHost.collectAsStateWithLifecycle()
-    val smbShare by AppSettings.smbShare.collectAsStateWithLifecycle()
-    val showCacheFolder by AppSettings.showCacheFolder.collectAsStateWithLifecycle()
-    val spotifyConnected by AppSettings.spotifySpdcToken.collectAsStateWithLifecycle()
-    fun link(icon: ImageVector, title: String, subtitle: String, browseId: String) = LibraryLink(
-        item = ShelfItem(
-            title = title,
-            subtitle = subtitle,
-            thumbnailUrl = null,
-            videoId = null,
-            browseId = browseId,
-        ),
-        icon = icon,
-    )
-    return listOfNotNull(
-        link(
-            Icons.Rounded.Download,
-            stringResource(R.string.downloads),
-            stringResource(R.string.downloaded_songs),
-            "local:downloads",
-        ),
-        link(
-            Icons.Rounded.Folder,
-            stringResource(R.string.local_music),
-            stringResource(R.string.audio_files_on_device),
-            "local:all",
-        ),
-        // Opt-in from Settings → Storage: what the song cache is holding from
-        // YouTube and JioSaavn. See [com.music.bitchord.playback.AudioCache.cachedSongs].
-        link(
-            Icons.Rounded.Storage,
-            stringResource(R.string.cached_songs),
-            stringResource(R.string.cached_songs_subtitle),
-            CACHE_FOLDER_BROWSE_ID,
-        ).takeIf { showCacheFolder },
-        // Only once set up in Sources; unconfigured, they'd just be dead ends.
-        link(
-            Icons.Rounded.Cloud,
-            stringResource(R.string.webdav),
-            stringResource(R.string.webdav_subtitle),
-            com.music.bitchord.data.webdav.WebDavConfig.BROWSE_ID,
-        ).takeIf { webdavConfigured.isNotBlank() },
-        link(
-            Icons.Rounded.Lan,
-            stringResource(R.string.smb),
-            stringResource(R.string.smb_subtitle),
-            com.music.bitchord.data.smb.SmbConfig.BROWSE_ID,
-        ).takeIf { smbHost.isNotBlank() && smbShare.isNotBlank() },
-        // Only while signed in to Spotify in Settings → Accounts; it opens that
-        // account's playlists rather than a browse page.
-        link(
-            Icons.Rounded.Cloud,
-            stringResource(R.string.spotify),
-            stringResource(R.string.spotify_library_subtitle),
-            SPOTIFY_BROWSE_ID,
-        ).takeIf { spotifyConnected.isNotBlank() }?.copy(logo = Res.drawable.spotify_logo),
-    )
-}
+fun libraryLinks(): List<LibraryLink> = emptyList()
 
 /**
  * The phone's "On device" shelf: the playlists and albums downloaded whole —

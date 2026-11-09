@@ -95,15 +95,15 @@ fun ReplayShareSheet(
     var style by remember { mutableStateOf(SharePosterStyle.WRAPPED) }
     var poster by remember { mutableStateOf<Bitmap?>(null) }
     var failed by remember { mutableStateOf(false) }
-    var saved by remember { mutableStateOf(false) }
+    var saved by remember(style) { mutableStateOf(false) }
 
     LaunchedEffect(summary, page, style) {
         poster = null
         poster = runCatching {
             when (style) {
                 SharePosterStyle.WRAPPED -> renderReplayPoster(context, summary, holder, memberSince, page)
-                SharePosterStyle.MOST_PLAYED_SONGS -> renderMusicoletCard(context, summary, MusicoletCardType.SONGS)
-                SharePosterStyle.MOST_PLAYED_ARTISTS -> renderMusicoletCard(context, summary, MusicoletCardType.ARTISTS)
+                SharePosterStyle.MOST_PLAYED_SONGS -> renderReplayPoster(context, summary, holder, memberSince, ReplayStoryPage.SONGS)
+                SharePosterStyle.MOST_PLAYED_ARTISTS -> renderReplayPoster(context, summary, holder, memberSince, ReplayStoryPage.ARTISTS)
             }
         }.onFailure { failed = true }.getOrNull()
     }

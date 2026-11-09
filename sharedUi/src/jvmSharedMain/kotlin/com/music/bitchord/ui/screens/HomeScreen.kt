@@ -452,6 +452,8 @@ fun CompactTrackRow(
                 model = thumbnailUrl.artworkAt(ROW_ART_PX),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
+                error = painterResource(Res.drawable.ic_logo),
+                fallback = painterResource(Res.drawable.ic_logo),
                 modifier = Modifier
                     .size(48.dp)
                     .clip(RoundedCornerShape(7.dp))
@@ -536,7 +538,11 @@ internal fun SectionHeader(title: String, subtitle: String = "", onShowAll: (() 
             .fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(Modifier.weight(1f)) {
+        Column(
+            Modifier
+                .weight(1f)
+                .then(if (onShowAll != null) Modifier.clickable(onClick = onShowAll) else Modifier)
+        ) {
             Text(
                 text = displayTitle,
                 style = MaterialTheme.typography.headlineMedium,
@@ -796,6 +802,8 @@ private fun HeroCard(
             model = item.thumbnailUrl.artworkAt(HEADER_ART_PX),
             contentDescription = null,
             contentScale = ContentScale.Crop,
+            error = painterResource(Res.drawable.ic_logo),
+            fallback = painterResource(Res.drawable.ic_logo),
             modifier = Modifier.fillMaxSize(),
         )
         if (isCurrent && isPlaying) SearchPlayingBars(Modifier.align(Alignment.Center))
@@ -1031,6 +1039,8 @@ internal fun ShelfCard(
                         .background(MaterialTheme.colorScheme.surfaceVariant),
                 ) {
                     AsyncImage(
+                        error = painterResource(Res.drawable.ic_logo),
+                        fallback = painterResource(Res.drawable.ic_logo),
                         model = item.thumbnailUrl.artworkAt(CARD_ART_PX),
                         contentDescription = null,
                         contentScale = androidx.compose.ui.layout.ContentScale.Crop,

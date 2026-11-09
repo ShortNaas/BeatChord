@@ -31,13 +31,16 @@ import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.DownloadDone
 import androidx.compose.material.icons.rounded.Downloading
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.FileUpload
+import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.HighQuality
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Radio
@@ -67,6 +70,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -125,10 +129,10 @@ fun SongActionsSheet(
     song: Song,
     signedIn: Boolean,
     likeStatus: LikeStatus,
-    onPlayNext: () -> Unit,
-    onAddToQueue: () -> Unit,
-    onStartRadio: () -> Unit,
-    onDownload: () -> Unit,
+    onPlayNext: (() -> Unit)? = null,
+    onAddToQueue: () -> Unit = {},
+    onStartRadio: (() -> Unit)? = null,
+    onDownload: (() -> Unit)? = null,
     /**
      * Copies this track to the WebDAV server. Null hides the row — the caller
      * passes one only for a readable device file while a server is
@@ -137,7 +141,7 @@ fun SongActionsSheet(
      */
     onUploadToWebDav: (() -> Unit)? = null,
     onToggleLike: () -> Unit,
-    onToggleDislike: () -> Unit,
+    onToggleDislike: (() -> Unit)? = null,
     onAddToPlaylist: () -> Unit,
     onOpenAlbum: (String) -> Unit,
     onOpenArtist: (String) -> Unit,
@@ -186,14 +190,10 @@ fun SongActionsSheet(
      * as before — present when the id is there, absent when it never was.
      */
     resolvingLinks: Boolean = false,
-    /**
-     * Where the rows are drawn. [SongActionsPresentation.Sheet] is the tinted
-     * bottom sheet with its own track header; [SongActionsPresentation.Menu]
-     * is only the rows, compact and in the theme's own colours, for the
-     * popup a held row lifts into — see [HeldContextMenu], which draws the
-     * held row itself above them.
-     */
     presentation: SongActionsPresentation = SongActionsPresentation.Sheet,
+    onDeleteMusic: (() -> Unit)? = null,
+    onMoveMusic: (() -> Unit)? = null,
+    onEditTags: (() -> Unit)? = null,
 ) {
     var pickingSleepTimer by remember { mutableStateOf(false) }
     val menu = presentation == SongActionsPresentation.Menu
@@ -262,52 +262,66 @@ fun SongActionsSheet(
             GroupSeparator(palette)
         }
 
-        if (signedIn && !isOffline) {
-            ActionRow(
-                icon = if (liked) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
-                label = if (liked) stringResource(R.string.remove_from_liked) else stringResource(R.string.like),
-                tint = if (liked) palette.accent else null,
-                accent = palette.accent,
-                onClick = onToggleLike,
-            )
+        ActionRow(
+            icon = if (liked) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+            label = if (liked) stringResource(R.string.remove_from_liked) else stringResource(R.string.like),
+            tint = if (liked) palette.accent else null,
+            accent = palette.accent,
+            onClick = onToggleLike,
+        )
+        onToggleDislike?.let { dislike ->
             ActionRow(
                 icon = if (disliked) Icons.Rounded.ThumbDown else Icons.Rounded.ThumbDownOffAlt,
                 label = if (disliked) stringResource(R.string.undo_dislike) else stringResource(R.string.dislike),
                 tint = if (disliked) palette.accent else null,
                 accent = palette.accent,
-                onClick = onToggleDislike,
+                onClick = dislike,
             )
+        }
+        ActionRow(
+            icon = Icons.AutoMirrored.Rounded.PlaylistAdd,
+            label = stringResource(R.string.add_to_playlist),
+            accent = palette.accent,
+            onClick = onAddToPlaylist,
+        )
+        onRemoveFromPlaylist?.let {
             ActionRow(
-                icon = Icons.AutoMirrored.Rounded.PlaylistAdd,
-                label = stringResource(R.string.add_to_playlist),
+                icon = Icons.Rounded.PlaylistRemove,
+                label = stringResource(R.string.remove_from_playlist),
                 accent = palette.accent,
-                onClick = onAddToPlaylist,
+                onClick = it,
             )
-            onRemoveFromPlaylist?.let {
-                ActionRow(
-                    icon = Icons.Rounded.PlaylistRemove,
-                    label = stringResource(R.string.remove_from_playlist),
-                    accent = palette.accent,
-                    onClick = it,
-                )
-            }
+        }
+        GroupSeparator(palette)
+
+        onEditTags?.let {
+            ActionRow(
+                icon = Icons.Rounded.Edit,
+                label = stringResource(R.string.song_action_edit_tags),
+                accent = palette.accent,
+                onClick = it,
+            )
+        }
+        onMoveMusic?.let {
+            ActionRow(
+                icon = Icons.Rounded.Folder,
+                label = stringResource(R.string.song_action_move_folder),
+                accent = palette.accent,
+                onClick = it,
+            )
+        }
+        onDeleteMusic?.let {
+            ActionRow(
+                icon = Icons.Rounded.Delete,
+                label = stringResource(R.string.song_action_delete),
+                accent = palette.accent,
+                onClick = it,
+            )
+        }
+        if (onEditTags != null || onMoveMusic != null || onDeleteMusic != null) {
             GroupSeparator(palette)
         }
 
-        DownloadRow(song, palette, isOffline, onDownload)
-        WebDavUploadRow(song, palette, isOffline, onUploadToWebDav)
-        ActionRow(
-            icon = Icons.Rounded.Radio,
-            label = stringResource(R.string.start_radio),
-            accent = palette.accent,
-            onClick = onStartRadio,
-        )
-        ActionRow(
-            icon = Icons.AutoMirrored.Rounded.PlaylistPlay,
-            label = stringResource(R.string.play_next),
-            accent = palette.accent,
-            onClick = onPlayNext,
-        )
         ActionRow(
             icon = Icons.AutoMirrored.Rounded.QueueMusic,
             label = stringResource(R.string.add_to_queue),
@@ -915,6 +929,8 @@ internal fun SheetTrackHeader(
         AsyncImage(
             model = song.artworkAt(ROW_ART_PX),
             contentDescription = null,
+            error = painterResource(R.drawable.ic_logo),
+            fallback = painterResource(R.drawable.ic_logo),
             modifier = Modifier
                 .size(52.dp)
                 .clip(RoundedCornerShape(8.dp))

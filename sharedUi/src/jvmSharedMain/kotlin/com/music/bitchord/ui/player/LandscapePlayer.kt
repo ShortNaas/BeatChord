@@ -1,6 +1,7 @@
 package com.music.bitchord.ui.player
 
 import com.music.bitchord.sharedui.resources.*
+import org.jetbrains.compose.resources.painterResource
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.AnimatedContent
@@ -8,6 +9,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -314,10 +316,9 @@ internal fun LandscapeArtwork(
             contentAlignment = Alignment.Center,
         ) {
             if (!artLoaded && !canvasRendered) {
-                Icon(
-                    imageVector = BitChordIcons.MusicNote,
+                Image(
+                    painter = painterResource(Res.drawable.ic_logo),
                     contentDescription = null,
-                    tint = Color.White.copy(alpha = 0.35f),
                     modifier = Modifier.fillMaxSize(0.36f),
                 )
             }

@@ -10,7 +10,6 @@ import com.music.bitchord.auth.YouTubeProfile
 import com.music.bitchord.auth.profileId
 import com.music.bitchord.auth.sessionId
 import com.music.bitchord.auth.adjacentProfile
-import com.music.bitchord.data.AppUpdateChecker
 import com.music.bitchord.data.LocalMediaRepository
 import com.music.bitchord.data.LikeState
 import com.music.bitchord.data.YtMusicRepository
@@ -337,6 +336,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         durationMs: Long,
         album: String? = null,
         localUri: String? = null,
+        localPath: String? = null,
     ) {
         val sources = if (AppSettings.syncedLyrics.value) {
             AppSettings.lyricsSources.value
@@ -389,6 +389,23 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     return@launch
                 }
             }
+
+            // Check offline cached lyrics before attempting network access
+            val cachedLyrics = com.music.bitchord.data.lyrics.LocalLyricsStore.get(
+                getApplication(),
+                videoId,
+                title,
+                artist,
+                localUri,
+                localPath,
+            )
+            if (cachedLyrics != null) {
+                _lyrics.value = cachedLyrics.lines
+                _lyricsSource.value = cachedLyrics.source
+                _lyricsChecked.value = true
+                return@launch
+            }
+
             if (durationMs <= 0L) {
                 // Duration arrives a beat after the track does; wait for it.
                 lyricsFor = null
@@ -407,6 +424,18 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             _lyrics.value = selected?.lines
             _lyricsSource.value = selected?.source
             _lyricsChecked.value = true
+            selected?.lines?.let { lines ->
+                com.music.bitchord.data.lyrics.LocalLyricsStore.save(
+                    context = getApplication(),
+                    videoId = videoId,
+                    title = title,
+                    artist = artist,
+                    localUri = localUri,
+                    localPath = localPath,
+                    lines = lines,
+                    source = selected.source,
+                )
+            }
         }
     }
 
@@ -597,7 +626,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
 
     /** Set once per launch if GitHub has a release newer than this build. */
-    val updateAvailable: StateFlow<AppUpdateChecker.UpdateInfo?> = AppUpdateChecker.available
 
     // ---- Ratings, library and playlists -------------------------------------
 
@@ -1431,12 +1459,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 .debounce(300)
                 .collect { reloadRemoteDetail(com.music.bitchord.data.smb.SmbConfig.BROWSE_ID) }
         }
-        viewModelScope.launch {
-            // A leftover APK only means "Install Now" for the session that
-            // downloaded it — see AppUpdateChecker.clearCache.
-            AppUpdateChecker.clearCache(getApplication())
-            AppUpdateChecker.check()
-        }
     }
 
     /**
@@ -1639,59 +1661,36 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
             val shelves = mutableListOf<HomeShelf>()
 
-            // 1. Recently Played (from local listening stats)
-            val summary = runCatching { ListeningStats.summary(ReplayPeriod.THIS_MONTH) }.getOrNull()
-            val recentSongs = summary?.songs?.map { it.song }?.take(15).orEmpty()
-            if (recentSongs.isNotEmpty()) {
-                shelves.add(
-                    HomeShelf(
-                        title = "Recently Played",
-                        items = recentSongs.map { it.toLocalShelfItem() },
-                    )
-                )
-            }
-
-            // 2. Most Played
-            val mostPlayed = summary?.songs?.filter { it.plays > 0 }?.sortedByDescending { it.plays }?.map { it.song }?.take(15).orEmpty()
-            if (mostPlayed.isNotEmpty()) {
-                shelves.add(
-                    HomeShelf(
-                        title = "Most Played",
-                        items = mostPlayed.map { it.toLocalShelfItem() },
-                    )
-                )
-            }
-
-            // 3. Recently Added (sorted by localDateAddedSeconds DESC)
+            // 1. Recently Added (sorted by localDateAddedSeconds DESC)
             val recentlyAdded = localSongs.sortedByDescending { it.localDateAddedSeconds ?: 0L }.take(15)
             if (recentlyAdded.isNotEmpty()) {
                 shelves.add(
                     HomeShelf(
-                        title = "Recently Added",
+                        title = text(R.string.shelf_recently_added),
                         items = recentlyAdded.map { it.toLocalShelfItem() },
                     )
                 )
             }
 
-            // 4. Artists
+            // 2. Artists (shuffled each time app opens)
             val artists = localSongs.groupBy { it.artist }
                 .filterKeys { it.isNotBlank() && it != "Unknown Artist" }
                 .map { (artist, songs) ->
                     ShelfItem(
                         title = artist,
-                        subtitle = "${songs.size} tracks",
+                        subtitle = trackCount(songs.size),
                         thumbnailUrl = songs.firstOrNull { !it.thumbnailUrl.isNullOrBlank() }?.thumbnailUrl,
                         videoId = null,
                         browseId = "local:artist:$artist",
                     )
                 }
-                .sortedByDescending { it.title }
+                .shuffled()
                 .take(15)
             if (artists.isNotEmpty()) {
-                shelves.add(HomeShelf(title = "Artists", items = artists))
+                shelves.add(HomeShelf(title = text(R.string.shelf_artists), items = artists))
             }
 
-            // 5. Albums
+            // 3. Albums (shuffled each time app opens)
             val albums = localSongs.groupBy { it.albumName }
                 .filterKeys { !it.isNullOrBlank() }
                 .map { (album, songs) ->
@@ -1703,15 +1702,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         browseId = "local:album:$album",
                     )
                 }
+                .shuffled()
                 .take(15)
             if (albums.isNotEmpty()) {
-                shelves.add(HomeShelf(title = "Albums", items = albums))
+                shelves.add(HomeShelf(title = text(R.string.shelf_albums), items = albums))
             }
 
-            // 6. Quick Picks
+            // 4. Quick Picks (shuffled each time app opens)
             shelves.add(
                 HomeShelf(
-                    title = "Quick Picks",
+                    title = text(R.string.shelf_quick_picks),
                     items = localSongs.shuffled().take(15).map { it.toLocalShelfItem() },
                 )
             )
@@ -1776,50 +1776,125 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val localSongs = runCatching { LocalMediaRepository.getLocalMusic(context) }.getOrDefault(emptyList())
 
         val shelves = mutableListOf<HomeShelf>()
+        val playsMap = runCatching { ListeningStats.getTrackPlaysMap() }.getOrDefault(emptyMap())
 
-        // 1. Playlists shelf
-        val localPlaylists = com.music.bitchord.data.spotify.LocalPlaylistStore.playlists.value
-        val playlistItems = localPlaylists.map { pl ->
-            ShelfItem(
-                title = pl.title,
-                subtitle = "${pl.songs.size} tracks",
-                thumbnailUrl = pl.songs.firstOrNull { !it.thumbnailUrl.isNullOrBlank() }?.thumbnailUrl,
-                videoId = null,
-                browseId = pl.id,
+        // 1. All Songs shelf
+        if (localSongs.isNotEmpty()) {
+            val allSongsItems = localSongs.take(15).map { song ->
+                ShelfItem(
+                    title = song.title,
+                    subtitle = song.artist,
+                    thumbnailUrl = song.thumbnailUrl,
+                    videoId = song.videoId,
+                    browseId = "library:all_songs",
+                )
+            }
+            shelves.add(
+                HomeShelf(
+                    title = text(R.string.shelf_all_songs),
+                    subtitle = trackCount(localSongs.size),
+                    items = allSongsItems,
+                    key = "all_songs",
+                )
             )
         }
-        shelves.add(HomeShelf(title = YtMusicRepository.PLAYLISTS_SHELF, items = playlistItems))
 
-        // 2. Albums shelf
-        val albums = localSongs.groupBy { it.albumName }
-            .filterKeys { !it.isNullOrBlank() }
-            .map { (album, songs) ->
+        // 2. Most Played shelf
+        val mostPlayed = localSongs
+            .map { it to (playsMap[it.videoId] ?: playsMap[it.localUri] ?: 0) }
+            .filter { it.second > 0 }
+            .sortedByDescending { it.second }
+            .map { it.first }
+        if (mostPlayed.isNotEmpty()) {
+            val mostPlayedItems = mostPlayed.take(15).map { song ->
+                val p = playsMap[song.videoId] ?: playsMap[song.localUri] ?: 0
                 ShelfItem(
-                    title = album!!,
-                    subtitle = songs.firstOrNull()?.artist ?: "",
-                    thumbnailUrl = songs.firstOrNull { !it.thumbnailUrl.isNullOrBlank() }?.thumbnailUrl,
-                    videoId = null,
-                    browseId = "local:album:$album",
+                    title = song.title,
+                    subtitle = "${playCount(p)} • ${song.artist}",
+                    thumbnailUrl = song.thumbnailUrl,
+                    videoId = song.videoId,
+                    browseId = "library:most_played",
                 )
             }
-        if (albums.isNotEmpty()) {
-            shelves.add(HomeShelf(title = "Albums", items = albums))
+            shelves.add(
+                HomeShelf(
+                    title = text(R.string.shelf_most_played),
+                    subtitle = text(R.string.shelf_subtitle_top_tracks),
+                    items = mostPlayedItems,
+                    key = "most_played",
+                )
+            )
         }
 
-        // 3. Artists shelf
-        val artists = localSongs.groupBy { it.artist }
-            .filterKeys { it.isNotBlank() && it != "Unknown Artist" }
-            .map { (artist, songs) ->
+        // 3. Recently Played shelf
+        val recentPairs = runCatching { ListeningStats.getRecentPlayedTracks() }.getOrDefault(emptyList())
+        val recentSongs = recentPairs.map { it.first }
+        if (recentSongs.isNotEmpty()) {
+            val recentItems = recentSongs.take(15).map { song ->
                 ShelfItem(
-                    title = artist,
-                    subtitle = "${songs.size} tracks",
-                    thumbnailUrl = songs.firstOrNull { !it.thumbnailUrl.isNullOrBlank() }?.thumbnailUrl,
-                    videoId = null,
-                    browseId = "local:artist:$artist",
+                    title = song.title,
+                    subtitle = song.artist,
+                    thumbnailUrl = song.thumbnailUrl,
+                    videoId = song.videoId,
+                    browseId = "library:recently_played",
                 )
             }
-        if (artists.isNotEmpty()) {
-            shelves.add(HomeShelf(title = "Artists", items = artists))
+            shelves.add(
+                HomeShelf(
+                    title = text(R.string.shelf_recently_played),
+                    subtitle = text(R.string.shelf_subtitle_recent_tracks),
+                    items = recentItems,
+                    key = "recently_played",
+                )
+            )
+        }
+
+        // 4. Recently Added shelf
+        val recentlyAdded = localSongs
+            .filter { (it.localDateAddedSeconds ?: 0L) > 0 }
+            .sortedByDescending { it.localDateAddedSeconds ?: 0L }
+        if (recentlyAdded.isNotEmpty()) {
+            val addedItems = recentlyAdded.take(15).map { song ->
+                ShelfItem(
+                    title = song.title,
+                    subtitle = song.artist,
+                    thumbnailUrl = song.thumbnailUrl,
+                    videoId = song.videoId,
+                    browseId = "library:recently_added",
+                )
+            }
+            shelves.add(
+                HomeShelf(
+                    title = text(R.string.shelf_recently_added),
+                    subtitle = text(R.string.shelf_subtitle_new_additions),
+                    items = addedItems,
+                    key = "recently_added",
+                )
+            )
+        }
+
+        // 5. Never Played shelf
+        val neverPlayed = localSongs.filter {
+            (playsMap[it.videoId] ?: playsMap[it.localUri] ?: 0) == 0
+        }
+        if (neverPlayed.isNotEmpty()) {
+            val neverItems = neverPlayed.take(15).map { song ->
+                ShelfItem(
+                    title = song.title,
+                    subtitle = song.artist,
+                    thumbnailUrl = song.thumbnailUrl,
+                    videoId = song.videoId,
+                    browseId = "library:never_played",
+                )
+            }
+            shelves.add(
+                HomeShelf(
+                    title = text(R.string.shelf_never_played),
+                    subtitle = unplayedCount(neverPlayed.size),
+                    items = neverItems,
+                    key = "never_played",
+                )
+            )
         }
 
         _library.value = UiState.Success(
@@ -3364,4 +3439,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun text(id: Int): String = getApplication<Application>().getString(id)
+
+    private fun quantity(id: Int, count: Int): String =
+        getApplication<Application>().resources.getQuantityString(id, count, count)
+
+    private fun trackCount(count: Int): String = quantity(R.plurals.shelf_track_count, count)
+
+    private fun playCount(count: Int): String = quantity(R.plurals.shelf_play_count, count)
+
+    private fun unplayedCount(count: Int): String = quantity(R.plurals.shelf_unplayed_count, count)
 }

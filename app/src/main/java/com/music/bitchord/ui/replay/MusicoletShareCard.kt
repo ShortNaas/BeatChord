@@ -96,7 +96,7 @@ private fun drawBrandHeader(canvas: Canvas, fonts: Fonts, x: Float, y: Float) {
     canvas.drawPath(path, iconPaint)
 
     val brandPaint = fonts.body(44f, Color.WHITE, bold = true)
-    canvas.drawText("BitChord", x + 75f, y - 10f, brandPaint)
+    canvas.drawText("BeatChord", x + 75f, y - 10f, brandPaint)
 }
 
 private fun drawPillChips(

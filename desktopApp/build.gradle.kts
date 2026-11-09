@@ -490,6 +490,12 @@ val windowsPortable by tasks.registering(Zip::class) {
 
 val composeMainClass = "com.music.bitchord.desktop.MainKt"
 
+// Pinned so a change to `rootProject.name` cannot silently rename the generated
+// resources package out from under the imports in Main.kt and DesktopApp.kt.
+compose.resources {
+    packageOfResClass = "bitchord.desktopapp.generated.resources"
+}
+
 compose.desktop {
     application {
         javaHome = javaToolchains.launcherFor(java.toolchain).map {

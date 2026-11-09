@@ -379,6 +379,11 @@ data class HomeShelf(
     val subtitle: String = "",
     val moreBrowseId: String? = null,
     val moreParams: String? = null,
+    /**
+     * Stable identity for a shelf whose [title] is user-facing and therefore
+     * translated. Empty for shelves nobody keys off.
+     */
+    val key: String = "",
 )
 
 /**

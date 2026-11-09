@@ -61,6 +61,7 @@ import com.music.bitchord.ui.components.floatingtabbar.FloatingTabBarScrollConne
 import com.music.bitchord.ui.haptics.Haptic
 import com.music.bitchord.ui.haptics.rememberHaptics
 import com.music.bitchord.ui.player.PlayerDock
+import androidx.compose.ui.res.painterResource
 
 /**
  * The liquid glass navigation bar: the iOS 26 shape where the now playing
@@ -353,6 +354,8 @@ private fun GlassNowPlaying(
                 ),
         ) {
             AsyncImage(
+                error = painterResource(R.drawable.ic_logo),
+                fallback = painterResource(R.drawable.ic_logo),
                 model = rememberRemoteArtworkUrl(song)?.artworkAt(ROW_ART_PX),
                 contentDescription = null,
                 modifier = Modifier

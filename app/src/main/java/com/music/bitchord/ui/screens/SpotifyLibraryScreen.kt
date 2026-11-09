@@ -57,6 +57,7 @@ import com.music.bitchord.data.settings.AppSettings
 import com.music.bitchord.data.spotify.SpotifyLibrary
 import com.music.bitchord.data.spotify.SpotifyPlaylist
 import com.music.bitchord.data.spotify.SpotifyTrack
+import androidx.compose.ui.res.painterResource
 
 private const val LOGIN_URL =
     "https://accounts.spotify.com/login?continue=https%3A%2F%2Fopen.spotify.com%2F"
@@ -204,6 +205,8 @@ private fun LibraryRow(
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         AsyncImage(
+            error = painterResource(R.drawable.ic_logo),
+            fallback = painterResource(R.drawable.ic_logo),
             model = imageUrl,
             contentDescription = null,
             contentScale = ContentScale.Crop,

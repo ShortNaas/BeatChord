@@ -61,8 +61,62 @@ object LocalPlaylistStore {
                 }
                 list.add(LocalPlaylist(id, title, songs))
             }
+            if (list.none { it.id == FAVORITES_ID }) {
+                list.add(0, LocalPlaylist(FAVORITES_ID, FAVORITES_TITLE, emptyList()))
+            }
             _playlists.value = list
+            val favs = list.firstOrNull { it.id == FAVORITES_ID }
+            if (favs != null) {
+                val keys = favs.songs.flatMap { listOfNotNull(it.videoId, it.localUri) }.toSet()
+                com.music.bitchord.data.LikeState.seedLiked(keys)
+            }
         }
+    }
+
+    const val FAVORITES_ID = "favorites"
+    const val FAVORITES_TITLE = "Favorites"
+
+    fun getFavorites(): LocalPlaylist {
+        return getPlaylist(FAVORITES_ID) ?: LocalPlaylist(FAVORITES_ID, FAVORITES_TITLE, emptyList()).also {
+            val updated = listOf(it) + _playlists.value.filterNot { p -> p.id == FAVORITES_ID }
+            _playlists.value = updated
+            persist(updated)
+        }
+    }
+
+    fun isFavorite(song: Song): Boolean {
+        val fav = getPlaylist(FAVORITES_ID) ?: return false
+        val key = song.localUri ?: song.videoId
+        return fav.songs.any { s ->
+            val sKey = s.localUri ?: s.videoId
+            sKey == key || (s.title.equals(song.title, ignoreCase = true) && s.artist.equals(song.artist, ignoreCase = true))
+        }
+    }
+
+    fun toggleFavorite(song: Song): Boolean {
+        val fav = getFavorites()
+        val key = song.localUri ?: song.videoId
+        val exists = fav.songs.any { s ->
+            val sKey = s.localUri ?: s.videoId
+            sKey == key || (s.title.equals(song.title, ignoreCase = true) && s.artist.equals(song.artist, ignoreCase = true))
+        }
+        val updatedSongs = if (exists) {
+            fav.songs.filterNot { s ->
+                val sKey = s.localUri ?: s.videoId
+                sKey == key || (s.title.equals(song.title, ignoreCase = true) && s.artist.equals(song.artist, ignoreCase = true))
+            }
+        } else {
+            listOf(song) + fav.songs
+        }
+        val updatedFav = fav.copy(songs = updatedSongs)
+        val remaining = _playlists.value.filterNot { it.id == FAVORITES_ID }
+        val updated = listOf(updatedFav) + remaining
+        _playlists.value = updated
+        persist(updated)
+        val newStatus = if (!exists) com.music.bitchord.data.model.LikeStatus.LIKE else com.music.bitchord.data.model.LikeStatus.INDIFFERENT
+        com.music.bitchord.data.LikeState.set(song.videoId, newStatus)
+        song.localUri?.let { com.music.bitchord.data.LikeState.set(it, newStatus) }
+        return !exists
     }
 
     fun savePlaylist(title: String, songs: List<Song>): LocalPlaylist {

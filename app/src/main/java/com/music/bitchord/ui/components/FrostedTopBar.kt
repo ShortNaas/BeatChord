@@ -77,6 +77,7 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.materials.HazeMaterials
 import kotlin.math.roundToInt
+import androidx.compose.ui.res.painterResource
 
 /**
  * The bar's own height, above whatever inset it is sitting under.
@@ -488,6 +489,8 @@ fun TopBarAccountButton(
         val photo = account?.thumbnailUrl
         if (photo != null) {
             AsyncImage(
+                error = painterResource(R.drawable.ic_logo),
+                fallback = painterResource(R.drawable.ic_logo),
                 model = photo,
                 contentDescription = stringResource(R.string.switch_account),
                 contentScale = ContentScale.Crop,

@@ -50,6 +50,7 @@ import com.music.bitchord.download.DownloadState
 import com.music.bitchord.download.Downloads
 import com.music.bitchord.ui.icons.BitChordIcons
 import java.util.Locale
+import androidx.compose.ui.res.painterResource
 
 /**
  * The album or playlist a long-press is acting on.
@@ -344,6 +345,8 @@ private fun BrowseSheetHeader(target: BrowseTarget) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         AsyncImage(
+            error = painterResource(R.drawable.ic_logo),
+            fallback = painterResource(R.drawable.ic_logo),
             model = target.thumbnailUrl.artworkAt(ROW_ART_PX),
             contentDescription = null,
             modifier = Modifier

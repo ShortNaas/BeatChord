@@ -71,6 +71,7 @@ import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Sort
 import androidx.compose.material.icons.rounded.Upgrade
 import com.music.bitchord.data.listentogether.ServerConnectionState
+import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -82,6 +83,7 @@ import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -120,9 +122,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.music.bitchord.auth.DiscordLoginScreen
 import com.music.bitchord.auth.WebSessionMode
 import com.music.bitchord.auth.YtMusicLoginScreen
-import com.music.bitchord.data.AppUpdateChecker
 import com.music.bitchord.data.LocalMediaRepository
-import com.music.bitchord.data.listentogether.JamInviteLink
+import com.music.bitchord.data.playlists.M3uImport
+import com.music.bitchord.data.spotify.LocalPlaylistStore
 import com.music.bitchord.data.listentogether.ListenTogether
 import com.music.bitchord.data.listentogether.partyQueueIndexOf
 import com.music.bitchord.data.NerdStats
@@ -149,7 +151,6 @@ import com.music.bitchord.data.settings.AppSettings
 import com.music.bitchord.data.settings.LibrarySort
 import com.music.bitchord.data.settings.ThemeMode
 import com.music.bitchord.ui.components.AccountProfileSelector
-import com.music.bitchord.ui.components.SpotifyImportAlert
 import com.music.bitchord.ui.screens.AccountAndScrobblingScreen
 import com.music.bitchord.ui.screens.DiscordDialog
 import com.music.bitchord.ui.screens.DiscordDialogHost
@@ -167,7 +168,6 @@ import com.music.bitchord.ui.screens.SettingsScreen
 import com.music.bitchord.ui.screens.SourceEditorAlert
 import com.music.bitchord.ui.screens.SourcesScreen
 import com.music.bitchord.data.sources.TrackMatcher
-import com.music.bitchord.ui.screens.SpotifyCanvasAuthScreen
 import com.music.bitchord.ui.screens.SpotifyLibraryScreen
 import com.music.bitchord.data.spotify.SPOTIFY_PAGE_PREFIX
 import com.music.bitchord.playback.AudioCache
@@ -206,6 +206,12 @@ import com.music.bitchord.download.Downloads
 import com.music.bitchord.ui.components.BrowseActionsSheet
 import com.music.bitchord.ui.components.BrowseTarget
 import com.music.bitchord.ui.components.ConfirmationAlert
+import com.music.bitchord.ui.screens.PlaylistsTabScreen
+import com.music.bitchord.ui.screens.LibraryCollectionScreen
+import androidx.compose.material.icons.rounded.Folder
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 import com.music.bitchord.ui.components.DownloadManagerSheet
 import com.music.bitchord.ui.components.PlaylistPickerSheet
 import com.music.bitchord.ui.components.ReorderPlaylistSheet
@@ -256,7 +262,6 @@ import com.music.bitchord.ui.components.AppLanguageDialog
 import com.music.bitchord.ui.components.TranslationLanguageDialog
 import com.music.bitchord.ui.components.LyricsSourcesDialog
 import com.music.bitchord.ui.components.ServerEditorHost
-import com.music.bitchord.ui.components.UpdateAvailableDialog
 import com.music.bitchord.ui.components.WebDavConflictAlert
 import com.music.bitchord.ui.components.FieldConfig
 import com.music.bitchord.ui.icons.BitChordIcons
@@ -338,7 +343,6 @@ class MainActivity : AppCompatActivity() {
         // Before the composition, so a cold launch from a widget's artwork has
         // the request already standing by the time BitChordApp first reads it.
         PlayerDeepLink.consume(intent)
-        JamInviteLink.consume(intent)
         // Likewise for a link tapped or shared from another app — see [MusicLink].
         MusicLink.consume(intent)
         setContent {
@@ -434,7 +438,6 @@ class MainActivity : AppCompatActivity() {
         // one that just arrived and not the one the task was started with.
         setIntent(intent)
         PlayerDeepLink.consume(intent)
-        JamInviteLink.consume(intent)
         MusicLink.consume(intent)
     }
 }
@@ -553,7 +556,6 @@ private fun BitChordApp(
     var showSources by rememberSaveable { mutableStateOf(false) }
     var showListenTogether by rememberSaveable { mutableStateOf(false) }
     var showEqualizer by rememberSaveable { mutableStateOf(false) }
-    var showSpotifyCanvasAuth by remember { mutableStateOf(false) }
 
     // Hosted here rather than inside SourcesScreen so its frosted card has
     // something to blur: that screen is drawn inside the `hazeSource` subtree,
@@ -630,7 +632,9 @@ private fun BitChordApp(
     // The picker opened from the Library tab, where there is no track and
     // creating the playlist is the whole errand.
     var creatingPlaylist by remember { mutableStateOf(false) }
-    var showSpotifyImportDialog by remember { mutableStateOf(false) }
+    var deletingSong by remember { mutableStateOf<Song?>(null) }
+    var movingSong by remember { mutableStateOf<Song?>(null) }
+    var editingSongTags by remember { mutableStateOf<Song?>(null) }
     // Which album or playlist the collection menu is open on, or null when it
     // is shut. One slot for every surface that can open it — the shelves on
     // three tabs, the search rows, the artist page's carousels, the release
@@ -682,27 +686,6 @@ private fun BitChordApp(
     val homeLoadingMore by viewModel.homeLoadingMore.collectAsStateWithLifecycle()
     val homeRecentlyPlayedLoading by viewModel.homeRecentlyPlayedLoading.collectAsStateWithLifecycle()
 
-    // The top bar's icon is the quiet, always-there nudge; this is the
-    // once-per-launch popup version of the same news. `updateDialogShown`
-    // rides out configuration changes on rememberSaveable so a rotation
-    // doesn't bring it back — only a fresh launch does.
-    var updateDialogShown by rememberSaveable { mutableStateOf(false) }
-    var showUpdateDialog by remember { mutableStateOf(false) }
-    val updateAvailable by viewModel.updateAvailable.collectAsStateWithLifecycle()
-
-    /**
-     * The single gate both surfaces read, so the icon can't announce the update
-     * a beat before the popup does — they're one piece of news, and staggering
-     * them made the top bar look like it had caught something the app hadn't.
-     */
-    val updateNotice = updateAvailable
-
-    LaunchedEffect(updateNotice) {
-        if (updateNotice != null && !updateDialogShown) {
-            updateDialogShown = true
-            showUpdateDialog = true
-        }
-    }
     val query by viewModel.query.collectAsStateWithLifecycle()
     val results by viewModel.results.collectAsStateWithLifecycle()
     val exploreState by viewModel.explore.collectAsStateWithLifecycle()
@@ -713,40 +696,6 @@ private fun BitChordApp(
     val searchSource by viewModel.searchSource.collectAsStateWithLifecycle()
     val libraryResults by viewModel.libraryResults.collectAsStateWithLifecycle()
     val signedIn by viewModel.signedIn.collectAsStateWithLifecycle()
-    val incomingJamInvite by JamInviteLink.pending.collectAsStateWithLifecycle()
-    var activeJamInviteCode by rememberSaveable { mutableStateOf<String?>(null) }
-    var activeJamInviteServer by rememberSaveable { mutableStateOf<String?>(null) }
-
-    // An invite is navigation and an action: reveal the Jam settings page now,
-    // then let that page join once an account is available. Keeping the code
-    // here lets a sign-in round trip return to the invite it started from.
-    LaunchedEffect(incomingJamInvite) {
-        val invite = incomingJamInvite ?: return@LaunchedEffect
-        activeJamInviteCode = invite.code
-        activeJamInviteServer = invite.serverUrl
-        dismissPlayer()
-        showReplay = false
-        replayStory = null
-        showReplayShare = false
-        showAccountScrobbling = false
-        showSources = false
-        showEqualizer = false
-        showHistory = false
-        showDiscord = false
-        showSpotify = false
-        libraryShowAll = null
-        viewModel.clearDetail()
-        webSession = null
-        showSettings = true
-        showListenTogether = true
-        JamInviteLink.handled()
-    }
-    LaunchedEffect(signedIn, activeJamInviteCode) {
-        if (signedIn && activeJamInviteCode != null) {
-            showSettings = true
-            showListenTogether = true
-        }
-    }
     val account by viewModel.account.collectAsStateWithLifecycle()
     val selectedChannelName by viewModel.selectedChannelName.collectAsStateWithLifecycle()
     val googleAccounts by viewModel.googleAccounts.collectAsStateWithLifecycle()
@@ -979,6 +928,7 @@ private fun BitChordApp(
                 player.durationMs.takeIf { ms -> ms > 0L } ?: it.durationMillis(),
                 it.albumName,
                 it.localUri,
+                it.localPath,
             )
         }
     }
@@ -1080,17 +1030,17 @@ private fun BitChordApp(
     // a fold. Keyed on the labels so a locale change still rebuilds it.
     val homeLabel = stringResource(R.string.home)
     val playLabel = stringResource(R.string.play)
-    val exploreLabel = stringResource(R.string.explore)
+    val playlistsLabel = stringResource(R.string.playlists)
     val libraryLabel = stringResource(R.string.library)
     val searchLabel = stringResource(R.string.search)
     val historyLabel = stringResource(R.string.history)
     val replayLabel = stringResource(R.string.replay)
     val queueLabel = stringResource(R.string.queue)
     val sharedLinkLabel = stringResource(R.string.shared_link)
-    val tabs = remember(homeLabel, exploreLabel, libraryLabel, searchLabel) {
+    val tabs = remember(homeLabel, playlistsLabel, libraryLabel, searchLabel) {
         listOf(
             BottomTab(homeLabel, BitChordIcons.Home),
-            BottomTab(exploreLabel, BitChordIcons.TabExplore),
+            BottomTab(playlistsLabel, BitChordIcons.Queue),
             BottomTab(libraryLabel, BitChordIcons.TabLibrary),
             BottomTab(searchLabel, BitChordIcons.TabSearch),
         )
@@ -1939,26 +1889,47 @@ private fun BitChordApp(
         }
     }
 
+    // Two local formats, picked apart by extension: M3U is what every other
+    // player writes, and a Musicolet backup is what this app could already
+    // read. Neither leaves the device.
     val playlistImportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument(),
     ) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
         scope.launch(Dispatchers.IO) {
+            val name = displayNameOf(context, uri)
+            val isM3u = name?.let { it.endsWith(".m3u", true) || it.endsWith(".m3u8", true) } == true
             val result = runCatching {
-                com.music.bitchord.data.musicolet.MusicoletManager.importIntoBitChord(context, uri)
+                if (isM3u) {
+                    val entries = M3uImport.parse(M3uImport.read(context, uri))
+                    val songs = M3uImport.match(entries, LocalMediaRepository.getLocalMusic(context))
+                    if (songs.isNotEmpty()) {
+                        LocalPlaylistStore.savePlaylist(M3uImport.titleOf(name), songs)
+                    }
+                    songs.size
+                } else {
+                    com.music.bitchord.data.musicolet.MusicoletManager.importIntoBitChord(context, uri)
+                        .totalPlaysImported
+                }
             }
             withContext(Dispatchers.Main) {
                 result.fold(
-                    onSuccess = { summary ->
+                    onSuccess = { count ->
                         viewModel.loadLibrary()
-                        Toast.makeText(
-                            context,
-                            "Imported ${summary.playlistsImported} playlist(s) & ${summary.totalPlaysImported} play(s)",
-                            Toast.LENGTH_LONG,
-                        ).show()
+                        val message = if (count > 0) {
+                            context.getString(R.string.playlist_imported, M3uImport.titleOf(name))
+                        } else {
+                            context.getString(R.string.playlist_import_empty)
+                        }
+                        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
                     },
                     onFailure = {
-                        Toast.makeText(context, "Import failed: ${it.message ?: "Unknown error"}", Toast.LENGTH_SHORT).show()
+                        val reason = it.message ?: context.getString(R.string.something_went_wrong)
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.playlist_import_failed, reason),
+                            Toast.LENGTH_SHORT,
+                        ).show()
                     }
                 )
             }
@@ -1981,10 +1952,6 @@ private fun BitChordApp(
     // card opens the same way from either.
     val onLibraryItemClick: (ShelfItem) -> Unit = { item ->
         item.browseId?.let { id ->
-            if (id == SPOTIFY_BROWSE_ID) {
-                showSpotify = true
-                return@let
-            }
             if ((id == "local:all" || id == "local:downloads") && !LocalMediaRepository.hasStoragePermission(context)) {
                 mediaPermissionLauncher.launch(mediaPermission)
             }
@@ -2313,8 +2280,9 @@ private fun BitChordApp(
             shuffleEnabled = shuffleEnabled,
             autoplayEnabled = autoplayEnabled,
             signedIn = signedIn,
-            likeStatus = likeStatuses[song.videoId] ?: LikeStatus.INDIFFERENT,
-            onToggleLike = { viewModel.toggleLike(song.videoId) },
+            likeStatus = if (com.music.bitchord.data.spotify.LocalPlaylistStore.isFavorite(song)) LikeStatus.LIKE else LikeStatus.INDIFFERENT,
+            onToggleLike = { com.music.bitchord.data.spotify.LocalPlaylistStore.toggleFavorite(song) },
+            onAddToPlaylist = { playlistTarget = song },
             // The service owns both the queue and the Shuffle state. Keeping
             // the toggle on that side prevents the UI from changing the icon
             // before its asynchronous reorder command has actually landed.
@@ -2554,7 +2522,6 @@ private fun BitChordApp(
         ) {
             selectedTab = TAB_HOME
         }
-        BackHandler(enabled = showUpdateDialog) { showUpdateDialog = false }
         BackHandler(enabled = showListenBrainzLogin) { showListenBrainzLogin = false }
         BackHandler(enabled = showLastfmLogin) { showLastfmLogin = false }
         BackHandler(enabled = discordDialog != null) { discordDialog = null }
@@ -2700,17 +2667,21 @@ private fun BitChordApp(
                         )
                     } else if (key == "library_show_all") {
                         libraryShowAll?.let { shelf ->
-                            LibraryGridPage(
+                            val allLocalSongs = (libraryState as? com.music.bitchord.data.model.UiState.Success)
+                                ?.data?.librarySongs.orEmpty()
+                            LibraryCollectionScreen(
                                 shelf = shelf,
-                                gridState = libraryShowAllGridState,
-                                onItemClick = onLibraryItemClick,
-                                onItemLongPress = onBrowseLongPress,
-                                // Only the Playlists shelf can grow one — see
-                                // [PlaylistShelf].
-                                onNewPlaylist = if (shelf.title == YtMusicRepository.PLAYLISTS_SHELF) {
-                                    { creatingPlaylist = true }
-                                } else {
-                                    null
+                                localSongs = allLocalSongs,
+                                onBack = { libraryShowAll = null },
+                                onPlaySong = { songs, index ->
+                                    scope.launch { controller?.playSongs(songs, index) }
+                                },
+                                onShufflePlay = { songs ->
+                                    scope.launch { controller?.playSongs(songs.shuffled(), 0) }
+                                },
+                                onSongLongPress = { song ->
+                                    songMenuOrigin = null
+                                    songActions = song
                                 },
                                 contentPadding = listPadding,
                             )
@@ -2787,31 +2758,6 @@ private fun BitChordApp(
                             onOpenSpotify = { showSpotify = true },
                             contentPadding = listPadding,
                         )
-                    } else if (key == "sources") {
-                        SourcesScreen(
-                            contentPadding = listPadding,
-                            onEditSource = { editingSource = it },
-                            onEditWebDav = { showWebDavEditor = true },
-                            onEditSmb = { showSmbEditor = true },
-                            onConfirmJioSaavn = { confirmJioSaavn = true },
-                        )
-                    } else if (key == "listen_together") {
-                        ListenTogetherScreen(
-                            signedIn = signedIn,
-                            inviteCode = activeJamInviteCode,
-                            inviteServer = activeJamInviteServer,
-                            onInviteHandled = {
-                                activeJamInviteCode = null
-                                activeJamInviteServer = null
-                            },
-                            onSignIn = {
-                                showListenTogether = false
-                                showSettings = false
-                                webSession = WebSessionMode.SIGN_IN
-                            },
-                            contentPadding = listPadding,
-                            onEditServer = { editingPartyServer = true },
-                        )
                     } else if (key == "equalizer") {
                         EqualizerScreen(contentPadding = listPadding)
                     } else if (key == "settings") {
@@ -2847,7 +2793,6 @@ private fun BitChordApp(
                                 settingsSubScreen = "listen_together"
                                 showListenTogether = true
                             },
-                            onSpotifyCanvasAuth = { showSpotifyCanvasAuth = true },
                             onAppLanguage = { showAppLanguage = true },
                             contentPadding = listPadding,
                         )
@@ -3078,46 +3023,29 @@ private fun BitChordApp(
                             loadingMore = homeLoadingMore,
                             recentlyPlayedLoading = homeRecentlyPlayedLoading,
                         )
-                        TAB_EXPLORE -> selectedMoodGenre?.let { category ->
-                            MoodGenrePlaylistsScreen(
-                                title = category.title,
-                                state = moodGenreShelves,
-                                listState = moodGenreListState,
-                                onItemClick = { item ->
-                                    item.videoId?.let { videoId ->
-                                        playRadio(
-                                            Song(
-                                                videoId = videoId,
-                                                title = item.title,
-                                                artist = InnertubeParser.artistFromSubtitle(item.subtitle),
-                                                thumbnailUrl = item.thumbnailUrl,
-                                            ),
-                                            QueueSource(
-                                                category.title,
-                                                PlaybackSourceType.EXPLORE,
-                                                category.browseId,
-                                            ),
-                                        )
-                                    } ?: item.browseId?.let { browseId ->
-                                        viewModel.openDetail(
-                                            browseId = browseId,
-                                            title = item.title,
-                                            subtitle = item.subtitle,
-                                            thumbnailUrl = item.thumbnailUrl,
-                                        )
-                                    }
-                                },
-                                onRetry = { viewModel.openMoodGenre(category) },
-                                contentPadding = listPadding,
-                            )
-                        } ?: ExploreScreen(
-                            state = exploreState,
-                            listState = exploreListState,
-                            onCategoryClick = viewModel::openMoodGenre,
-                            onRetry = viewModel::loadExplore,
-                            refreshing = MainViewModel.Feed.EXPLORE in refreshing,
-                            onRefresh = { viewModel.refresh(MainViewModel.Feed.EXPLORE) },
-                            pullState = explorePull,
+                        TAB_EXPLORE -> PlaylistsTabScreen(
+                            playlists = localPlaylists,
+                            onPlaylistClick = { playlist ->
+                                viewModel.openDetail(
+                                    browseId = playlist.id,
+                                    title = playlist.title,
+                                    subtitle = "${playlist.songs.size} tracks",
+                                    thumbnailUrl = playlist.songs.firstOrNull { !it.thumbnailUrl.isNullOrBlank() }?.thumbnailUrl,
+                                )
+                            },
+                            onPlaylistLongPress = { playlist ->
+                                openBrowseMenu(
+                                    BrowseTarget(
+                                        browseId = playlist.id,
+                                        title = playlist.title,
+                                        subtitle = "${playlist.songs.size} tracks",
+                                        thumbnailUrl = playlist.songs.firstOrNull { !it.thumbnailUrl.isNullOrBlank() }?.thumbnailUrl,
+                                        type = BrowseType.PLAYLIST,
+                                    )
+                                )
+                            },
+                            onNewPlaylist = { creatingPlaylist = true },
+                            onImportPlaylist = { playlistImportLauncher.launch(arrayOf("*/*")) },
                             contentPadding = listPadding,
                         )
                         TAB_SEARCH -> SearchScreen(
@@ -3249,19 +3177,8 @@ private fun BitChordApp(
                             topPadding = topBarContentPadding(),
                             // The field is in the top bar; see the bar's accessory.
                             showField = false,
-                            // The settings page's own two-state selector, so the
-                            // app has one look for "pick one of these".
-                            sourceSwitcher = {
-                                SegmentedControl(
-                                    options = listOf(
-                                        stringResource(R.string.search_source_youtube),
-                                        stringResource(R.string.library),
-                                    ),
-                                    selectedIndex = searchSource.ordinal,
-                                    onSelect = { index -> onSearchSourceChange(SearchSource.entries[index]) },
-                                )
-                            },
-                            searchingLibrary = searchSource == SearchSource.LIBRARY,
+                            sourceSwitcher = null,
+                            searchingLibrary = true,
                             libraryResults = libraryResults,
                             // The same queue opening the Local Music folder and
                             // tapping the row there would give.
@@ -3309,7 +3226,7 @@ private fun BitChordApp(
                             pullState = libraryPull,
                             contentPadding = listPadding,
                             links = libraryLinks(),
-                            deviceItems = libraryDeviceItems(downloadedReleases) + localPlaylistItems,
+                            deviceItems = emptyList(),
                         )
                     }
                 }
@@ -3351,43 +3268,6 @@ private fun BitChordApp(
                                 onOpenDiscord = { showDiscord = true },
                                 onOpenSpotify = { showSpotify = true },
                                 contentPadding = listPadding,
-                            )
-                        }
-                    }
-                    "sources" -> {
-                        Surface(
-                            modifier = Modifier.fillMaxSize(),
-                            color = MaterialTheme.colorScheme.background,
-                        ) {
-                            SourcesScreen(
-                                contentPadding = listPadding,
-                                onEditSource = { editingSource = it },
-                                onEditWebDav = { showWebDavEditor = true },
-                                onEditSmb = { showSmbEditor = true },
-                                onConfirmJioSaavn = { confirmJioSaavn = true },
-                            )
-                        }
-                    }
-                    "listen_together" -> {
-                        Surface(
-                            modifier = Modifier.fillMaxSize(),
-                            color = MaterialTheme.colorScheme.background,
-                        ) {
-                            ListenTogetherScreen(
-                                signedIn = signedIn,
-                                inviteCode = activeJamInviteCode,
-                                inviteServer = activeJamInviteServer,
-                                onInviteHandled = {
-                                    activeJamInviteCode = null
-                                    activeJamInviteServer = null
-                                },
-                                onSignIn = {
-                                    settingsSubScreen = null
-                                    showSettings = false
-                                    webSession = WebSessionMode.SIGN_IN
-                                },
-                                contentPadding = listPadding,
-                                onEditServer = { editingPartyServer = true },
                             )
                         }
                     }
@@ -3639,20 +3519,6 @@ private fun BitChordApp(
                         if (!showSettings && !showAccountScrobbling && !showSources && !showListenTogether && !showEqualizer &&
                             detail == null && selectedTab == TAB_HOME
                         ) {
-                            updateNotice?.let { update ->
-                                IconButton(onClick = { showUpdateDialog = true }) {
-                                    Icon(
-                                        // An arrow rising out of a bar, not the
-                                        // little phone-with-an-arrow: at 24dp the
-                                        // handset outline is mush, and the glyph
-                                        // has to read as "newer version" rather
-                                        // than as "something about your device".
-                                        Icons.Rounded.Upgrade,
-                                        contentDescription = stringResource(R.string.update_available, update.version),
-                                        tint = MaterialTheme.colorScheme.primary,
-                                    )
-                                }
-                            }
                         }
                         if (!showSettings && !showAccountScrobbling) {
                             // Left of the account photo, and only on Library itself:
@@ -4203,47 +4069,31 @@ private fun BitChordApp(
                 song = song,
                 presentation = presentation,
                 signedIn = signedIn,
-                likeStatus = likeStatuses[song.videoId] ?: LikeStatus.INDIFFERENT,
+                likeStatus = if (com.music.bitchord.data.spotify.LocalPlaylistStore.isFavorite(song)) LikeStatus.LIKE else LikeStatus.INDIFFERENT,
                 onPlayNext = { playNext(song); songActions = null },
                 onAddToQueue = { addToQueue(song); songActions = null },
                 onStartRadio = { startRadio(song); songActions = null },
+                onDeleteMusic = {
+                    songActions = null
+                    deletingSong = song
+                },
+                onMoveMusic = {
+                    songActions = null
+                    movingSong = song
+                },
+                onEditTags = {
+                    songActions = null
+                    editingSongTags = song
+                },
                 // Stays open: the row it replaces itself with is the
                 // progress, and closing the sheet would hide the only
                 // answer to "did that work?".
                 onDownload = { downloadSong(song) },
-                // The other direction: a device file going up to the
-                // server. Closed first, unlike a download — progress and
-                // the summary notice live outside the sheet.
-                onUploadToWebDav =
-                    if (com.music.bitchord.data.webdav.WebDavConfig.isConfigured(webdavUrl) &&
-                        com.music.bitchord.data.webdav.WebDavUploads.isUploadable(song)
-                    ) {
-                        {
-                            songActions = null
-                            uploadToWebDav(listOf(song))
-                        }
-                    } else {
-                        null
-                    },
-                // The sheet stays up for a rating: it shows the new state
-                // in place, and people often thumb a song and then queue it.
-                onToggleLike = { viewModel.toggleLike(song.videoId) },
-                onToggleDislike = {
-                    val previousStatus = viewModel.toggleDislike(song.videoId)
-                    if (
-                        previousStatus != null &&
-                        shouldSkipAfterDislike(
-                            previousStatus = previousStatus,
-                            targetVideoId = song.videoId,
-                            currentVideoId = player.song?.videoId,
-                        )
-                    ) {
-                        controller?.seekToNextMediaItem()
-                    }
-                },
+                onUploadToWebDav = null,
+                onToggleLike = { com.music.bitchord.data.spotify.LocalPlaylistStore.toggleFavorite(song) },
+                onToggleDislike = null,
                 onAddToPlaylist = {
                     songActions = null
-                    viewModel.loadPlaylists()
                     playlistTarget = song
                 },
                 onRemoveFromPlaylist = editable?.let {
@@ -4465,34 +4315,6 @@ private fun BitChordApp(
                     },
                 )
             }
-        }
-
-        if (showSpotifyImportDialog) {
-            BackHandler { showSpotifyImportDialog = false }
-            SpotifyImportAlert(
-                hazeState = hazeState,
-                signedIn = signedIn,
-                onImported = { title, privacy, songs ->
-                    viewModel.createPlaylistWithVideoIds(
-                        title,
-                        privacy,
-                        songs.map { it.videoId },
-                        songs,
-                    ) { browseId, pTitle, savedLocally ->
-                        showQueueNotice(
-                            context.getString(
-                                if (savedLocally && signedIn) R.string.spotify_import_local_fallback
-                                else R.string.spotify_import_done,
-                                pTitle,
-                            ),
-                        )
-                        browseId?.let { id ->
-                            viewModel.openDetail(id, pTitle, "${songs.size} songs", songs.firstOrNull()?.thumbnailUrl)
-                        }
-                    }
-                },
-                onDismiss = { showSpotifyImportDialog = false },
-            )
         }
 
         // ---- Album / playlist actions ----
@@ -4854,41 +4676,6 @@ private fun BitChordApp(
             }
         }
 
-        // ---- Update available (once per launch) ----
-        if (showUpdateDialog) {
-            updateNotice?.let { update ->
-                UpdateAvailableDialog(
-                    version = update.version,
-                    notes = update.notes,
-                    hazeState = hazeState,
-                    // A download in progress keeps running behind the closed
-                    // sheet — only the sheet itself goes away. The top bar's
-                    // update icon reopens it onto whatever state it reached.
-                    onDismiss = { showUpdateDialog = false },
-                    onDownload = {
-                        if (update.apkUrl != null) {
-                            scope.launch { AppUpdateChecker.downloadApk(context) }
-                        } else {
-                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(update.releaseUrl)))
-                            showUpdateDialog = false
-                        }
-                    },
-                    onCancelDownload = {
-                        AppUpdateChecker.cancelDownload()
-                    },
-                    onInstall = {
-                        val ready = AppUpdateChecker.download.value as? AppUpdateChecker.DownloadState.Ready
-                        ready?.let { AppUpdateChecker.installApk(context, it.file) }
-                    },
-                    onOpenReleasePage = {
-                        AppUpdateChecker.resetDownload()
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(update.releaseUrl)))
-                        showUpdateDialog = false
-                    },
-                )
-            }
-        }
-
         if (showLyricsSources) {
             BackHandler { showLyricsSources = false }
             LyricsSourcesDialog(
@@ -5178,13 +4965,6 @@ private fun BitChordApp(
             }
         }
 
-        if (showSpotifyCanvasAuth) {
-            BackHandler { showSpotifyCanvasAuth = false }
-            SpotifyCanvasAuthScreen(
-                onNavigateUp = { showSpotifyCanvasAuth = false }
-            )
-        }
-
         discordDialog?.let { which ->
             DiscordDialogHost(
                 which = which,
@@ -5230,6 +5010,162 @@ private fun BitChordApp(
                     confirmJioSaavn = false
                 },
                 onDismiss = { confirmJioSaavn = false },
+            )
+        }
+
+        deletingSong?.let { song ->
+            ConfirmationAlert(
+                hazeState = hazeState,
+                title = "Delete Music",
+                description = "Are you sure you want to permanently delete \"${song.title}\" from your device?",
+                confirmLabel = "Delete",
+                onConfirm = {
+                    scope.launch {
+                        val success = com.music.bitchord.data.LocalFileManager.deleteSong(context, song)
+                        if (success) {
+                            showQueueNotice("Deleted \"${song.title}\"")
+                            viewModel.refresh(MainViewModel.Feed.LIBRARY)
+                            viewModel.refresh(MainViewModel.Feed.HOME)
+                        } else {
+                            showQueueNotice("Failed to delete \"${song.title}\"")
+                        }
+                    }
+                    deletingSong = null
+                },
+                onDismiss = { deletingSong = null },
+            )
+        }
+
+        movingSong?.let { song ->
+            val folders = remember { com.music.bitchord.data.LocalFileManager.getCommonMusicFolders(context) }
+            AlertDialog(
+                onDismissRequest = { movingSong = null },
+                title = { Text("Move Music to Folder") },
+                text = {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = "Choose a destination folder for \"${song.title}\":",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(bottom = 12.dp),
+                        )
+                        folders.forEach { folder ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        scope.launch {
+                                            val ok = com.music.bitchord.data.LocalFileManager.moveSong(context, song, folder)
+                                            if (ok) {
+                                                showQueueNotice("Moved to ${folder.name}")
+                                                viewModel.refresh(MainViewModel.Feed.LIBRARY)
+                                            } else {
+                                                showQueueNotice("Failed to move music")
+                                            }
+                                        }
+                                        movingSong = null
+                                    }
+                                    .padding(vertical = 10.dp, horizontal = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Folder,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp),
+                                )
+                                Spacer(Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = folder.name,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Medium,
+                                    )
+                                    Text(
+                                        text = folder.parentFile?.name?.let { ".../$it/${folder.name}" } ?: folder.absolutePath,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {},
+                dismissButton = {
+                    TextButton(onClick = { movingSong = null }) {
+                        Text("Cancel")
+                    }
+                },
+            )
+        }
+
+        editingSongTags?.let { song ->
+            var titleInput by remember(song) { mutableStateOf(song.title) }
+            var artistInput by remember(song) { mutableStateOf(song.artist) }
+            var albumInput by remember(song) { mutableStateOf(song.albumName ?: "") }
+
+            AlertDialog(
+                onDismissRequest = { editingSongTags = null },
+                title = { Text("Edit Music Tags") },
+                text = {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        OutlinedTextField(
+                            value = titleInput,
+                            onValueChange = { titleInput = it },
+                            label = { Text("Title") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        OutlinedTextField(
+                            value = artistInput,
+                            onValueChange = { artistInput = it },
+                            label = { Text("Artist") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        OutlinedTextField(
+                            value = albumInput,
+                            onValueChange = { albumInput = it },
+                            label = { Text("Album") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                val ok = com.music.bitchord.data.LocalFileManager.editSongTags(
+                                    context = context,
+                                    song = song,
+                                    newTitle = titleInput.trim(),
+                                    newArtist = artistInput.trim(),
+                                    newAlbum = albumInput.trim(),
+                                )
+                                if (ok) {
+                                    showQueueNotice("Tags updated")
+                                    viewModel.refresh(MainViewModel.Feed.LIBRARY)
+                                    viewModel.refresh(MainViewModel.Feed.HOME)
+                                } else {
+                                    showQueueNotice("Failed to update tags")
+                                }
+                            }
+                            editingSongTags = null
+                        },
+                    ) {
+                        Text("Save")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { editingSongTags = null }) {
+                        Text("Cancel")
+                    }
+                },
             )
         }
 
@@ -5374,6 +5310,12 @@ private fun SongSort.localizedLabel(): String = when (this) {
  * listing under its own cover and wants the same chrome every other release page
  * gets. See [Downloads.PLAYLIST_PREFIX] for why they share a namespace at all.
  */
+/** The picked file's own name, which is all a playlist import needs from it. */
+private fun displayNameOf(context: android.content.Context, uri: Uri): String? = runCatching {
+    context.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)
+        ?.use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else null }
+}.getOrNull() ?: uri.lastPathSegment
+
 private fun String?.isDeviceFolder(): Boolean =
     this != null && startsWith("local:") && !startsWith(Downloads.PLAYLIST_PREFIX)
 

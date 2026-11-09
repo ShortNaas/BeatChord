@@ -46,6 +46,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.materials.HazeMaterials
+import androidx.compose.ui.res.painterResource
 
 /** Shared compact selector for every visible YouTube account avatar. */
 @OptIn(ExperimentalHazeMaterialsApi::class)
@@ -121,8 +122,15 @@ fun AccountProfileSelector(
     Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).clickable(role = Role.RadioButton, onClick = if (managing) onRemove else onClick)
         .semantics { contentDescription = description }
         .padding(horizontal = 20.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        if (profile.avatar != null) AsyncImage(profile.avatar, null, Modifier.size(38.dp).clip(MaterialTheme.shapes.extraLarge))
-        else Icon(Icons.Rounded.Person, null, Modifier.size(38.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (profile.avatar != null) {
+            AsyncImage(
+                model = profile.avatar,
+                contentDescription = null,
+                error = painterResource(R.drawable.ic_logo),
+                fallback = painterResource(R.drawable.ic_logo),
+                modifier = Modifier.size(38.dp).clip(MaterialTheme.shapes.extraLarge),
+            )
+        } else Icon(Icons.Rounded.Person, null, Modifier.size(38.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.width(12.dp)); Column(Modifier.weight(1f)) {
             Text(profile.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(profile.handle.ifBlank { stringResource(if (profile.isBrandAccount) R.string.brand_account else R.string.personal) },

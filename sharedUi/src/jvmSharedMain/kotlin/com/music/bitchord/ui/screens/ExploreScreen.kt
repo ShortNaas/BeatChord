@@ -52,6 +52,7 @@ import com.music.bitchord.ui.components.PAGE_GUTTER
 import com.music.bitchord.ui.components.PullToRefresh
 import com.music.bitchord.ui.components.ShimmerBox
 import com.music.bitchord.ui.components.feedSkeleton
+import org.jetbrains.compose.resources.painterResource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -171,6 +172,8 @@ private fun MoodGenreCard(
         ) {
             item.thumbnailUrl?.let { artwork ->
                 AsyncImage(
+                    error = painterResource(Res.drawable.ic_logo),
+                    fallback = painterResource(Res.drawable.ic_logo),
                     model = artwork,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,

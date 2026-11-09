@@ -4,6 +4,8 @@ import com.music.bitchord.ui.components.contextClick
 import androidx.compose.ui.unit.Dp
 import com.music.bitchord.sharedui.resources.*
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.resources.painterResource
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -461,6 +463,9 @@ private fun TopResultCard(
             AsyncImage(
                 model = song.thumbnailUrl?.artworkAt(ROW_ART_PX),
                 contentDescription = null,
+                contentScale = ContentScale.Crop,
+                error = painterResource(Res.drawable.ic_logo),
+                fallback = painterResource(Res.drawable.ic_logo),
                 modifier = Modifier.size(72.dp).clip(RoundedCornerShape(10.dp)),
             )
             Spacer(Modifier.width(14.dp))
@@ -682,6 +687,9 @@ private fun TypeaheadSongRow(
             AsyncImage(
                 model = song.artworkAt(ROW_ART_PX),
                 contentDescription = null,
+                contentScale = ContentScale.Crop,
+                error = painterResource(Res.drawable.ic_logo),
+                fallback = painterResource(Res.drawable.ic_logo),
                 modifier = Modifier
                     .size(52.dp)
                     .clip(RoundedCornerShape(8.dp))
@@ -780,6 +788,8 @@ private fun RecentSearchEntityRow(
     ) {
         Box(Modifier.size(52.dp)) {
             AsyncImage(
+                error = painterResource(Res.drawable.ic_logo),
+                fallback = painterResource(Res.drawable.ic_logo),
                 model = entity.artworkUrl,
                 contentDescription = null,
                 modifier = Modifier
@@ -839,6 +849,8 @@ private fun BrowseRow(item: BrowseItem, onClick: () -> Unit, onLongPress: (() ->
         verticalAlignment = Alignment.CenterVertically,
     ) {
         AsyncImage(
+            error = painterResource(Res.drawable.ic_logo),
+            fallback = painterResource(Res.drawable.ic_logo),
             model = item.thumbnailUrl.artworkAt(ROW_ART_PX),
             contentDescription = null,
             modifier = Modifier

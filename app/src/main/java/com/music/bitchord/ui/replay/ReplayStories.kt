@@ -421,7 +421,7 @@ private fun StoryChrome(
             )
             Spacer(Modifier.width(7.dp))
             Text(
-                text = "BitChord",
+                text = "BeatChord",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.W700,
                 color = Color.White.copy(alpha = 0.9f),
@@ -813,6 +813,8 @@ private fun Cover(
         .clip(shape)
     when {
         url != null -> AsyncImage(
+            error = painterResource(R.drawable.ic_logo),
+            fallback = painterResource(R.drawable.ic_logo),
             model = url.artworkAt(px),
             contentDescription = null,
             contentScale = ContentScale.Crop,

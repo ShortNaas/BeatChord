@@ -472,6 +472,43 @@ object ListeningStats {
         }
     }
 
+    suspend fun getRecentPlayedTracks(): List<Pair<Song, Long>> = withContext(Dispatchers.IO) {
+        flushAndAwait()
+        val merged = HashMap<String, TrackEntry>()
+        months().forEach { month ->
+            read(month.toString())?.tracks?.forEach { entry ->
+                merged.merge(entry.id, entry.copy()) { a, b -> a.also { it.absorb(b) } }
+            }
+        }
+        merged.values
+            .filter { it.last > 0 }
+            .sortedByDescending { it.last }
+            .map { entry ->
+                val song = Song(
+                    videoId = entry.id,
+                    title = entry.title,
+                    artist = entry.artist,
+                    thumbnailUrl = entry.art,
+                    artistId = entry.artistId,
+                    albumId = entry.albumId,
+                    albumName = entry.album,
+                    localUri = if (entry.id.startsWith("/") || entry.id.startsWith("content://") || entry.id.startsWith("file://")) entry.id else null,
+                )
+                song to entry.last
+            }
+    }
+
+    suspend fun getTrackPlaysMap(): Map<String, Int> = withContext(Dispatchers.IO) {
+        flushAndAwait()
+        val merged = HashMap<String, Int>()
+        months().forEach { month ->
+            read(month.toString())?.tracks?.forEach { entry ->
+                merged[entry.id] = (merged[entry.id] ?: 0) + entry.plays
+            }
+        }
+        merged
+    }
+
     // ── Shapes ──────────────────────────────────────────────────────────────
 
     /**

@@ -1,6 +1,8 @@
 package com.music.bitchord.ui.player
 
 import com.music.bitchord.sharedui.resources.*
+import org.jetbrains.compose.resources.painterResource
+import androidx.compose.ui.layout.ContentScale
 import com.music.bitchord.ui.components.ExplicitSongTitle
 
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -741,6 +743,9 @@ private fun InlineQueueRow(
         AsyncImage(
             model = rememberRemoteArtworkUrl(song),
             contentDescription = null,
+            contentScale = ContentScale.Crop,
+            error = painterResource(Res.drawable.ic_logo),
+            fallback = painterResource(Res.drawable.ic_logo),
             modifier = Modifier
                 .size(44.dp)
                 .clip(RoundedCornerShape(6.dp))

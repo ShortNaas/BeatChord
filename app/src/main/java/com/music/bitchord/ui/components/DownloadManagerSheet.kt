@@ -62,6 +62,7 @@ import com.music.bitchord.download.DownloadSession
 import com.music.bitchord.download.Downloads
 import com.music.bitchord.ui.haptics.Haptic
 import com.music.bitchord.ui.haptics.rememberHaptics
+import androidx.compose.ui.res.painterResource
 
 /**
  * The download indicator in the top bar, beside the account photo.
@@ -299,6 +300,8 @@ private fun DownloadManagerRow(
     ) {
         Box(Modifier.size(ART_SIZE), contentAlignment = Alignment.Center) {
             AsyncImage(
+                error = painterResource(R.drawable.ic_logo),
+                fallback = painterResource(R.drawable.ic_logo),
                 model = item.song.artworkAt(ROW_ART_PX),
                 contentDescription = null,
                 modifier = Modifier

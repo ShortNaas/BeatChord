@@ -27,8 +27,10 @@ import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import org.jetbrains.compose.resources.painterResource
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitVerticalTouchSlopOrCancellation
@@ -702,6 +704,7 @@ fun NowPlayingScreen(
     onQueueDragActiveChange: (Boolean) -> Unit = {},
     onClearQueue: () -> Unit,
     onOpenMenu: () -> Unit,
+    onAddToPlaylist: () -> Unit = onOpenMenu,
     onOpenAlbum: (String) -> Unit,
     /**
      * Opens an artist's page. [browseId] is null for anyone but the lead credit:
@@ -1489,6 +1492,9 @@ fun NowPlayingScreen(
             onOpenOutput = openAudioOutput,
             onListenTogether = onListenTogether,
             onOpenListenTogetherMembers = openListenTogetherMembers,
+            isFavorite = likeStatus == LikeStatus.LIKE,
+            onAddToPlaylist = onAddToPlaylist,
+            onToggleFavorite = onToggleLike,
         )
         // Keep the current output caption visible in every state.
         Spacer(Modifier.height(18.dp))
@@ -2938,12 +2944,11 @@ fun NowPlayingScreen(
                         contentAlignment = Alignment.Center,
                     ) {
                         if (!art.loaded && !canvasRendered) {
-                            Icon(
-                                imageVector = BitChordIcons.MusicNote,
+                            Image(
+                                painter = painterResource(Res.drawable.ic_logo),
                                 contentDescription = null,
-                                tint = Color.White.copy(alpha = 0.35f),
                                 modifier = Modifier
-                                    .size(40.dp)
+                                    .size(64.dp)
                                     .graphicsLayer {
                                         val scale = 1f - 0.5f * p()
                                         scaleX = scale
@@ -3242,25 +3247,17 @@ fun NowPlayingScreen(
                         }
                     }
                     Spacer(Modifier.width(10.dp))
-                    // Beside the credits rather than down in the toggle row:
-                    // liking is about *this song*, and the row below is about
-                    // how the queue plays. Guests get nothing to tap, since
-                    // there's no account to record it against — and neither
-                    // does a local file or a finished download, which carries
-                    // no YouTube identity to rate.
-                    if (signedIn && song.localUri == null) {
-                        val liked = likeStatus == LikeStatus.LIKE
-                        CircleGlyph(
-                            icon = if (liked) BitChordIcons.HeartFilled else BitChordIcons.Heart,
-                            contentDescription = stringResource(
-                                if (liked) Res.string.remove_from_liked else Res.string.like,
-                            ),
-                            onClick = onToggleLike,
-                            active = liked,
-                            haptic = if (liked) Haptic.ToggleOff else Haptic.ToggleOn,
-                        )
-                        Spacer(Modifier.width(8.dp))
-                    }
+                    val liked = likeStatus == LikeStatus.LIKE
+                    CircleGlyph(
+                        icon = if (liked) BitChordIcons.HeartFilled else BitChordIcons.Heart,
+                        contentDescription = stringResource(
+                            if (liked) Res.string.remove_from_liked else Res.string.like,
+                        ),
+                        onClick = onToggleLike,
+                        active = liked,
+                        haptic = if (liked) Haptic.ToggleOff else Haptic.ToggleOn,
+                    )
+                    Spacer(Modifier.width(8.dp))
                     CircleGlyph(
                         icon = if (showRevertCue) Icons.AutoMirrored.Rounded.Undo else Icons.Rounded.MoreHoriz,
                         contentDescription = stringResource(Res.string.more),

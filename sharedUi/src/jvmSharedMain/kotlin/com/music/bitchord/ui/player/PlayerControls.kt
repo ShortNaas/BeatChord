@@ -54,6 +54,7 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.automirrored.rounded.VolumeDown
 import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.Headphones
@@ -540,6 +541,9 @@ internal fun PlayerActionRow(
     onListenTogether: () -> Unit,
     /** Opens [ListenTogetherMembersSheet] rather than settings directly. */
     onOpenListenTogetherMembers: () -> Unit,
+    isFavorite: Boolean = false,
+    onAddToPlaylist: () -> Unit = {},
+    onToggleFavorite: () -> Unit = {},
 ) {
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         // Sized for the wider of the two capsules — the three-up one — in both
@@ -611,14 +615,11 @@ internal fun PlayerActionRow(
                         )
                         PillDivider()
                         PillSegment(
-                            icon = BitChordIcons.Infinity,
-                            contentDescription = stringResource(
-                                if (autoplayEnabled) Res.string.autoplay_on else Res.string.autoplay_off,
-                            ),
-                            onClick = onToggleAutoplay,
-                            highlighted = autoplayEnabled,
-                            haptic = if (autoplayEnabled) Haptic.ToggleOff else Haptic.ToggleOn,
-                            tapWindowMs = AUTOPLAY_TAP_WINDOW_MS,
+                            icon = Icons.AutoMirrored.Rounded.PlaylistAdd,
+                            contentDescription = stringResource(Res.string.playlist_action),
+                            onClick = onAddToPlaylist,
+                            highlighted = false,
+                            haptic = Haptic.Tap,
                             width = PILL_SEGMENT_WIDTH_TRIPLE,
                         )
                     }
@@ -627,6 +628,8 @@ internal fun PlayerActionRow(
                         onOutput = onOpenOutput,
                         onParty = onListenTogether,
                         onOpenMembers = onOpenListenTogetherMembers,
+                        isFavorite = isFavorite,
+                        onToggleFavorite = onToggleFavorite,
                     )
                 }
             }
@@ -840,8 +843,9 @@ private fun OutputPartyPill(
     onParty: () -> Unit,
     /** Who's in it, before the settings page — see [ListenTogetherMembersSheet]. */
     onOpenMembers: () -> Unit,
+    isFavorite: Boolean = false,
+    onToggleFavorite: () -> Unit = {},
 ) {
-    val badge = rememberPartyBadge()
     Pill {
         PillSegment(
             icon = Icons.Rounded.Headphones,
@@ -851,25 +855,12 @@ private fun OutputPartyPill(
         )
         PillDivider()
         PillSegment(
-            // Person rather than Groups: the three-person glyph is drawn half
-            // the height of Headphones and wider than the segment holding it,
-            // so the two halves of the capsule never looked like a pair.
-            icon = Icons.Rounded.Person,
+            icon = if (isFavorite) BitChordIcons.HeartFilled else BitChordIcons.Heart,
             iconSize = PILL_PARTY_SIZE,
-            // The count is here and nowhere else: spoken, it is the whole
-            // point of the control; drawn, it would cost the capsule its
-            // symmetry for something the caption below already implies.
-            contentDescription = if (badge.inParty) {
-                stringResource(Res.string.listen_together_open_count, badge.members)
-            } else {
-                stringResource(Res.string.listen_together_open)
-            },
-            // Already in a party, this opens who's in it rather than the
-            // settings page directly; there is nothing to create or join once
-            // there is a party, so [onParty] only ever fires beforehand.
-            onClick = if (badge.inParty) onOpenMembers else onParty,
-            highlighted = badge.inParty,
-            trailingLabel = badge.members.takeIf { badge.inParty }?.toString(),
+            contentDescription = stringResource(if (isFavorite) Res.string.remove_from_liked else Res.string.like),
+            onClick = onToggleFavorite,
+            highlighted = isFavorite,
+            haptic = if (isFavorite) Haptic.ToggleOff else Haptic.ToggleOn,
         )
     }
 }

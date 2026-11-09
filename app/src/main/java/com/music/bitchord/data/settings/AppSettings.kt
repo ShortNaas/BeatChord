@@ -419,7 +419,7 @@ object AppSettings {
      * but it is the better default, and most tracks resolve to no canvas at
      * all. See [CanvasRepository][com.music.bitchord.data.canvas.CanvasRepository].
      */
-    val animatedCanvas = MutableStateFlow(true)
+    val animatedCanvas = MutableStateFlow(false)
 
     /**
      * Whether [animatedCanvas] is allowed to actually stream on a metered
@@ -842,7 +842,7 @@ object AppSettings {
             reduceAnimation.value = false
             reduceDynamicBlur.value = false
         }
-        animatedCanvas.value = prefs.getBoolean(KEY_ANIMATED_CANVAS, true)
+        animatedCanvas.value = prefs.getBoolean(KEY_ANIMATED_CANVAS, false)
         canvasOverCellular.value = prefs.getBoolean(KEY_CANVAS_OVER_CELLULAR, false)
         spotifyCanvasAutoHide.value = prefs.getBoolean(KEY_SPOTIFY_CANVAS_AUTO_HIDE, true)
         prioritizeSpotifyCanvas.value = prefs.getBoolean(KEY_PRIORITIZE_SPOTIFY_CANVAS, false)

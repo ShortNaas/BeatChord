@@ -21,6 +21,8 @@ import com.music.bitchord.data.model.CARD_ART_PX
 import com.music.bitchord.data.model.artworkAt
 import com.music.bitchord.data.settings.AppSettings
 import com.music.bitchord.ui.theme.ArtworkPalette
+import androidx.compose.ui.res.painterResource
+import com.music.bitchord.R
 
 /**
  * The colour a surface takes from the artwork it is about: a flat tint
@@ -66,6 +68,8 @@ fun ArtworkBackdrop(
     Box(modifier.background(palette.background)) {
         if (canBlur && imageUrl != null) {
             AsyncImage(
+                error = painterResource(R.drawable.ic_logo),
+                fallback = painterResource(R.drawable.ic_logo),
                 model = imageUrl.artworkAt(artPx),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,

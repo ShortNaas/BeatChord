@@ -43,6 +43,8 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.materials.HazeMaterials
+import androidx.compose.ui.res.painterResource
+import com.music.bitchord.R
 
 /**
  * Which channel to listen as — the Google account's own, or one of its brand
@@ -197,6 +199,8 @@ private fun ChannelRow(channel: AccountChannel, selected: Boolean, onClick: () -
     ) {
         if (channel.thumbnailUrl != null) {
             AsyncImage(
+                error = painterResource(R.drawable.ic_logo),
+                fallback = painterResource(R.drawable.ic_logo),
                 model = channel.thumbnailUrl,
                 contentDescription = null,
                 modifier = Modifier

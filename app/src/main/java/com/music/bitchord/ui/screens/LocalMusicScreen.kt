@@ -117,6 +117,7 @@ import com.music.bitchord.ui.haptics.Haptic
 import com.music.bitchord.ui.haptics.rememberHaptics
 import com.music.bitchord.ui.icons.BitChordIcons
 import java.util.Locale
+import androidx.compose.ui.res.painterResource
 
 private const val LOCAL_TAB_SONGS = 0
 private const val LOCAL_TAB_ARTISTS = 1
@@ -624,6 +625,8 @@ private fun SongGridCard(
             )
             if (song.thumbnailUrl != null) {
                 AsyncImage(
+                    error = painterResource(R.drawable.ic_logo),
+                    fallback = painterResource(R.drawable.ic_logo),
                     model = song.thumbnailUrl.artworkAt(CARD_ART_PX),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
@@ -762,6 +765,8 @@ private fun ArtistRow(
             )
             if (thumbnailUrl != null) {
                 AsyncImage(
+                    error = painterResource(R.drawable.ic_logo),
+                    fallback = painterResource(R.drawable.ic_logo),
                     model = thumbnailUrl.artworkAt(ROW_ART_PX),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
@@ -829,6 +834,8 @@ private fun ArtistGridCard(
             )
             if (thumbnailUrl != null) {
                 AsyncImage(
+                    error = painterResource(R.drawable.ic_logo),
+                    fallback = painterResource(R.drawable.ic_logo),
                     model = thumbnailUrl.artworkAt(CARD_ART_PX),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
@@ -1066,6 +1073,8 @@ private fun AlbumGridCard(
             val cardArt = entry.thumbnailUrl ?: fetchedArt
             if (cardArt != null) {
                 AsyncImage(
+                    error = painterResource(R.drawable.ic_logo),
+                    fallback = painterResource(R.drawable.ic_logo),
                     model = cardArt.artworkAt(CARD_ART_PX),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
@@ -1199,6 +1208,8 @@ private fun CollectionArtwork(url: String?, playlist: Boolean, size: Dp) {
         )
         if (url != null) {
             AsyncImage(
+                error = painterResource(R.drawable.ic_logo),
+                fallback = painterResource(R.drawable.ic_logo),
                 model = url.artworkAt(ROW_ART_PX),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
@@ -1263,6 +1274,8 @@ private fun DrillDownHeader(
             )
             artworkUrl?.let { artwork ->
                 AsyncImage(
+                    error = painterResource(R.drawable.ic_logo),
+                    fallback = painterResource(R.drawable.ic_logo),
                     model = artwork.artworkAt(CARD_ART_PX),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,

@@ -157,6 +157,7 @@ import com.music.bitchord.ui.theme.ArtworkPalette
 import com.music.bitchord.ui.theme.rememberArtworkPalette
 import kotlin.math.roundToInt
 import java.util.Locale
+import androidx.compose.ui.res.painterResource
 
 private const val MAX_ARTIST_SONGS = 20
 private const val SONGS_PER_COLUMN = 4
@@ -1152,6 +1153,8 @@ private fun PageBackground(
                 .offset { IntOffset(0, listState.headerTop(artHeight.toPx()).roundToInt()) },
         ) {
             AsyncImage(
+                error = painterResource(R.drawable.ic_logo),
+                fallback = painterResource(R.drawable.ic_logo),
                 model = art,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
@@ -1178,6 +1181,8 @@ private fun PageBackground(
             // copy, so it is a memory-cache hit and lands on the same frame.
             if (softenFoot) {
                 AsyncImage(
+                    error = painterResource(R.drawable.ic_logo),
+                    fallback = painterResource(R.drawable.ic_logo),
                     model = art,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
@@ -1634,6 +1639,8 @@ private fun CompactSongRow(
     ) {
         Box(Modifier.size(48.dp)) {
             AsyncImage(
+                error = painterResource(R.drawable.ic_logo),
+                fallback = painterResource(R.drawable.ic_logo),
                 model = song.artworkAt(ROW_ART_PX),
                 contentDescription = null,
                 modifier = Modifier
@@ -1693,6 +1700,8 @@ private fun SuggestedSongRow(
     ) {
         Box(Modifier.size(52.dp)) {
             AsyncImage(
+                error = painterResource(R.drawable.ic_logo),
+                fallback = painterResource(R.drawable.ic_logo),
                 model = song.artworkAt(ROW_ART_PX),
                 contentDescription = null,
                 modifier = Modifier
@@ -1811,6 +1820,8 @@ private fun TopReleaseCard(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         AsyncImage(
+            error = painterResource(R.drawable.ic_logo),
+            fallback = painterResource(R.drawable.ic_logo),
             model = item.thumbnailUrl.artworkAt(CARD_ART_PX),
             contentDescription = null,
             modifier = Modifier
@@ -1890,6 +1901,8 @@ private fun SectionCard(
             .longPressMenuClickable(onClick = onClick, onLongClick = onLongPress),
     ) {
         AsyncImage(
+            error = painterResource(R.drawable.ic_logo),
+            fallback = painterResource(R.drawable.ic_logo),
             model = item.thumbnailUrl.artworkAt(CARD_ART_PX),
             contentDescription = null,
             modifier = Modifier
