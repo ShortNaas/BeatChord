@@ -8,7 +8,6 @@ import android.net.NetworkCapabilities
 import androidx.media3.common.Player
 import com.music.bitchord.BuildConfig
 import com.music.bitchord.auth.AuthStore
-import com.music.bitchord.data.canvas.SpotifyToken
 import com.music.bitchord.data.lyrics.LyricsSource
 import com.music.bitchord.data.sources.SourceKind
 import com.music.bitchord.playback.EqLayout
@@ -410,46 +409,11 @@ object AppSettings {
     val translationLanguage = MutableStateFlow("")
 
     /**
-     * Plays a looping video behind the cover art on the player when one is
-     * published for the track — Spotify's Canvas, Apple's motion artwork.
-     *
-     * Costs a video stream on top of the audio one and reaches three
-     * services that have nothing to do with playback, so it stays a switch —
-     * but it is the better default, and most tracks resolve to no canvas at
-     * all. See [CanvasRepository][com.music.bitchord.data.canvas.CanvasRepository].
-     */
-    val animatedCanvas = MutableStateFlow(false)
-
-    /**
-     * Whether [animatedCanvas] is allowed to actually stream on a metered
-     * connection, as distinct from the switch that turns the feature off
-     * altogether.
-     *
-     * Off by default. A canvas clip loops for as long as its track plays,
-     * and every loop past the first re-fetches the same few seconds of video
-     * — see [CanvasCache][com.music.bitchord.data.canvas.CanvasCache] for why
-     * that costs network at all rather than being answered from a buffer —
-     * so a few-second clip behind a four-minute track on cellular is not a
-     * flat video cost, it is that cost repeated dozens of times per song.
-     * That is the shape of the reported 8GB day: still art costs nothing
-     * here and stays up regardless of this setting.
-     */
-    val canvasOverCellular = MutableStateFlow(false)
-
-    /** Automatically collapses the lower controls after Spotify Canvas settles. */
-    val spotifyCanvasAutoHide = MutableStateFlow(true)
-
-    /** Tries Spotify before Apple Music and the other animated-art providers. */
-    val prioritizeSpotifyCanvas = MutableStateFlow(false)
-
-    /**
      * Blows the player's cover art out to a full-bleed banner running off the
      * top of the screen, rather than sitting it in a square card.
      *
-     * The treatment motion artwork has always had, applied to still sleeves too.
      * Off restores the card: the sleeve keeps its corners, its shadow and its
-     * shrink-while-paused, and only a clip goes full-bleed. Phones only either
-     * way — see the hero notes in
+     * shrink-while-paused. Phones only either way — see the hero notes in
      * [NowPlayingScreen][com.music.bitchord.ui.player.NowPlayingScreen].
      */
     val fullBleedArtwork = MutableStateFlow(true)
@@ -594,7 +558,6 @@ object AppSettings {
     val listenBrainzEnabled = MutableStateFlow(false)
     val listenBrainzToken = MutableStateFlow("")
     val listenBrainzPrimaryArtistOnly = MutableStateFlow(false)
-    val spotifySpdcToken = MutableStateFlow("")
 
     // ── Discord Rich Presence ───────────────────────────────────────────
 
@@ -811,10 +774,6 @@ object AppSettings {
             reduceAnimation.value = false
             reduceDynamicBlur.value = false
         }
-        animatedCanvas.value = prefs.getBoolean(KEY_ANIMATED_CANVAS, false)
-        canvasOverCellular.value = prefs.getBoolean(KEY_CANVAS_OVER_CELLULAR, false)
-        spotifyCanvasAutoHide.value = prefs.getBoolean(KEY_SPOTIFY_CANVAS_AUTO_HIDE, true)
-        prioritizeSpotifyCanvas.value = prefs.getBoolean(KEY_PRIORITIZE_SPOTIFY_CANVAS, false)
         fullBleedArtwork.value = prefs.getBoolean(KEY_FULL_BLEED_ARTWORK, true)
         legacyMeshGradient.value = prefs.getBoolean(KEY_LEGACY_MESH_GRADIENT, false)
         lastPlayerScreen.value = runCatching {
@@ -845,7 +804,6 @@ object AppSettings {
         listenBrainzEnabled.value = prefs.getBoolean(KEY_LISTENBRAINZ_ENABLED, false)
         listenBrainzToken.value = prefs.getString(KEY_LISTENBRAINZ_TOKEN, "").orEmpty()
         listenBrainzPrimaryArtistOnly.value = prefs.getBoolean(KEY_LISTENBRAINZ_PRIMARY_ARTIST_ONLY, false)
-        spotifySpdcToken.value = prefs.getString(KEY_SPOTIFY_SPDC_TOKEN, "").orEmpty()
         replayGenres.value = prefs.getBoolean(KEY_REPLAY_GENRES, true)
         filterNonMusicAudio.value = prefs.getBoolean(KEY_FILTER_NON_MUSIC_AUDIO, true)
         localMusicSort.value = readLocalMusicSort(KEY_LOCAL_MUSIC_SORT)
@@ -1323,26 +1281,6 @@ object AppSettings {
         setPrioritizeSyllableSync(false)
     }
 
-    fun setAnimatedCanvas(value: Boolean) {
-        animatedCanvas.value = value
-        prefs.edit().putBoolean(KEY_ANIMATED_CANVAS, value).apply()
-    }
-
-    fun setCanvasOverCellular(value: Boolean) {
-        canvasOverCellular.value = value
-        prefs.edit().putBoolean(KEY_CANVAS_OVER_CELLULAR, value).apply()
-    }
-
-    fun setSpotifyCanvasAutoHide(value: Boolean) {
-        spotifyCanvasAutoHide.value = value
-        prefs.edit().putBoolean(KEY_SPOTIFY_CANVAS_AUTO_HIDE, value).apply()
-    }
-
-    fun setPrioritizeSpotifyCanvas(value: Boolean) {
-        prioritizeSpotifyCanvas.value = value
-        prefs.edit().putBoolean(KEY_PRIORITIZE_SPOTIFY_CANVAS, value).apply()
-    }
-
     fun setFullBleedArtwork(value: Boolean) {
         fullBleedArtwork.value = value
         prefs.edit().putBoolean(KEY_FULL_BLEED_ARTWORK, value).apply()
@@ -1406,12 +1344,6 @@ object AppSettings {
     fun setLastfmEndpoint(value: String) {
         lastfmEndpoint.value = value
         prefs.edit().putString(KEY_LASTFM_ENDPOINT, value).apply()
-    }
-
-    fun setSpotifySpdcToken(value: String) {
-        spotifySpdcToken.value = value
-        prefs.edit().putString(KEY_SPOTIFY_SPDC_TOKEN, value).apply()
-        SpotifyToken.invalidate()
     }
 
     fun setLastfmScrobbleEnabled(value: Boolean) {
@@ -1734,7 +1666,6 @@ object AppSettings {
         KEY_LASTFM_API_KEY,
         KEY_LASTFM_SECRET,
         KEY_LISTENBRAINZ_TOKEN,
-        KEY_SPOTIFY_SPDC_TOKEN,
         KEY_PAXSENIX_API_KEY,
     )
 
@@ -1822,10 +1753,6 @@ object AppSettings {
     private const val KEY_LYRICS_BLUR = "lyrics_blur"
     private const val KEY_LYRICS_OFFSET_MS = "lyrics_offset_ms"
     private const val KEY_TRANSLATION_LANGUAGE = "translation_language"
-    private const val KEY_ANIMATED_CANVAS = "animated_canvas"
-    private const val KEY_CANVAS_OVER_CELLULAR = "canvas_over_cellular"
-    private const val KEY_SPOTIFY_CANVAS_AUTO_HIDE = "spotify_canvas_auto_hide"
-    private const val KEY_PRIORITIZE_SPOTIFY_CANVAS = "prioritize_spotify_canvas"
     private const val KEY_FULL_BLEED_ARTWORK = "full_bleed_artwork"
     private const val KEY_LEGACY_MESH_GRADIENT = "legacy_mesh_gradient"
     private const val KEY_LAST_PLAYER_SCREEN = "last_player_screen"
@@ -1863,7 +1790,6 @@ object AppSettings {
     private const val KEY_LISTENBRAINZ_ENABLED = "listenbrainz_enabled"
     private const val KEY_LISTENBRAINZ_TOKEN = "listenbrainz_token"
     private const val KEY_LISTENBRAINZ_PRIMARY_ARTIST_ONLY = "listenbrainz_primary_artist_only"
-    private const val KEY_SPOTIFY_SPDC_TOKEN = "spotify_spdc_token"
 
     private const val KEY_DISCORD_USERNAME = "discord_username"
     private const val KEY_DISCORD_NAME = "discord_name"

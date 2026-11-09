@@ -208,14 +208,9 @@ fun MeshGradientBackground(
 /**
  * Loads the artwork with Coil (software bitmap, thumbnail-sized) and pulls a
  * 4-colour palette out of it. Recomputes when [imageUrl] changes.
- *
- * A track's motion artwork is frequently lit nothing like its still sleeve —
- * a different shot, a different grade. [canvasFrame], a frame captured off
- * the playing clip once one is available, is quantised the same way and
- * takes over from there, crossfading in exactly like a track skip.
  */
 @Composable
-fun rememberArtworkColors(imageUrl: String?, canvasFrame: ImageBitmap? = null): MeshPalette {
+fun rememberArtworkColors(imageUrl: String?): MeshPalette {
     val context = LocalPlatformContext.current
     var palette by remember(imageUrl) { mutableStateOf(MeshPalette(FallbackColors)) }
 
@@ -231,15 +226,6 @@ fun rememberArtworkColors(imageUrl: String?, canvasFrame: ImageBitmap? = null): 
         palette = MeshPalette(paletteOf(bitmap))
     }
 
-    LaunchedEffect(canvasFrame) {
-        val frame = canvasFrame ?: return@LaunchedEffect
-        // Reject near-black frames (first read after surface recreation, before
-        // ExoPlayer decodes real content).  A dark sleeve will still exceed the
-        // threshold because compression noise pushes mean luminance above ~12.
-        if (isLikelyBlackFrame(frame)) return@LaunchedEffect
-        val colors = withContext(Dispatchers.Default) { paletteOf(frame) }
-        palette = MeshPalette(colors)
-    }
     return palette
 }
 

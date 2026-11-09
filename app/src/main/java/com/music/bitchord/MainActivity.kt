@@ -70,7 +70,6 @@ import androidx.compose.material.icons.rounded.IosShare
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Sort
 import androidx.compose.material.icons.rounded.Upgrade
-import com.music.bitchord.data.listentogether.ServerConnectionState
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -123,8 +122,6 @@ import com.music.bitchord.auth.YtMusicLoginScreen
 import com.music.bitchord.data.LocalMediaRepository
 import com.music.bitchord.data.playlists.M3uImport
 import com.music.bitchord.data.spotify.LocalPlaylistStore
-import com.music.bitchord.data.listentogether.ListenTogether
-import com.music.bitchord.data.listentogether.partyQueueIndexOf
 import com.music.bitchord.data.NerdStats
 import com.music.bitchord.data.TrackLog
 import com.music.bitchord.data.innertube.InnertubeParser
@@ -136,7 +133,6 @@ import com.music.bitchord.data.model.SearchFilter
 import com.music.bitchord.data.model.SearchResult
 import com.music.bitchord.data.model.ShelfItem
 import com.music.bitchord.data.model.Song
-import com.music.bitchord.data.model.isUnresolvedSpotify
 import com.music.bitchord.data.model.UiState
 import com.music.bitchord.data.model.UserPlaylist
 import com.music.bitchord.data.model.EntityType
@@ -152,15 +148,10 @@ import com.music.bitchord.ui.screens.EqualizerScreen
 import com.music.bitchord.ui.screens.HistoryScreen
 import com.music.bitchord.ui.screens.LibraryReplayEntry
 import com.music.bitchord.ui.screens.libraryDeviceItems
-import com.music.bitchord.ui.screens.SPOTIFY_BROWSE_ID
 import com.music.bitchord.ui.screens.libraryLinks
 import com.music.bitchord.ui.screens.CACHE_FOLDER_BROWSE_ID
-import com.music.bitchord.ui.screens.ListenTogetherScreen
-import com.music.bitchord.ui.screens.PartyServerEditor
 import com.music.bitchord.ui.screens.SettingsScreen
 import com.music.bitchord.data.sources.TrackMatcher
-import com.music.bitchord.ui.screens.SpotifyLibraryScreen
-import com.music.bitchord.data.spotify.SPOTIFY_PAGE_PREFIX
 import com.music.bitchord.playback.AudioCache
 import com.music.bitchord.playback.LinkRequest
 import com.music.bitchord.playback.MusicLink
@@ -172,7 +163,6 @@ import com.music.bitchord.playback.QueueCoordinator.asQueueEntry
 import com.music.bitchord.playback.QueueShuffle
 import com.music.bitchord.playback.QueueSource
 import com.music.bitchord.data.model.QueueTier
-import com.music.bitchord.playback.autoplayEnabledFor
 import com.music.bitchord.playback.autoplaySectionStart
 import com.music.bitchord.playback.beginRadioQueue
 import com.music.bitchord.playback.commitRadioQueue
@@ -215,7 +205,6 @@ import androidx.media3.session.MediaController
 import com.music.bitchord.playback.QualityUpgrade
 import com.music.bitchord.playback.rememberMediaController
 import com.music.bitchord.playback.rememberPlayerState
-import com.music.bitchord.playback.setQueueDragActive
 import com.music.bitchord.ui.MainViewModel
 import com.music.bitchord.ui.SearchSource
 import com.music.bitchord.ui.components.BottomFadeScrim
@@ -291,8 +280,6 @@ import com.music.bitchord.ui.replay.ReplayStoryPage
 import com.music.bitchord.ui.replay.rememberReplayState
 import com.music.bitchord.ui.theme.BitChordTheme
 import com.music.bitchord.ui.theme.rememberArtworkPalette
-import com.music.bitchord.data.canvas.AppleArtistArtRepository
-import com.music.bitchord.data.canvas.keyColors
 import com.music.bitchord.ui.theme.SystemBarIcons
 import com.music.bitchord.ui.utils.guardSheetFromContentTouches
 import com.music.bitchord.ui.utils.rememberIosOverscrollFactory
@@ -538,15 +525,7 @@ private fun BitChordApp(
     // null = no sub-screen overlay; non-null = that key is rendered as overlay.
     var settingsSubScreen by rememberSaveable { mutableStateOf<String?>(null) }
     var showAccountScrobbling by rememberSaveable { mutableStateOf(false) }
-    var showListenTogether by rememberSaveable { mutableStateOf(false) }
     var showEqualizer by rememberSaveable { mutableStateOf(false) }
-
-    // Hosted here rather than inside the settings overlay so its frosted card
-    // has something to blur: a haze effect sampling the layer it is itself
-    // part of renders with no background at all. Hosting it here also puts the
-    // scrim over the tab bar and the mini player, like every other alert in
-    // the app.
-    var editingPartyServer by remember { mutableStateOf(false) }
     var showHistory by remember { mutableStateOf(false) }
     // A Library shelf's "Show all" — the shelf it was opened from, so its own
     // cards can be laid out again as a full-screen grid. See [LibraryGridPage].
@@ -571,7 +550,6 @@ private fun BitChordApp(
     // The alerts live out here rather than on the page because their scrim has
     // to cover the tab bar and mini player, which are drawn after it.
     var showDiscord by remember { mutableStateOf(false) }
-    var showSpotify by remember { mutableStateOf(false) }
     var songActions by remember { mutableStateOf<Song?>(null) }
     var showLyricsOffset by remember { mutableStateOf(false) }
     /**
@@ -633,15 +611,7 @@ private fun BitChordApp(
         browseActions = target
     }
     val autoplay by AppSettings.autoplay.collectAsStateWithLifecycle()
-    val partyState by ListenTogether.state.collectAsStateWithLifecycle()
-    // The same answer the playback service acts on, rather than a second one
-    // derived here — see [autoplayEnabledFor]. Drawing the local preference in
-    // a party made the toggle lie in both directions: a listener whose own
-    // switch was on sat under "AutoPlay on" in a party that had it off, got no
-    // suggestions, and pressing the button appeared to do nothing, because it
-    // turned the party's setting on while the label already said so.
-    val autoplayEnabled = autoplayEnabledFor(partyState, autoplay)
-    val partyServerStatus by ListenTogether.serverConnectionState.collectAsStateWithLifecycle()
+    val autoplayEnabled = autoplay
     val listenBrainzToken by AppSettings.listenBrainzToken.collectAsStateWithLifecycle()
     // Set each time the search tab is tapped, which SearchScreen uses as a
     // signal to focus the input field.
@@ -723,7 +693,6 @@ private fun BitChordApp(
     LaunchedEffect(showSettings) {
         if (!showSettings) {
             showAccountScrobbling = false
-            showSpotify = false
         }
     }
 
@@ -788,17 +757,7 @@ private fun BitChordApp(
     }
     val controller = rememberMediaController()
     val player = rememberPlayerState(controller)
-    // A resume in a party is performed on the instant the server schedules, not
-    // when it was pressed, and nothing about the player moves in between — so
-    // the transport spends that round trip drawn as though the tap never landed.
-    // Folded into the buffering flag every play button already answers to, since
-    // to a listener the two are the same fact: it is coming, wait.
-    val awaitingPartyStart by ListenTogether.awaitingStart.collectAsStateWithLifecycle()
-    val playPauseBusy = player.isLoading || awaitingPartyStart
-    // Listening in a party whose host has taken the controls. Read once here
-    // and handed to every surface, so the player, the mini player and the glass
-    // bar can never disagree about whether this device may drive the music.
-    val controlsLocked = partyState.controlsLocked
+    val playPauseBusy = player.isLoading
     var queueNotice by remember { mutableStateOf<QueueActionNotice?>(null) }
     var queueNoticeId by remember { mutableIntStateOf(0) }
     val showQueueNotice: (String) -> Unit = { message ->
@@ -810,43 +769,12 @@ private fun BitChordApp(
         delay(3_000)
         if (queueNotice?.id == shown.id) queueNotice = null
     }
-    // Why a control did nothing, on the same strip above the mini player that
-    // already answers "added to queue". Reached from every surface that had a
-    // control taken away — see [ListenTogether.State.controlsLocked].
-    val hostOnlyMessage = stringResource(R.string.listen_together_host_only_notice)
-    val showHostOnlyNotice: () -> Unit = { showQueueNotice(hostOnlyMessage) }
-
-    /**
-     * Whether the host has taken the music, and say so if they have.
-     *
-     * Every way the app starts or reorders playback funnels through one of the
-     * lambdas below, and each asks this first. Checked here rather than left to
-     * the player: the service refuses these actions anyway, but by then the tap
-     * has already been half-applied — a queue swapped with nothing to play it,
-     * or a resume of whatever the party was on — which is what a listener saw
-     * as the music flickering on and off.
-     */
-    val refusedByHost: () -> Boolean = {
-        val locked = ListenTogether.state.value.controlsLocked
-        if (locked) showHostOnlyNotice()
-        locked
-    }
-
     /**
      * The one play/pause every surface presses.
-     *
-     * In a locked party this still works — it stops and starts *this* device
-     * without touching the party, which is the whole of what a listener is
-     * left with. The exception is a party that is itself paused: there is
-     * nothing to join and nothing to hold out of, so the tap says why instead
-     * of starting a second of audio that [PartySync] then has to stop.
      */
     val togglePlayPause: () -> Unit = {
         controller?.let { c ->
-            val party = ListenTogether.state.value
-            if (party.controlsLocked && !party.playback.isPlaying && !c.isPlaying) {
-                showHostOnlyNotice()
-            } else if (c.isPlaying) {
+            if (c.isPlaying) {
                 c.pause()
             } else {
                 c.play()
@@ -1151,46 +1079,24 @@ private fun BitChordApp(
     }
 
     val playFrom: (List<Song>, Int, QueueSource) -> Unit = playFrom@{ allSongs, allIndex, source ->
-        // A Spotify page lists songs it has not found on YouTube Music yet (or
-        // never will); those can't be queued, so play the rest in their order.
-        if (allSongs.getOrNull(allIndex)?.isUnresolvedSpotify == true) return@playFrom
-        val songs = allSongs.filterNot { it.isUnresolvedSpotify }
-        val index = songs.indexOf(allSongs.getOrNull(allIndex)).coerceAtLeast(0)
+        val songs = allSongs
+        val index = allIndex
         playRequestGeneration++
         activeRadioSeed = null
         scope.launch {
-            if (refusedByHost()) return@launch
             val c = controller ?: return@launch
             val currentTimeline = player.queue.takeIf { it.size == c.mediaItemCount }
                 ?: (0 until c.mediaItemCount).map { c.getMediaItemAt(it).toSong() }
             val currentIndex = c.currentMediaItemIndex
 
-            if (ListenTogether.state.value.inParty) {
-                val selectedSong = songs.getOrNull(index) ?: return@launch
-                val party = ListenTogether.state.value
-                val partyQueue = party.queue.items
-                val partyIndex = partyQueueIndexOf(party.queue, party.playback, party.playback.track?.videoId)
-                val upcomingPartyTracks = if (partyIndex >= 0) {
-                    partyQueue.drop(partyIndex + 1)
-                } else {
-                    emptyList()
-                }
-                val timeline = QueueCoordinator.buildPartyPlaybackQueue(
-                    tappedSong = selectedSong,
-                    source = source,
-                    upcomingPartyTracks = upcomingPartyTracks,
-                )
-                c.playSongs(timeline, 0)
-            } else {
-                val result = QueueCoordinator.buildContextQueue(
-                    currentTimeline = currentTimeline,
-                    currentIndex = currentIndex,
-                    newContextSongs = songs,
-                    selectedIndex = index,
-                    contextSource = source,
-                )
-                c.playSongs(result.timeline, result.startIndex)
-            }
+            val result = QueueCoordinator.buildContextQueue(
+                currentTimeline = currentTimeline,
+                currentIndex = currentIndex,
+                newContextSongs = songs,
+                selectedIndex = index,
+                contextSource = source,
+            )
+            c.playSongs(result.timeline, result.startIndex)
             // Start playback in the mini-player; the user opens the full view by tapping it.
         }
     }
@@ -1238,14 +1144,9 @@ private fun BitChordApp(
     }
 
     // Check if alternate (video vs audio) version exists in background.
-    // Skipped entirely in a Listen Together party: the track playing there is
-    // shared by everyone in it, and a per-listener version switch would put
-    // each member on their own cut of what is supposed to be one song — see
-    // [ListenTogether] and the matching guard server-side in
-    // [PlaybackService.smoothSwapCurrentTrackVersion].
-    LaunchedEffect(player.song?.videoId, convertedAudioId, convertedVideoId, partyState.inParty) {
+    LaunchedEffect(player.song?.videoId, convertedAudioId, convertedVideoId) {
         val song = player.song
-        if (song == null || partyState.inParty) {
+        if (song == null) {
             hasAlternateVersion = false
             return@LaunchedEffect
         }
@@ -1283,7 +1184,6 @@ private fun BitChordApp(
         playRequestGeneration++
         activeRadioSeed = null
         scope.launch {
-            if (refusedByHost()) return@launch
             val c = controller ?: return@launch
             val currentTimeline = player.queue.takeIf { it.size == c.mediaItemCount }
                 ?: (0 until c.mediaItemCount).map { c.getMediaItemAt(it).toSong() }
@@ -1309,7 +1209,7 @@ private fun BitChordApp(
      */
     val startRadio: (Song) -> Unit = { song ->
         val originalController = controller
-        if (originalController != null && !refusedByHost()) {
+        if (originalController != null) {
             val request = ++playRequestGeneration
             // Ignore AutoPlay's tail: it may legitimately grow while the
             // request is in flight and does not mean the listener chose a
@@ -1381,17 +1281,9 @@ private fun BitChordApp(
     }
     val addToQueue: (Song) -> Unit = { song ->
         scope.launch {
-            if (refusedByHost()) return@launch
             // The end of what the user queued, not the end of the queue: a song
             // asked for by name outranks whatever AutoPlay lined up behind it.
             controller?.let {
-                if (ListenTogether.state.value.inParty) {
-                    val upcoming = (it.mediaItemCount - (it.currentMediaItemIndex + 1)).coerceAtLeast(0)
-                    if (upcoming >= 25) {
-                        showQueueNotice(context.getString(R.string.party_queue_full, 25))
-                        return@launch
-                    }
-                }
                 val current = it.currentMediaItem?.toSong()
                 val timeline = player.queue.takeIf { q -> q.size == it.mediaItemCount }
                     ?: (0 until it.mediaItemCount).map { idx -> it.getMediaItemAt(idx).toSong() }
@@ -1413,15 +1305,7 @@ private fun BitChordApp(
     }
     val playNext: (Song) -> Unit = { song ->
         scope.launch {
-            if (refusedByHost()) return@launch
             controller?.let {
-                if (ListenTogether.state.value.inParty) {
-                    val upcoming = (it.mediaItemCount - (it.currentMediaItemIndex + 1)).coerceAtLeast(0)
-                    if (upcoming >= 25) {
-                        showQueueNotice(context.getString(R.string.party_queue_full, 25))
-                        return@launch
-                    }
-                }
                 val current = it.currentMediaItem?.toSong()
                 val timeline = player.queue.takeIf { q -> q.size == it.mediaItemCount }
                     ?: (0 until it.mediaItemCount).map { idx -> it.getMediaItemAt(idx).toSong() }
@@ -1521,8 +1405,7 @@ private fun BitChordApp(
     val queueSongs: (List<Song>, Boolean) -> Unit = { songs, next ->
         if (songs.isNotEmpty()) {
             scope.launch {
-                if (refusedByHost()) return@launch
-                val c = controller
+                    val c = controller
                 if (c == null || c.mediaItemCount == 0) {
                     // Nothing to queue behind. "Add to queue" on a silent
                     // player can only mean start here — and adding without
@@ -1530,17 +1413,6 @@ private fun BitChordApp(
                     // never gets round to it.
                     play(songs, 0)
                 } else {
-                    val toAdd = if (ListenTogether.state.value.inParty) {
-                        val upcoming = (c.mediaItemCount - (c.currentMediaItemIndex + 1)).coerceAtLeast(0)
-                        val slotsLeft = (25 - upcoming).coerceAtLeast(0)
-                        if (slotsLeft <= 0) {
-                            showQueueNotice(context.getString(R.string.party_queue_full, 25))
-                            return@launch
-                        }
-                        songs.take(slotsLeft)
-                    } else {
-                        songs
-                    }
                     val timeline = player.queue.takeIf { q -> q.size == c.mediaItemCount }
                         ?: (0 until c.mediaItemCount).map { idx -> c.getMediaItemAt(idx).toSong() }
                     val at = QueueCoordinator.findUserQueueInsertionIndex(
@@ -1551,7 +1423,7 @@ private fun BitChordApp(
                     val current = c.currentMediaItem?.toSong()
                     c.addMediaItems(
                         at,
-                        toAdd.map {
+                        songs.map {
                             it.copy(
                                 radioName = current?.radioName,
                                 playbackSource = current?.playbackSource ?: queueLabel,
@@ -1563,8 +1435,8 @@ private fun BitChordApp(
                     )
                     val message = context.resources.getQuantityString(
                         if (next) R.plurals.songs_will_play_next else R.plurals.songs_added_to_queue,
-                        toAdd.size,
-                        toAdd.size,
+                        songs.size,
+                        songs.size,
                     )
                     showQueueNotice(message)
                 }
@@ -2065,18 +1937,7 @@ private fun BitChordApp(
     // washed in an artwork's colour instead. Off a detail page this resolves
     // to the theme's background anyway, which is exactly right there.
     //
-    // An artist page is coloured from Apple's art when it has some, so this has
-    // to read the same source the page does or the bars stay the YouTube photo's
-    // colour while the page beneath them has moved on.
-    val appleArtVersion by AppleArtistArtRepository.updates.collectAsStateWithLifecycle()
-    val detailApple = remember(detail?.title, detail?.type, appleArtVersion) {
-        detail?.takeIf { it.type == BrowseType.ARTIST }
-            ?.let { AppleArtistArtRepository.cached(it.title) }
-    }
-    val detailPalette = rememberArtworkPalette(
-        imageUrl = detailApple?.heroUrl ?: detail?.thumbnailUrl,
-        keyColors = detailApple?.keyColors(),
-    )
+    val detailPalette = rememberArtworkPalette(imageUrl = detail?.thumbnailUrl)
 
     // One set of numbers for the cards, the page, the stories and the shared
     // picture, so they cannot disagree. Read while any of them is on screen —
@@ -2143,20 +2004,8 @@ private fun BitChordApp(
                 )
             }
             ?: effectiveSong
-        val playedBy = partyState
-            .takeIf {
-                it.inParty && it.playback.track?.videoId == displayedSong.videoId
-            }
-            ?.playback
-            ?.let { playback ->
-                playback.startedByName?.takeIf(String::isNotBlank)
-                    ?: partyState.members.firstOrNull {
-                        it.memberId == playback.startedBy
-                    }?.displayName?.takeIf(String::isNotBlank)
-            }
         NowPlayingScreen(
             song = displayedSong,
-            playedBy = playedBy,
             accountName = account?.name,
             windowWidth = windowWidth,
             windowHeight = windowHeight,
@@ -2171,7 +2020,6 @@ private fun BitChordApp(
             },
             onNext = { controller?.seekToNextMediaItem() },
             onPrevious = { controller?.seekToPrevious() },
-            onBlockedControl = showHostOnlyNotice,
             onSeekFraction = { fraction ->
                 controller?.let { player ->
                     // Read at the moment of the seek, not from the
@@ -2257,7 +2105,6 @@ private fun BitChordApp(
             },
             onRemoveFromQueue = { controller?.removeMediaItem(it) },
             onMoveInQueue = { from, to -> controller?.moveMediaItem(from, to) },
-            onQueueDragActiveChange = { active -> controller?.setQueueDragActive(active) },
             // The enriched copy, not player.song — otherwise the menu
             // hides the album and artist rows even once their browse
             // ids have been resolved.
@@ -2329,13 +2176,11 @@ private fun BitChordApp(
                 viewModel.clearDetail()
                 showSettings = false
                 showAccountScrobbling = false
-                showListenTogether = false
                 showEqualizer = false
                 showReplay = false
                 settingsSubScreen = null
                 showHistory = false
                 showDiscord = false
-                showSpotify = false
                 libraryShowAll = null
 
                 when (sourceType) {
@@ -2378,13 +2223,6 @@ private fun BitChordApp(
             lyricsUnavailable = lyricsChecked && lyrics.isNullOrEmpty(),
             lyricsOffsetOpen = showLyricsOffset,
             onDismissLyricsOffset = { showLyricsOffset = false },
-            onListenTogether = {
-                // The player is a sheet over the page, so it has to come down
-                // for the page to be read at all.
-                dismissPlayer()
-                showSettings = true
-                showListenTogether = true
-            },
             onClearQueue = {
                 // Keep what's playing and context/autoplay; drop user-queued tracks.
                 controller?.let { c ->
@@ -2417,7 +2255,7 @@ private fun BitChordApp(
             }
         }
         BackHandler(
-            enabled = detail != null && !showSettings && !showAccountScrobbling && !showListenTogether &&
+            enabled = detail != null && !showSettings && !showAccountScrobbling &&
                 !showEqualizer && !showReplay,
         ) { viewModel.closeDetail() }
         BackHandler(enabled = selectedMoodGenre != null && detail == null && !showSettings && !showReplay) {
@@ -2426,16 +2264,9 @@ private fun BitChordApp(
         BackHandler(enabled = showDiscord) {
             showDiscord = false
         }
-        BackHandler(enabled = showSpotify && detail == null) {
-            showSpotify = false
-        }
-        BackHandler(enabled = showAccountScrobbling && !showDiscord && !showSpotify) {
+        BackHandler(enabled = showAccountScrobbling && !showDiscord) {
             showAccountScrobbling = false
             if (settingsSubScreen == "account_scrobbling") settingsSubScreen = null
-        }
-        BackHandler(enabled = showListenTogether) {
-            showListenTogether = false
-            if (settingsSubScreen == "listen_together") settingsSubScreen = null
         }
         BackHandler(enabled = showEqualizer) {
             showEqualizer = false
@@ -2444,7 +2275,7 @@ private fun BitChordApp(
         // One back step out of Settings, or out of any tab but Home, lands on
         // Home rather than exiting — only Home itself hands back to the system,
         // which is what actually closes/minimizes the app.
-        BackHandler(enabled = showSettings && !showSpotify && !showAccountScrobbling && !showListenTogether && !showEqualizer && !showReplay) {
+        BackHandler(enabled = showSettings && !showAccountScrobbling && !showEqualizer && !showReplay) {
             showSettings = false
             // Only when Settings was the whole of what was on screen. Opened
             // over Replay or over a release page, closing it reveals that again
@@ -2452,14 +2283,13 @@ private fun BitChordApp(
             if (detail == null && !showReplay) selectedTab = TAB_HOME
         }
         BackHandler(
-            enabled = detail == null && !showSettings && !showAccountScrobbling && !showSpotify &&
-                !showListenTogether && !showEqualizer && !showReplay && selectedMoodGenre == null &&
+            enabled = detail == null && !showSettings && !showAccountScrobbling &&
+                !showEqualizer && !showReplay && selectedMoodGenre == null &&
                 selectedTab != TAB_HOME,
         ) {
             selectedTab = TAB_HOME
         }
         BackHandler(enabled = showListenBrainzLogin) { showListenBrainzLogin = false }
-        BackHandler(enabled = editingPartyServer) { editingPartyServer = false }
         BackHandler(enabled = showHistory) { showHistory = false }
         // Disabled while a detail page is open over the grid: that one's own
         // BackHandler below has to close first, or back would skip past it
@@ -2476,7 +2306,6 @@ private fun BitChordApp(
             Box(Modifier.weight(1f).fillMaxHeight()) {
                 AnimatedContent(
                     targetState = when {
-                        showSpotify && detail == null -> "spotify"
                         showDiscord -> "discord"
                         showHistory -> "history"
                         // `&& detail == null`: a card opened from the grid
@@ -2491,7 +2320,6 @@ private fun BitChordApp(
                         // rendered below the AnimatedContent block.
                         settingsSubScreen != null -> "settings"
                         showAccountScrobbling -> "account_scrobbling"
-                        showListenTogether -> "listen_together"
                         showEqualizer -> "equalizer"
                         // Above Replay, not below it. The top bar's account
                         // button sets `showSettings` from every page including
@@ -2647,19 +2475,6 @@ private fun BitChordApp(
                             listState = replayListState,
                             landingPage = replayLandingPage,
                         )
-                    } else if (key == "spotify") {
-                        SpotifyLibraryScreen(
-                            onOpenPlaylist = { playlist ->
-                                viewModel.openDetail(
-                                    browseId = SPOTIFY_PAGE_PREFIX + playlist.id,
-                                    title = playlist.name,
-                                    subtitle = playlist.owner ?: context.getString(R.string.spotify),
-                                    thumbnailUrl = playlist.imageUrl,
-                                    type = BrowseType.PLAYLIST,
-                                )
-                            },
-                            contentPadding = listPadding,
-                        )
                     } else if (key == "discord") {
                     } else if (key == "account_scrobbling") {
                     } else if (key == "equalizer") {
@@ -2689,10 +2504,6 @@ private fun BitChordApp(
                             },
                             onLyricsSources = { showLyricsSources = true },
                             onTranslationLanguage = { showTranslationLanguage = true },
-                            onListenTogether = {
-                                settingsSubScreen = "listen_together"
-                                showListenTogether = true
-                            },
                             onAppLanguage = { showAppLanguage = true },
                             contentPadding = listPadding,
                         )
@@ -3099,7 +2910,7 @@ private fun BitChordApp(
                             // does nothing; see [onBrowseLongPress].
                             onShelfItemLongPress = onBrowseLongPress,
                             onNewPlaylist = { creatingPlaylist = true },
-                            onImportSpotifyPlaylist = { playlistImportLauncher.launch(arrayOf("*/*")) },
+                            onImportPlaylist = { playlistImportLauncher.launch(arrayOf("*/*")) },
                             onShowAll = { shelf -> libraryShowAll = shelf },
                             replay = {
                                 LibraryReplayEntry(
@@ -3137,7 +2948,7 @@ private fun BitChordApp(
                 // these pages had no status-bar scrim, title or back button, and
                 // Discord (pushed over Account) was covered by the page it opened
                 // from — hence skipped while it is up.
-                when (settingsSubScreen.takeUnless { showDiscord || showSpotify }) {
+                when (settingsSubScreen.takeUnless { showDiscord }) {
                     "equalizer" -> {
                         Surface(
                             modifier = Modifier.fillMaxSize(),
@@ -3191,7 +3002,7 @@ private fun BitChordApp(
                         detail.type == BrowseType.PLAYLIST ||
                         detail.type == BrowseType.ARTIST) &&
                     !isLocalDetail && !showDiscord && !showHistory && !showSettings &&
-                    !showAccountScrobbling && !showListenTogether && !showEqualizer && !showReplay
+                    !showAccountScrobbling && !showEqualizer && !showReplay
                 val chromePageColor = if (isDetailVisible) {
                     detailPalette.background
                 } else {
@@ -3229,12 +3040,10 @@ private fun BitChordApp(
 
                 FrostedTopBar(
                     title = when {
-                        showSpotify && detail == null -> stringResource(R.string.spotify)
                         showDiscord -> "Discord"
                         showHistory -> stringResource(R.string.history)
                         libraryShowAll != null && detail == null -> libraryShowAll?.title.orEmpty()
                         showAccountScrobbling -> stringResource(R.string.account_scrobbling)
-                        showListenTogether -> stringResource(R.string.listen_together)
                         showEqualizer -> stringResource(R.string.equalizer)
                         showSettings -> stringResource(R.string.settings)
                         showReplay -> stringResource(R.string.replay)
@@ -3254,8 +3063,7 @@ private fun BitChordApp(
                     // Search has no large in-list header to hand the title back to —
                     // the field takes that space — so its bar title is always up.
                     scrolled = when {
-                        showSettings || showAccountScrobbling || showListenTogether ||
-                            showEqualizer ||
+                        showSettings || showAccountScrobbling || showEqualizer ||
                             showDiscord || showHistory ||
                             (libraryShowAll != null && detail == null) ||
                             (detail != null && detailActiveShelf != null) ||
@@ -3269,12 +3077,10 @@ private fun BitChordApp(
                     refreshing = currentFeed != null && currentFeed in refreshing,
                     pullFraction = { currentPull?.distanceFraction ?: 0f },
                     onBack = when {
-                        showSpotify && detail == null -> ({ showSpotify = false })
                         showDiscord -> ({ showDiscord = false })
                         showHistory -> ({ showHistory = false })
                         libraryShowAll != null && detail == null -> ({ libraryShowAll = null })
                         showAccountScrobbling -> ({ showAccountScrobbling = false })
-                        showListenTogether -> ({ showListenTogether = false })
                         showEqualizer -> ({ showEqualizer = false })
                         settingsSubScreen != null -> ({ settingsSubScreen = null })
                         showSettings -> ({ showSettings = false })
@@ -3289,7 +3095,7 @@ private fun BitChordApp(
                     accessory = if (
                         selectedTab == TAB_SEARCH && detail == null && selectedMoodGenre == null &&
                         libraryShowAll == null && !showSettings && !showAccountScrobbling &&
-                        !showListenTogether && !showEqualizer && !showDiscord &&
+                        !showEqualizer && !showDiscord &&
                         !showHistory && !showReplay
                     ) {
                         {
@@ -3320,71 +3126,8 @@ private fun BitChordApp(
                         }
                     } else null,
                     actions = {
-                        // This is intentionally scoped to Listen together: the
-                        // round-trip time is meaningful while coordinating a
-                        // party, but would be noise in the rest of the app.
-                        if (showListenTogether) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 8.dp),
-                            ) {
-                                when (val state = partyServerStatus) {
-                                    is ServerConnectionState.CustomFallback -> {
-                                        Icon(
-                                            Icons.Rounded.CloudOff,
-                                            contentDescription = stringResource(R.string.listen_together_top_bar_fallback, stringResource(R.string.listen_together_ping, state.latencyMs)),
-                                            tint = MaterialTheme.colorScheme.error,
-                                            modifier = Modifier.size(14.dp),
-                                        )
-                                        Spacer(Modifier.width(4.dp))
-                                        Text(
-                                            text = stringResource(R.string.listen_together_ping, state.latencyMs),
-                                            style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.error,
-                                            maxLines = 1,
-                                        )
-                                    }
-                                    is ServerConnectionState.CustomOnline -> {
-                                        Text(
-                                            text = stringResource(R.string.listen_together_ping, state.latencyMs),
-                                            style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            maxLines = 1,
-                                        )
-                                    }
-                                    is ServerConnectionState.DefaultOnline -> {
-                                        Text(
-                                            text = stringResource(R.string.listen_together_ping, state.latencyMs),
-                                            style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            maxLines = 1,
-                                        )
-                                    }
-                                    ServerConnectionState.Checking -> {
-                                        Text(
-                                            text = stringResource(R.string.listen_together_server_checking),
-                                            style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 1,
-                                        )
-                                    }
-                                    ServerConnectionState.Offline -> {
-                                        Text(
-                                            text = stringResource(R.string.listen_together_server_offline_dash),
-                                            style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.error,
-                                            maxLines = 1,
-                                        )
-                                    }
-                                }
-                            }
-                        }
                         // Only worth surfacing where there's room for it and it won't
                         // be mistaken for a per-page action — Home, at rest.
-                        if (!showSettings && !showAccountScrobbling && !showListenTogether && !showEqualizer &&
-                            detail == null && selectedTab == TAB_HOME
-                        ) {
-                        }
                         if (!showSettings && !showAccountScrobbling) {
                             // Left of the account photo, and only on Library itself:
                             // a history is a record of what was played, which reads
@@ -3524,7 +3267,6 @@ private fun BitChordApp(
                     viewModel.closeMoodGenre()
                     showSettings = false
                     showAccountScrobbling = false
-                    showListenTogether = false
                     showEqualizer = false
                     showReplay = false
                     settingsSubScreen = null
@@ -3570,8 +3312,6 @@ private fun BitChordApp(
                         } else {
                             playerSheetMotion::open
                         },
-                        controlsLocked = controlsLocked,
-                        onBlockedControl = showHostOnlyNotice,
                         dock = activeDock,
                         pull = playerSheetMotion.takeIf { !reducePlayerMotion },
                         modifier = Modifier.fillMaxWidth(),
@@ -3607,8 +3347,6 @@ private fun BitChordApp(
                             } else {
                                 playerSheetMotion::open
                             },
-                            controlsLocked = controlsLocked,
-                            onBlockedControl = showHostOnlyNotice,
                             dock = activeDock,
                             pull = playerSheetMotion.takeIf { !reducePlayerMotion },
                             modifier = Modifier.fillMaxWidth(),
@@ -4635,13 +4373,6 @@ private fun BitChordApp(
         // At the root for the same two reasons every full-window alert is: it
         // is a haze card that has to sample the backdrop it is *not* inside,
         // and a full-window scrim that has to be full-window.
-        if (editingPartyServer) {
-            PartyServerEditor(
-                hazeState = hazeState,
-                onDismiss = { editingPartyServer = false },
-            )
-        }
-
         deletingSong?.let { song ->
             ConfirmationAlert(
                 hazeState = hazeState,

@@ -17,7 +17,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.music.bitchord.R
 import com.music.bitchord.sharedui.resources.Res
-import com.music.bitchord.sharedui.resources.spotify_logo
 import com.music.bitchord.data.model.ShelfItem
 import com.music.bitchord.data.settings.AppSettings
 import com.music.bitchord.download.Downloads
@@ -64,9 +63,6 @@ fun libraryDeviceItems(downloadedReleases: List<SavedCollection>): List<ShelfIte
         )
     }
 }
-
-/** The Library row that opens the connected Spotify account; handled by the app, not a browse page. */
-const val SPOTIFY_BROWSE_ID = "app:spotify"
 
 /** The Cached songs folder's page id — one of the `local:` device folders. */
 const val CACHE_FOLDER_BROWSE_ID = "local:cache"

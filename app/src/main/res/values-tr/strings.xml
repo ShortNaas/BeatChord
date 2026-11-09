@@ -227,7 +227,6 @@
     <string name="liquid_glass_subtitle">Yüzen gezinme çubuğunda gerçek kırılan cam. Yalnızca Android 12+; daha fazla GPU kullanır.</string>
     <string name="liquid_glass_unavailable">Android 12 veya daha yenisini gerektirir</string>
     <string name="full_screen_cover_art">Tam ekran kapak resmi</string>
-    <string name="animated_cover_art">Hareketli kapak resmi</string>
     <string name="synced_lyrics">Senkronize sözler</string>
     <string name="synced_lyrics_subtitle">Söylenirken oynatıcıdaki kelimeleri aydınlatır</string>
     <string name="lyrics_sources">Söz kaynakları</string>
@@ -254,7 +253,6 @@
     <string name="light">Açık</string>
     <string name="dark">Koyu</string>
     <string name="full_screen_cover_art_subtitle">Kapağı kare bir kılıf yerine oynatıcının kenarlarına kadar uzatır</string>
-    <string name="animated_cover_art_subtitle">Bazı sürümlerin geldiği döngülü videoyu sabit bir kılıf yerine oynatır</string>
     <string name="dont_repeat_songs_subtitle">AutoPlay bu oturumda zaten çalınmış veya önerilmiş bir şarkıyı önermez</string>
     <string name="download_quality_subtitle">Bağlantı ne olursa olsun parça başına %1$s</string>
     <string name="filter_non_music_audio">Müzik olmayan sesleri filtrele</string>
@@ -400,7 +398,6 @@
         <item quantity="one">Günlük kopyalandı · %1$d satır</item>
         <item quantity="other">Günlük kopyalandı · %1$d satır</item>
     </plurals>
-    <string name="integrate_spotify_canvas">Spotify Canvas\'ı kur</string>
     <string name="lastfm_login">Last.fm girişi</string>
     <string name="lastfm_login_description">Scrobbling\'i etkinleştirmek için Last.fm hesabınızla giriş yapın.</string>
     <string name="lastfm_now_playing_subtitle">Last.fm\'i ne dinlediğinle güncelle</string>
@@ -478,13 +475,6 @@
     <string name="upgrade_length_slack_footer">Daha büyük tolerans daha fazla kaynak eşleşmesi kabul eder; daha küçük tolerans daha katıdır. Varsayılan 3 saniyedir.</string>
     <string name="seconds_short">%1$d sn</string>
     <string name="spdc_token">sp_dc belirteci</string>
-    <string name="spotify_canvas_setup">Spotify Canvas kurulumu</string>
-    <string name="spotify_canvas_setup_description">Spotify Canvas\'ı kullanmak için Spotify sp_dc çerezinizi girin.</string>
-    <string name="spotify_canvas_setup_steps">1. Bir tarayıcıda open.spotify.com\'a giriş yapın.\n2. Geliştirici Araçları\'nı, ardından Uygulama ve Çerezler\'i açın.\n3. sp_dc çerezinin değerini kopyalayın.\n4. Aşağıya yapıştırın.</string>
-    <string name="spotify_canvas_auto_hide">Oynatıcı kontrollerini otomatik gizle</string>
-    <string name="spotify_canvas_auto_hide_subtitle">Spotify Canvas oynarken yarım oynatıcıyı 5 saniye sonra daraltır</string>
-    <string name="prioritize_spotify_canvas">Spotify Canvas\'a öncelik ver</string>
-    <string name="prioritize_spotify_canvas_subtitle">Apple Music ve diğer hareketli kapak sağlayıcılarından önce Spotify\'ı dene</string>
     <string name="status">Durum</string>
     <string name="status_dialog_message">Varlık aktifken hesabının gösterdiği şey.</string>
     <string name="status_dnd">Rahatsız etmeyin</string>
@@ -668,107 +658,7 @@
     <string name="switch_profile_hint">Avatarı kullanarak değiştir, sonra bu profili kullan.</string>
     <string name="profile_unavailable">Bu sayfada henüz giriş yapılmış bir profil yok.</string>
 
-    <!-- Listen together -->
-    <string name="listen_together">Birlikte dinle</string>
-    <string name="listen_together_subtitle">Bir kod paylaş, aynı müziği aynı anda dinleyin</string>
-    <string name="listen_together_in_party">Partide · %1$s</string>
-    <string name="listen_together_sign_in_footer">Birlikte dinlemek için hesap gerekir; böylece partideki herkes kimlerin olduğunu görür.</string>
-    <string name="listen_together_server">Parti sunucusu</string>
-    <string name="listen_together_server_online">Çevrimiçi · %1$d ms</string>
-    <string name="listen_together_server_online_fallback">Çevrimiçi (varsayılan yedek) · %1$d ms</string>
-    <string name="listen_together_server_offline">Şu anda erişilemiyor</string>
-    <string name="listen_together_server_checking">Kontrol ediliyor…</string>
-    <string name="listen_together_server_unknown">Kontrol etmek için dokun</string>
-    <string name="listen_together_custom_server">Kendi sunucunu kullan</string>
-    <string name="listen_together_custom_server_footer">Yerleşik sunucuyu kullanmak için boş bırak. Kendi kopyanı çalıştırıyorsan partideki herkesin aynı adresi göstermesi gerekir.</string>
-    <string name="listen_together_using_default">Yerleşik sunucu kullanılıyor</string>
-    <string name="listen_together_remove_server">Sunucuyu kaldır</string>
-    <string name="listen_together_switched_to_default">Varsayılan sunucuya geçildi</string>
-    <string name="listen_together_custom_server_saved">Özel sunucu kaydedildi</string>
-    <string name="listen_together_create">Parti oluştur</string>
-    <string name="listen_together_create_subtitle">Arkadaşlarınla paylaşacak bir kod al</string>
-    <string name="listen_together_create_footer">Altı karakterlik bir kod alırsın. Koda sahip olan herkes katılabilir; seninle birlikte en fazla %1$d cihaz.</string>
-    <string name="listen_together_profile">Parti profilin</string>
-    <string name="listen_together_nickname_hint">Bu parti için takma ad</string>
-    <string name="listen_together_party_size">Parti boyutu</string>
-    <string name="listen_together_party_size_subtitle">2–10 dinleyici seç</string>
-    <string name="listen_together_host_controls">Kapasiteyi değiştirmek veya dinleyici çıkarmak yalnızca sende</string>
-    <string name="listen_together_remove">Çıkar</string>
-    <string name="listen_together_activity">Son etkinlikler</string>
-    <string name="listen_together_activity_footer">Yalnızca bu oturum · en yeni önce · en fazla 100 işlem</string>
-    <string name="listen_together_activity_played">Çalmayı başlattı</string>
-    <string name="listen_together_activity_paused">Çalmayı duraklattı</string>
-    <string name="listen_together_activity_seeked">Parçada ileri/geri gitti</string>
-    <string name="listen_together_activity_skipped">İleri atladı</string>
-    <string name="listen_together_activity_went_back">Geri döndü</string>
-    <string name="listen_together_activity_added">Sıraya ekledi</string>
-    <string name="listen_together_activity_removed_track">Sıradan bir parça çıkardı</string>
-    <string name="listen_together_activity_cleared">Sıradaki parçaları temizledi</string>
-    <string name="listen_together_activity_reordered">Sırayı yeniden düzenledi</string>
-    <string name="listen_together_activity_removed_member">Bir dinleyiciyi çıkardı</string>
-    <string name="listen_together_activity_changed_size">Parti boyutunu değiştirdi</string>
-    <string name="listen_together_activity_updated">Partiyi güncelledi</string>
-    <string name="listen_together_join">Partiye katıl</string>
-    <string name="listen_together_join_action">Katıl</string>
-    <string name="listen_together_code_hint">Altı harf veya rakam</string>
-    <string name="listen_together_code">Parti kodu</string>
-    <string name="listen_together_code_footer">Yüksek sesle oku ya da gönder. O ve I harfleri kullanılmaz, yani bir “o” her zaman sıfırdır.</string>
     <string name="copy_code">Kodu kopyala</string>
-    <string name="listen_together_share_text">BeatChord’da benimle dinle — parti kodu %1$s</string>
-    <string name="listen_together_now_playing">Şu an çalıyor</string>
-    <string name="listen_together_nothing_playing">Henüz bir şey çalmıyor</string>
-    <string name="listen_together_listening">Dinliyor · %1$d / %2$d</string>
-    <string name="listen_together_members_footer">Bir parti %1$d cihaz alır. İçindeki herkes müziği kontrol edebilir.</string>
-    <string name="listen_together_you">Sen</string>
-    <string name="listen_together_host">Kurucu</string>
-    <string name="listen_together_away">Uzakta — yeri tutuluyor</string>
-    <string name="listen_together_landing_title">Parti başlat</string>
-    <string name="listen_together_landing_subtitle">Çünkü müzik birlikte daha güzel. Arkadaşlarını nerede olurlarsa olsunlar birlikte dinlemeye ve gerçek zamanlı şarkı eklemeye davet et.</string>
-    <string name="listen_together_create_action">Parti oluştur</string>
-    <string name="listen_together_join_existing">Mevcut partiye katıl</string>
-    <string name="listen_together_create_sheet_subtitle">Nasıl görüneceğini ve kaç kişinin katılabileceğini seç.</string>
-    <string name="listen_together_creating">Oluşturuluyor…</string>
-    <string name="listen_together_joining">Katılınıyor…</string>
-    <string name="listen_together_full">Bu parti dolu</string>
-    <string name="listen_together_join_question">%1$s adlı kişinin partisine katılınsın mı?</string>
-    <string name="listen_together_join_question_unnamed">Bu partiye katılınsın mı?</string>
-    <string name="listen_together_not_now">Şimdi değil</string>
-    <string name="listen_together_preview_footer">Partidekiler adını ve profil fotoğrafını görecek.</string>
-    <string name="listen_together_invite_title">Arkadaşlarını partine davet et</string>
-    <string name="listen_together_share_link">Bağlantıyı paylaş</string>
-    <string name="listen_together_scan_qr">QR kodu tara</string>
-    <string name="listen_together_scan_qr_subtitle">Arkadaşların katılmak için bunu tarasın.</string>
-    <string name="listen_together_invite">Davet et</string>
-    <string name="listen_together_host_only">Müziği yalnızca ben kontrol ederim</string>
-    <string name="listen_together_host_only_subtitle">Diğerleri birlikte dinler ve kendi cihazlarında duraklatabilir</string>
-    <string name="listen_together_host_only_notice">Müziği yalnızca kurucu kontrol edebilir</string>
-    <string name="listen_together_leave">Partiden ayrıl</string>
-    <string name="listen_together_leave_subtitle">Diğerleri dinlemeye devam eder</string>
-    <string name="listen_together_reconnecting">Yeniden bağlanılıyor…</string>
-    <string name="listen_together_syncing_clock">Saat ölçülüyor…</string>
-    <string name="listen_together_in_sync">Eşzamanlı · %1$d ms gidiş dönüş</string>
-    <string name="listen_together_custom_server_dialog_title">Özel sunucudaki partiye katılınsın mı?</string>
-    <string name="listen_together_custom_server_dialog_message">Bu parti harici bir sunucuda barındırılıyor:\n\n%1$s\n\nParti sunucunu değiştirip %2$s partisine katılmak istiyor musun?</string>
-    <string name="listen_together_custom_server_switch_and_join">Değiştir ve katıl</string>
-    <string name="listen_together_official_server_dialog_title">Resmi sunucuya geçilsin mi?</string>
-    <string name="listen_together_official_server_dialog_message">Bu parti resmi BeatChord sunucusunda barındırılıyor.\n\nResmi sunucuya geri dönüp %1$s partisine katılmak istiyor musun?</string>
-    <string name="listen_together_switch_failed_stayed_in_party">Partiye katılınamadı: %1$s. %2$s partisinde kalmaya devam ediyorsun.</string>
-    <string name="listen_together_switch_failed">Partiye katılınamadı: %1$s.</string>
-    <string name="listen_together_ping">%1$d ms</string>
-    <string name="listen_together_server_offline_dash">—</string>
-    <string name="listen_together_invalid_server_url">Geçersiz sunucu URL\'si. Lütfen geçerli bir adres gir (ör. https://your-server.com)</string>
-    <string name="listen_together_err_whitespace">Sunucu URL\'leri boşluk içeremez</string>
-    <string name="listen_together_err_invalid_path">Sunucu URL\'si geçersiz bir yol içeriyor</string>
-    <string name="listen_together_err_no_path">Sunucu URL\'si yol içermemeli</string>
-    <string name="listen_together_err_no_query">Sunucu URL\'si sorgu parametresi içermemeli</string>
-    <string name="listen_together_err_no_fragment">Sunucu URL\'si parça (fragment) içermemeli</string>
-    <string name="listen_together_err_invalid_port">Sunucu portu 1 ile 65535 arasında olmalı</string>
-    <string name="listen_together_custom_server_connected">Özel sunucuya bağlanıldı</string>
-    <string name="listen_together_custom_server_unreachable_fallback">Özel sunucuya ulaşılamıyor. Varsayılan yedek sunucu kullanılıyor.</string>
-    <string name="listen_together_status_custom_online">Özel sunucuya bağlı · %1$d ms</string>
-    <string name="listen_together_status_custom_fallback">Özel sunucuya ulaşılamıyor · Varsayılan yedek kullanılıyor (%1$d ms)</string>
-    <string name="listen_together_status_all_offline">Hem özel sunucu hem varsayılan sunucu çevrimdışı</string>
-    <string name="listen_together_top_bar_fallback">Yedek · %1$s</string>
 
     <string name="vietnamese">Vietnamca</string>
 
@@ -864,7 +754,6 @@
 
     <string name="shelf_new_releases">Yeni çıkanlar</string>
 
-    <string name="shelf_party">Parti</string>
 
     <string name="shelf_quick_picks">Hızlı seçimler</string>
 
@@ -1143,7 +1032,6 @@
         <item quantity="one">%1$d çalma listesine eklendi</item>
         <item quantity="other">%1$d çalma listesine eklendi</item>
     </plurals>
-    <string name="party_queue_full">Sıra dolu (partide en fazla %d şarkı)</string>
 
     <string name="paxsenix_api_key">PaxSenix API anahtarı</string>
 
@@ -1176,36 +1064,13 @@
     <string name="song_cache_unlimited_subtitle">Sınır yok. Önbellekteki ses, depolama alanı dolana kadar büyüyebilir.</string>
     <string name="clear_song_cache_title">Şarkı önbelleği temizlensin mi?</string>
     <string name="clear_song_cache_warning">Önbellekteki tüm şarkılar silinecek ve önbellekteki şarkılar klasörü boşaltılacak. Bir sonraki çalışta yeniden akışla oynatılacaklar.</string>
-    <string name="import_spotify">Spotify’den içe aktar</string>
-    <string name="import_spotify_subtitle">Bir çalma listesi bağlantısından</string>
     <string name="local_playlist_subtitle">%1$d şarkı · Bu cihazda</string>
     <string name="lossless_output_permission_denied">Yakındaki cihazlar izni kapalı</string>
     <string name="lossless_output_permission_denied_detail">Ayarlar’ı açmak ve Yakındaki cihazlara izin vermek için dokunun — olmadan Bluetooth kodunuzu okuyamayız</string>
     <string name="recent_album">Son albüm</string>
     <string name="recent_ep">Son EP</string>
     <string name="recent_single">Son single</string>
-    <string name="spotify">Spotify</string>
-    <string name="spotify_connect_subtitle">Çalma listelerini yüklemek için oturum açın. Oynatma YouTube Music kullanır.</string>
-    <string name="spotify_disconnect">Bağlantıyı kes</string>
-    <string name="spotify_empty_playlists">Bu hesapta çalma listesi yok</string>
-    <string name="spotify_empty_tracks">Bu çalma listesinde şarkı yok</string>
-    <string name="spotify_import_button">İçe aktar</string>
-    <string name="spotify_import_description">Herkese açık bir çalma listesi bağlantısı yapıştırın. Şarkılar YouTube Music’de eşleştirilir.</string>
-    <string name="spotify_import_description_local">Herkese açık bir çalma listesi bağlantısı yapıştırın. Şarkılar YouTube Music’de eşleştirilir ve bu cihaza kaydedilir.</string>
-    <string name="spotify_import_done">‘%1$s’ içe aktarıldı</string>
     <string name="spotify_import_empty_playlist">Bu çalma listesinde şarkı yok</string>
-    <string name="spotify_import_failed">Çalma listesi içe aktarılamadı: %1$s</string>
-    <string name="spotify_import_fetching">Spotify çalma listesi okunuyor…</string>
-    <string name="spotify_import_hint">open.spotify.com/playlist/…</string>
-    <string name="spotify_import_invalid">Bu bir Spotify çalma listesi bağlantısı değil.</string>
-    <string name="spotify_import_local_fallback">YouTube Music’de oluşturulamadı, bu yüzden ‘%1$s’ bu cihaza kaydedildi.</string>
-    <string name="spotify_import_matching">Şarkılar eşleştiriliyor %1$d / %2$d</string>
-    <string name="spotify_import_none">Bu şarkılardan hiçbiri YouTube Music’de bulunamadı.</string>
-    <string name="spotify_import_title">Spotify çalma listesini içe aktar</string>
-    <string name="spotify_import_unmatched">%1$d şarkı YouTube Music’de bulunamadı</string>
-    <string name="spotify_library_subtitle">Spotify çalma listeleriniz</string>
-    <string name="spotify_sign_in">Spotify ile oturum aç</string>
-    <string name="spotify_track_unavailable">O şarkı YouTube Music’de bulunamadı</string>
     <string name="shelf_recently_added">Recently Added</string>
     <string name="shelf_artists">Artists</string>
     <string name="shelf_albums">Albums</string>

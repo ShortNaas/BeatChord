@@ -56,7 +56,7 @@ class PlaybackPosition {
      * waiting on its audio. The lyrics carry the position forward on the frame clock between
      * reports, and through that wait they ran ahead of the song and then sat frozen until it
      * caught up. The phone never sets it — Media3 already reports a buffering player as not
-     * playing — the desktop engine does, because its "playing" also drives Listen Together.
+     * playing — the desktop engine does, because its "playing" is what the media keys follow.
      */
     var advancing by mutableStateOf(true)
 

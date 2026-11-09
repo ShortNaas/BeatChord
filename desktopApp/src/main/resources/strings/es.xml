@@ -208,7 +208,6 @@
     <string name="liquid_glass_subtitle">Cristal refractante real en la barra de navegación flotante. Solo Android 12+; usa más GPU.</string>
     <string name="liquid_glass_unavailable">Requiere Android 12 o posterior</string>
     <string name="full_screen_cover_art">Portada a pantalla completa</string>
-    <string name="animated_cover_art">Portada animada</string>
     <string name="synced_lyrics">Letras sincronizadas</string>
     <string name="synced_lyrics_subtitle">Ilumina las palabras mientras se cantan</string>
     <string name="lyrics_sources">Fuentes de letras</string>
@@ -233,7 +232,6 @@
     <string name="light">Claro</string>
     <string name="dark">Oscuro</string>
     <string name="full_screen_cover_art_subtitle">Lleva la portada a los bordes del reproductor en lugar de mostrarla cuadrada</string>
-    <string name="animated_cover_art_subtitle">Reproduce el video en bucle que incluyen algunos lanzamientos</string>
     <string name="dont_repeat_songs_subtitle">La reproducción automática no sugerirá una canción ya reproducida o sugerida en esta sesión</string>
     <string name="download_quality_subtitle">%1$s por pista, sin importar la conexión</string>
     <string name="filter_non_music_audio">Filtrar audios que no son música</string>
@@ -402,7 +400,6 @@
         <item quantity="one">Registro copiado · %1$d línea</item>
         <item quantity="other">Registro copiado · %1$d líneas</item>
     </plurals>
-    <string name="integrate_spotify_canvas">Configurar Spotify Canvas</string>
     <string name="lastfm_login">Inicio de sesión en Last.fm</string>
     <string name="lastfm_login_description">Inicia sesión con tu cuenta de Last.fm para activar el scrobbling.</string>
     <string name="lastfm_now_playing_subtitle">Actualiza Last.fm con lo que estás escuchando</string>
@@ -474,9 +471,6 @@
     <string name="sources_quality_capped">Esta conexión está configurada por debajo de calidad Alta, así que el audio se transcodifica para respetar ese límite. Las descargas no cambian.</string>
     <string name="sources_subtitle">Origen del audio y orden de prioridad</string>
     <string name="spdc_token">Token sp_dc</string>
-    <string name="spotify_canvas_setup">Configuración de Spotify Canvas</string>
-    <string name="spotify_canvas_setup_description">Para usar Spotify Canvas, proporciona tu cookie sp_dc de Spotify.</string>
-    <string name="spotify_canvas_setup_steps">1. Inicia sesión en open.spotify.com desde un navegador.\n2. Abre las herramientas de desarrollo, entra en Aplicación y luego en Cookies.\n3. Copia el valor de la cookie sp_dc.\n4. Pégalo abajo.</string>
     <string name="status">Estado</string>
     <string name="status_dialog_message">Lo que muestra tu cuenta mientras la presencia está activa.</string>
     <string name="status_dnd">No molestar</string>
@@ -675,44 +669,6 @@
     <string name="switch_profile_hint">Cambia con el avatar y luego usa este perfil.</string>
     <string name="profile_unavailable">Aún no hay un perfil con sesión iniciada en esta página.</string>
 
-    <!-- Listen together -->
-    <string name="listen_together">Escuchar juntos</string>
-    <string name="listen_together_subtitle">Comparte un código para escuchar la misma música al mismo tiempo</string>
-    <string name="listen_together_in_party">En una fiesta · %1$s</string>
-    <string name="listen_together_sign_in_footer">Escuchar juntos requiere una cuenta, para que todos en la fiesta vean quién más está.</string>
-    <string name="listen_together_server">Servidor de la fiesta</string>
-    <string name="listen_together_server_online">En línea · %1$d ms</string>
-    <string name="listen_together_server_offline">Ahora mismo no responde</string>
-    <string name="listen_together_server_checking">Comprobando…</string>
-    <string name="listen_together_server_unknown">Toca para comprobar</string>
-    <string name="listen_together_custom_server">Usar tu propio servidor</string>
-    <string name="listen_together_custom_server_footer">Déjalo vacío para usar el servidor integrado. Si tienes tu propia copia, todos en la fiesta deben apuntar al mismo.</string>
-    <string name="listen_together_using_builtin">Usando el servidor integrado</string>
-    <string name="listen_together_create">Crear una fiesta</string>
-    <string name="listen_together_create_subtitle">Consigue un código para compartir con tus amigos</string>
-    <string name="listen_together_create_footer">Recibes un código de seis caracteres. Cualquiera que lo tenga puede unirse, hasta cinco dispositivos incluido el tuyo.</string>
-    <string name="listen_together_join">Unirse a una fiesta</string>
-    <string name="listen_together_join_action">Unirse</string>
-    <string name="listen_together_code_hint">Seis letras o números</string>
-    <string name="listen_together_code">Código de la fiesta</string>
-    <string name="listen_together_code_footer">Dilo en voz alta o envíalo. La O y la I no se usan, así que una «o» siempre es un cero.</string>
     <string name="copy_code">Copiar código</string>
-    <string name="listen_together_share_text">Escucha conmigo en BeatChord — código de fiesta %1$s</string>
-    <string name="listen_together_now_playing">Reproduciendo</string>
-    <string name="listen_together_nothing_playing">Todavía no suena nada</string>
-    <string name="listen_together_listening">Escuchando · %1$d de %2$d</string>
-    <string name="listen_together_members_footer">Una fiesta admite %1$d dispositivos. Cualquiera que esté en ella puede controlar la música.</string>
-    <string name="listen_together_you">Tú</string>
-    <string name="listen_together_host">Anfitrión</string>
-    <string name="listen_together_away">Ausente — su plaza está reservada</string>
-    <string name="listen_together_leave">Salir de la fiesta</string>
-    <string name="listen_together_leave_subtitle">Los demás siguen escuchando</string>
-    <string name="listen_together_reconnecting">Reconectando…</string>
-    <string name="listen_together_syncing_clock">Midiendo el reloj…</string>
-    <string name="listen_together_in_sync">Sincronizado · %1$d ms de ida y vuelta</string>
-    <string name="listen_together_jam">Jam de %1$s</string>
-    <string name="listen_together_jam_unnamed">Escuchando juntos</string>
-    <string name="listen_together_open">Escuchar juntos</string>
-    <string name="listen_together_open_count">Escuchando juntos · %1$d</string>
     <string name="miscellaneous_footer">Al activarlo, cerrar la app desde recientes también detiene la música.</string>
 </resources>

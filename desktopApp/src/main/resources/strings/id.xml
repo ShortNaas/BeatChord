@@ -192,7 +192,6 @@
     <string name="reduce_dynamic_blur">Kurangi blur dinamis</string>
     <string name="reduce_dynamic_blur_subtitle">Mengganti kaca buram dengan warna solid di seluruh aplikasi</string>
     <string name="full_screen_cover_art">Sampul layar penuh</string>
-    <string name="animated_cover_art">Sampul animasi</string>
     <string name="synced_lyrics">Lirik tersinkron</string>
     <string name="synced_lyrics_subtitle">Menyorot kata-kata di pemutar saat dinyanyikan</string>
     <string name="lyrics_sources">Sumber lirik</string>
@@ -217,7 +216,6 @@
     <string name="light">Terang</string>
     <string name="dark">Gelap</string>
     <string name="full_screen_cover_art_subtitle">Membuat sampul memenuhi tepi pemutar alih-alih berbentuk persegi</string>
-    <string name="animated_cover_art_subtitle">Memutar video berulang yang disertakan beberapa rilisan alih-alih sampul diam</string>
     <string name="dont_repeat_songs_subtitle">Putar Otomatis tidak akan menyarankan lagu yang sudah diputar atau disarankan dalam sesi ini</string>
     <string name="download_quality_subtitle">%1$s per trek, apa pun koneksinya</string>
     <string name="filter_non_music_audio">Filter audio non-musik</string>
@@ -377,7 +375,6 @@
     <plurals name="log_copied_line_count">
         <item quantity="other">Log disalin · %1$d baris</item>
     </plurals>
-    <string name="integrate_spotify_canvas">Siapkan Spotify Canvas</string>
     <string name="lastfm_login">Login Last.fm</string>
     <string name="lastfm_login_description">Masuk dengan akun Last.fm Anda untuk mengaktifkan scrobbling.</string>
     <string name="lastfm_now_playing_subtitle">Perbarui Last.fm dengan apa yang sedang Anda dengarkan</string>
@@ -449,9 +446,6 @@
     <string name="sources_quality_capped">Koneksi ini diatur di bawah Kualitas tinggi, sehingga stream ditranskode agar sesuai dengan batas tersebut. Unduhan tidak terpengaruh.</string>
     <string name="sources_subtitle">Dari mana audio berasal dan urutan yang digunakan</string>
     <string name="spdc_token">Token sp_dc</string>
-    <string name="spotify_canvas_setup">Penyiapan Spotify Canvas</string>
-    <string name="spotify_canvas_setup_description">Untuk menggunakan Spotify Canvas, berikan cookie sp_dc Spotify Anda.</string>
-    <string name="spotify_canvas_setup_steps">1. Masuk di open.spotify.com melalui browser.\n2. Buka Developer Tools, lalu Application dan Cookies.\n3. Salin nilai cookie sp_dc.\n4. Tempel di bawah ini.</string>
     <string name="status">Status</string>
     <string name="status_dialog_message">Apa yang ditampilkan akun Anda saat presence aktif.</string>
     <string name="status_dnd">Jangan ganggu</string>
@@ -628,44 +622,6 @@
         <item>Hampir menemukan kata-katanya</item>
     </string-array>
 
-    <!-- Listen together -->
-    <string name="listen_together">Dengar bersama</string>
-    <string name="listen_together_subtitle">Bagikan kode dan putar musik yang sama, serempak</string>
-    <string name="listen_together_in_party">Dalam pesta · %1$s</string>
-    <string name="listen_together_sign_in_footer">Mendengar bersama butuh akun, supaya semua orang di pesta bisa lihat siapa saja yang ikut.</string>
-    <string name="listen_together_server">Server pesta</string>
-    <string name="listen_together_server_online">Online · %1$d ms</string>
-    <string name="listen_together_server_offline">Sedang tidak bisa dihubungi</string>
-    <string name="listen_together_server_checking">Memeriksa…</string>
-    <string name="listen_together_server_unknown">Ketuk untuk memeriksa</string>
-    <string name="listen_together_custom_server">Pakai server sendiri</string>
-    <string name="listen_together_custom_server_footer">Biarkan kosong untuk memakai server bawaan. Kalau kamu menjalankan salinan sendiri, semua orang di pesta harus diarahkan ke server yang sama.</string>
-    <string name="listen_together_using_builtin">Memakai server bawaan</string>
-    <string name="listen_together_create">Buat pesta</string>
-    <string name="listen_together_create_subtitle">Dapatkan kode untuk dibagikan ke teman</string>
-    <string name="listen_together_create_footer">Kamu dapat kode enam karakter. Siapa pun yang punya kodenya bisa ikut, sampai lima perangkat termasuk milikmu.</string>
-    <string name="listen_together_join">Ikut pesta</string>
-    <string name="listen_together_join_action">Ikut</string>
-    <string name="listen_together_code_hint">Enam huruf atau angka</string>
-    <string name="listen_together_code">Kode pesta</string>
-    <string name="listen_together_code_footer">Bacakan atau kirimkan. Huruf O dan I tidak dipakai, jadi “o” selalu berarti nol.</string>
     <string name="copy_code">Salin kode</string>
-    <string name="listen_together_share_text">Dengarkan bareng aku di BeatChord — kode pesta %1$s</string>
-    <string name="listen_together_now_playing">Sedang diputar</string>
-    <string name="listen_together_nothing_playing">Belum ada yang diputar</string>
-    <string name="listen_together_listening">Mendengarkan · %1$d dari %2$d</string>
-    <string name="listen_together_members_footer">Satu pesta menampung %1$d perangkat. Siapa pun di dalamnya bisa mengatur musik.</string>
-    <string name="listen_together_you">Kamu</string>
-    <string name="listen_together_host">Tuan rumah</string>
-    <string name="listen_together_away">Sedang menjauh — tempatnya ditahan</string>
-    <string name="listen_together_leave">Keluar dari pesta</string>
-    <string name="listen_together_leave_subtitle">Yang lain tetap mendengarkan</string>
-    <string name="listen_together_reconnecting">Menyambung ulang…</string>
-    <string name="listen_together_syncing_clock">Mengukur jam…</string>
-    <string name="listen_together_in_sync">Sinkron · %1$d ms bolak-balik</string>
-    <string name="listen_together_jam">Sesi %1$s</string>
-    <string name="listen_together_jam_unnamed">Mendengar bersama</string>
-    <string name="listen_together_open">Dengar bersama</string>
-    <string name="listen_together_open_count">Mendengar bersama · %1$d</string>
     <string name="miscellaneous_footer">Jika diaktifkan, menutup aplikasi dari layar aplikasi terbaru juga akan menghentikan pemutaran musik.</string>
 </resources>

@@ -45,7 +45,7 @@
 -keep @kotlinx.serialization.Serializable class com.my.kizzy.** { *; }
 
 # ---- WebView bridges ------------------------------------------------------------
-# PoToken minting and the Spotify token page call back into these from JavaScript.
+# PoToken minting calls back into these from JavaScript.
 -keepclassmembers class * {
     @android.webkit.JavascriptInterface <methods>;
 }

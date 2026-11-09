@@ -198,7 +198,6 @@
     <string name="reduce_dynamic_blur">動的なぼかしを減らす</string>
     <string name="reduce_dynamic_blur_subtitle">アプリ全体ですりガラス効果を単色の塗りつぶしに置き換えます</string>
     <string name="full_screen_cover_art">全画面カバーアート</string>
-    <string name="animated_cover_art">アニメーションカバーアート</string>
     <string name="synced_lyrics">同期歌詞</string>
     <string name="synced_lyrics_subtitle">歌われている歌詞をプレイヤー上でハイライト表示します</string>
     <string name="lyrics_sources">歌詞のソース</string>
@@ -225,7 +224,6 @@
     <string name="light">ライト</string>
     <string name="dark">ダーク</string>
     <string name="full_screen_cover_art_subtitle">正方形のジャケットの代わりにカバーをプレイヤーの端まで広げます</string>
-    <string name="animated_cover_art_subtitle">静止画のジャケットの代わりに一部のリリースが持つループ動画を再生します</string>
     <string name="dont_repeat_songs_subtitle">オートプレイは、このセッションで既に再生または提案された曲を再度提案しません</string>
     <string name="download_quality_subtitle">接続にかかわらず、1トラックあたり%1$s</string>
     <string name="filter_non_music_audio">音楽以外の音声を除外</string>
@@ -360,7 +358,6 @@
     <plurals name="log_copied_line_count">
         <item quantity="other">ログをコピーしました · %1$d行</item>
     </plurals>
-    <string name="integrate_spotify_canvas">Spotify Canvasを設定</string>
     <string name="lastfm_login">Last.fmログイン</string>
     <string name="lastfm_login_description">Last.fmアカウントでログインするとスクロブリングが有効になります。</string>
     <string name="lastfm_now_playing_subtitle">今聴いているものをLast.fmに反映します</string>
@@ -436,13 +433,6 @@
     <string name="upgrade_length_slack_footer">許容差を大きくするとソースの一致が増え、小さくすると厳しくなります。既定値は3秒です。</string>
     <string name="seconds_short">%1$d秒</string>
     <string name="spdc_token">sp_dcトークン</string>
-    <string name="spotify_canvas_setup">Spotify Canvasの設定</string>
-    <string name="spotify_canvas_setup_description">Spotify Canvasを使うには、Spotifyのsp_dc cookieを入力してください。</string>
-    <string name="spotify_canvas_setup_steps">1. ブラウザでopen.spotify.comにログインします。\n2. デベロッパーツールを開き、[Application]と[Cookies]を選択します。\n3. sp_dc cookieの値をコピーします。\n4. 下に貼り付けます。</string>
-    <string name="spotify_canvas_auto_hide">操作ボタンを自動で隠す</string>
-    <string name="spotify_canvas_auto_hide_subtitle">Spotify Canvasの再生中、5秒後にハーフプレーヤーを折りたたみます</string>
-    <string name="prioritize_spotify_canvas">Spotify Canvasを優先</string>
-    <string name="prioritize_spotify_canvas_subtitle">Apple Musicなどのアニメーションカバーより先にSpotifyを試します</string>
     <string name="status">ステータス</string>
     <string name="status_dialog_message">プレゼンスが有効な間、アカウントに表示される内容です。</string>
     <string name="status_dnd">取り込み中</string>
@@ -602,107 +592,7 @@
     <string name="this_year">今年</string>
     <string name="all_time">すべての期間</string>
 
-    <!-- Listen together -->
-    <string name="listen_together">一緒に聴く</string>
-    <string name="listen_together_subtitle">コードを共有して、同じ音楽を同時に再生</string>
-    <string name="listen_together_in_party">パーティー中 · %1$s</string>
-    <string name="listen_together_sign_in_footer">一緒に聴くにはアカウントが必要です。パーティーの全員が、ほかに誰がいるかを見られるようにするためです。</string>
-    <string name="listen_together_server">パーティーサーバー</string>
-    <string name="listen_together_server_online">オンライン · %1$d ms</string>
-    <string name="listen_together_server_online_fallback">オンライン（既定のフォールバック） · %1$d ms</string>
-    <string name="listen_together_server_offline">今は接続できません</string>
-    <string name="listen_together_server_checking">確認中…</string>
-    <string name="listen_together_server_unknown">タップして確認</string>
-    <string name="listen_together_custom_server">自分のサーバーを使う</string>
-    <string name="listen_together_custom_server_footer">空のままにすると内蔵サーバーを使います。自分でコピーを動かしている場合は、パーティーの全員が同じサーバーを指している必要があります。</string>
-    <string name="listen_together_using_default">内蔵サーバーを使用中</string>
-    <string name="listen_together_remove_server">サーバーを削除</string>
-    <string name="listen_together_switched_to_default">既定のサーバーに切り替えました</string>
-    <string name="listen_together_custom_server_saved">カスタムサーバーを保存しました</string>
-    <string name="listen_together_create">パーティーを作る</string>
-    <string name="listen_together_create_subtitle">友だちに共有するコードを取得</string>
-    <string name="listen_together_create_footer">6文字のコードが発行されます。コードを知っている人は誰でも参加でき、自分を含めて%1$d台までです。</string>
-    <string name="listen_together_profile">パーティーでのプロフィール</string>
-    <string name="listen_together_nickname_hint">このパーティーでのニックネーム</string>
-    <string name="listen_together_party_size">パーティーの人数</string>
-    <string name="listen_together_party_size_subtitle">2〜10人から選択</string>
-    <string name="listen_together_host_controls">人数の変更やリスナーの削除はあなただけが行えます</string>
-    <string name="listen_together_remove">削除</string>
-    <string name="listen_together_activity">最近のアクティビティ</string>
-    <string name="listen_together_activity_footer">このセッションのみ · 新しい順 · 最大100件</string>
-    <string name="listen_together_activity_played">再生を開始</string>
-    <string name="listen_together_activity_paused">再生を一時停止</string>
-    <string name="listen_together_activity_seeked">再生位置を移動</string>
-    <string name="listen_together_activity_skipped">次へスキップ</string>
-    <string name="listen_together_activity_went_back">前に戻る</string>
-    <string name="listen_together_activity_added">キューに追加</string>
-    <string name="listen_together_activity_removed_track">キューから曲を削除</string>
-    <string name="listen_together_activity_cleared">次の曲をクリア</string>
-    <string name="listen_together_activity_reordered">キューを並べ替え</string>
-    <string name="listen_together_activity_removed_member">リスナーを削除</string>
-    <string name="listen_together_activity_changed_size">パーティーの人数を変更</string>
-    <string name="listen_together_activity_updated">パーティーを更新</string>
-    <string name="listen_together_join">パーティーに参加</string>
-    <string name="listen_together_join_action">参加</string>
-    <string name="listen_together_code_hint">英字か数字6文字</string>
-    <string name="listen_together_code">パーティーコード</string>
-    <string name="listen_together_code_footer">読み上げるか送ってください。O と I は使われないので、「オー」は必ずゼロです。</string>
     <string name="copy_code">コードをコピー</string>
-    <string name="listen_together_share_text">BeatChord で一緒に聴こう — パーティーコード %1$s</string>
-    <string name="listen_together_now_playing">再生中</string>
-    <string name="listen_together_nothing_playing">まだ何も再生していません</string>
-    <string name="listen_together_listening">参加中 · %1$d / %2$d</string>
-    <string name="listen_together_members_footer">パーティーには %1$d 台まで入れます。参加者は誰でも音楽を操作できます。</string>
-    <string name="listen_together_you">あなた</string>
-    <string name="listen_together_host">ホスト</string>
-    <string name="listen_together_away">離席中 — 枠は確保されています</string>
-    <string name="listen_together_landing_title">パーティーを始める</string>
-    <string name="listen_together_landing_subtitle">音楽はみんなで聴くともっと楽しい。友だちを招待して、どこにいてもリアルタイムで一緒に聴いたり曲を追加したりできます。</string>
-    <string name="listen_together_create_action">パーティーを作成</string>
-    <string name="listen_together_join_existing">既存のパーティーに参加</string>
-    <string name="listen_together_create_sheet_subtitle">表示のされ方と参加できる人数を選んでください。</string>
-    <string name="listen_together_creating">作成中…</string>
-    <string name="listen_together_joining">参加中…</string>
-    <string name="listen_together_full">このパーティーは満員です</string>
-    <string name="listen_together_join_question">%1$sさんのパーティーに参加しますか？</string>
-    <string name="listen_together_join_question_unnamed">このパーティーに参加しますか？</string>
-    <string name="listen_together_not_now">今はしない</string>
-    <string name="listen_together_preview_footer">パーティーの参加者にあなたの名前とプロフィール写真が表示されます。</string>
-    <string name="listen_together_invite_title">友だちをパーティーに招待</string>
-    <string name="listen_together_share_link">リンクを共有</string>
-    <string name="listen_together_scan_qr">QRコードをスキャン</string>
-    <string name="listen_together_scan_qr_subtitle">友だちにスキャンしてもらうと参加できます。</string>
-    <string name="listen_together_invite">招待</string>
-    <string name="listen_together_host_only">音楽の操作は自分だけ</string>
-    <string name="listen_together_host_only_subtitle">ほかの人は一緒に聴けて、自分のデバイスで一時停止できます</string>
-    <string name="listen_together_host_only_notice">音楽を操作できるのはホストだけです</string>
-    <string name="listen_together_leave">パーティーを出る</string>
-    <string name="listen_together_leave_subtitle">ほかの人はそのまま聴き続けます</string>
-    <string name="listen_together_reconnecting">再接続中…</string>
-    <string name="listen_together_syncing_clock">時刻を計測中…</string>
-    <string name="listen_together_in_sync">同期中 · 往復 %1$d ms</string>
-    <string name="listen_together_custom_server_dialog_title">カスタムサーバーのパーティーに参加しますか？</string>
-    <string name="listen_together_custom_server_dialog_message">このパーティーは外部サーバーでホストされています:\n\n%1$s\n\nパーティーサーバーを切り替えて、パーティー %2$s に参加しますか？</string>
-    <string name="listen_together_custom_server_switch_and_join">切り替えて参加</string>
-    <string name="listen_together_official_server_dialog_title">公式サーバーに切り替えますか？</string>
-    <string name="listen_together_official_server_dialog_message">このパーティーはBeatChord公式サーバーでホストされています。\n\n公式サーバーに戻して、パーティー %1$s に参加しますか？</string>
-    <string name="listen_together_switch_failed_stayed_in_party">パーティーに参加できませんでした: %1$s。パーティー %2$s に残ります。</string>
-    <string name="listen_together_switch_failed">パーティーに参加できませんでした: %1$s。</string>
-    <string name="listen_together_ping">%1$d ms</string>
-    <string name="listen_together_server_offline_dash">—</string>
-    <string name="listen_together_invalid_server_url">サーバーURLが無効です。有効なアドレスを入力してください（例: https://your-server.com）</string>
-    <string name="listen_together_err_whitespace">サーバーURLに空白は使えません</string>
-    <string name="listen_together_err_invalid_path">サーバーURLのパスが無効です</string>
-    <string name="listen_together_err_no_path">サーバーURLにパスを含めないでください</string>
-    <string name="listen_together_err_no_query">サーバーURLにクエリパラメーターを含めないでください</string>
-    <string name="listen_together_err_no_fragment">サーバーURLにフラグメントを含めないでください</string>
-    <string name="listen_together_err_invalid_port">サーバーのポートは1〜65535の範囲で指定してください</string>
-    <string name="listen_together_custom_server_connected">カスタムサーバーに接続しました</string>
-    <string name="listen_together_custom_server_unreachable_fallback">カスタムサーバーに接続できません。既定のサーバーを使用します。</string>
-    <string name="listen_together_status_custom_online">カスタムサーバーに接続中 · %1$d ms</string>
-    <string name="listen_together_status_custom_fallback">カスタムサーバーに接続できません · 既定のフォールバックを使用中（%1$d ms）</string>
-    <string name="listen_together_status_all_offline">カスタムサーバーと既定のサーバーの両方がオフラインです</string>
-    <string name="listen_together_top_bar_fallback">フォールバック · %1$s</string>
 
     <string name="vietnamese">ベトナム語</string>
 
@@ -812,7 +702,6 @@
 
     <string name="shelf_sleep">睡眠</string>
 
-    <string name="shelf_party">パーティー</string>
 
     <string name="shelf_romance">ロマンス</string>
 
@@ -1165,7 +1054,6 @@
     <plurals name="added_to_playlists_notice">
         <item quantity="other">%1$d件のプレイリストに追加しました</item>
     </plurals>
-    <string name="party_queue_full">キューがいっぱいです（パーティーの上限は%d曲）</string>
 
     <string name="paxsenix_api_key">PaxSenix API key</string>
 
@@ -1198,36 +1086,13 @@
     <string name="song_cache_unlimited_subtitle">上限なし。キャッシュされた音声はストレージがいっぱいになるまで増え続けます。</string>
     <string name="clear_song_cache_title">曲キャッシュを消去しますか？</string>
     <string name="clear_song_cache_warning">キャッシュ済みの曲はすべて削除され、キャッシュ済みの曲フォルダは空になります。次回再生時に再びストリーミングされます。</string>
-    <string name="import_spotify">Spotify からインポート</string>
-    <string name="import_spotify_subtitle">プレイリストのリンクから</string>
     <string name="local_playlist_subtitle">%1$d 曲 · この端末内</string>
     <string name="lossless_output_permission_denied">近くのデバイスの権限がオフです</string>
     <string name="lossless_output_permission_denied_detail">タップして設定を開き、「近くのデバイス」を許可してください — 許可しないと Bluetooth コーデックを読み取れません</string>
     <string name="recent_album">最近のアルバム</string>
     <string name="recent_ep">最近の EP</string>
     <string name="recent_single">最近のシングル</string>
-    <string name="spotify">Spotify</string>
-    <string name="spotify_connect_subtitle">サインインしてプレイリストを読み込みます。再生は YouTube Music を使います。</string>
-    <string name="spotify_disconnect">切断</string>
-    <string name="spotify_empty_playlists">このアカウントにはプレイリストがありません</string>
-    <string name="spotify_empty_tracks">このプレイリストには曲がありません</string>
-    <string name="spotify_import_button">インポート</string>
-    <string name="spotify_import_description">公開プレイリストのリンクを貼り付けます。楽曲は YouTube Music で照合されます。</string>
-    <string name="spotify_import_description_local">公開プレイリストのリンクを貼り付けます。楽曲は YouTube Music で照合され、この端末に保存されます。</string>
-    <string name="spotify_import_done">「%1$s」をインポートしました</string>
     <string name="spotify_import_empty_playlist">このプレイリストに曲はありません</string>
-    <string name="spotify_import_failed">プレイリストをインポートできませんでした: %1$s</string>
-    <string name="spotify_import_fetching">Spotify のプレイリストを読み込んでいます…</string>
-    <string name="spotify_import_hint">open.spotify.com/playlist/…</string>
-    <string name="spotify_import_invalid">Spotify のプレイリストのリンクではありません。</string>
-    <string name="spotify_import_local_fallback">YouTube Music に作成できなかったため、「%1$s」をこの端末に保存しました。</string>
-    <string name="spotify_import_matching">楽曲を照合中 %1$d / %2$d</string>
-    <string name="spotify_import_none">それらの曲は YouTube Music で見つかりませんでした。</string>
-    <string name="spotify_import_title">Spotify プレイリストをインポート</string>
-    <string name="spotify_import_unmatched">%1$d 曲が YouTube Music で見つかりませんでした</string>
-    <string name="spotify_library_subtitle">あなたの Spotify プレイリスト</string>
-    <string name="spotify_sign_in">Spotify でサインイン</string>
-    <string name="spotify_track_unavailable">その曲は YouTube Music で見つかりません</string>
     <string name="shelf_recently_added">Recently Added</string>
     <string name="shelf_artists">Artists</string>
     <string name="shelf_albums">Albums</string>

@@ -8,7 +8,6 @@
     <string name="audio_pipeline">Audio Pipeline</string>
     <string name="automix_analysis_status">Automix · השיר הזה: %1$s · הבא: %2$s</string>
     <string name="automix_not_supported_video">Automix אינו נתמך בקטעי וידאו</string>
-    <string name="automix_stopped_in_party">Automix: הופסק בהאזנה ביחד</string>
     <string name="autoplay">הפעלה אוטומטית</string>
     <string name="autoplay_empty_description">מוזיקה דומה תמשיך להתנגן</string>
     <string name="autoplay_off">הפעלה אוטומטית כבויה</string>
@@ -35,16 +34,6 @@
     <string name="increase_lyrics_offset">Increase lyrics offset</string>
     <string name="instrumental">אינסטרומנטלי</string>
     <string name="like">לייק</string>
-    <string name="listen_together">להאזין ביחד</string>
-    <string name="listen_together_away">מרוחק — המקום נשמר</string>
-    <string name="listen_together_host">מארח</string>
-    <string name="listen_together_in_party">במסיבה · %1$s</string>
-    <string name="listen_together_jam">הג׳אם של %1$s</string>
-    <string name="listen_together_jam_unnamed">מאזינים ביחד</string>
-    <string name="listen_together_manage">ניהול</string>
-    <string name="listen_together_open">להאזין ביחד</string>
-    <string name="listen_together_open_count">מאזינים ביחד · %1$d</string>
-    <string name="listen_together_you">אתם</string>
     <string name="mixing">מיקס</string>
     <string name="lossless">Lossless</string>
     <string name="lyrics_already_in_language">המילים כבר ב%1$s</string>
@@ -104,7 +93,6 @@
     <string name="open_lyrics">Lyrics</string>
     <string name="pause">השהה</string>
     <string name="play">הפעלה</string>
-    <string name="played_by">Played by %1$s</string>
     <string name="playing_from">Playing from %1$s</string>
     <string name="playing_radio">מנגן רדיו %1$s</string>
     <string name="queue">תור ההשמעה</string>
@@ -195,8 +183,6 @@
     <string name="your_listening_experience">חווית ההאזנה שלך</string>
     <string name="default_replay_holder">מאזין BitChord</string>
     <string name="member_since">חבר מאז</string>
-    <string name="import_spotify">ייבוא מ-Spotify</string>
-    <string name="import_spotify_subtitle">מקישור לפלייליסט</string>
     <string name="search_library_empty">מחפש את השירים בתיקיית המוזיקה המקומית שלכם.</string>
     <string name="search_library_hint">שירים, אמנים ואלבומים</string>
     <string name="search_library_no_results">אין דבר במוזיקה המקומית שתואם ל-„%1$s”.</string>

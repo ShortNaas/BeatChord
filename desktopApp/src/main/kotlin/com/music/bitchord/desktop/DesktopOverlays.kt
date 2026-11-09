@@ -21,8 +21,6 @@ internal class DesktopOverlays {
     /** Which device playback is sent to. */
     var audioOutput by mutableStateOf(false)
 
-    /** The party this device is listening with. */
-    var listenTogether by mutableStateOf(false)
     var songMenu by mutableStateOf(false)
     var downloadManager by mutableStateOf(false)
     var replay by mutableStateOf(false)
@@ -60,10 +58,8 @@ internal enum class DesktopSettingsPage {
     MAIN,
     EQUALIZER,
     AUDIO_OUTPUT,
-    LISTEN_TOGETHER,
     LYRICS_SOURCES,
     TRANSLATION_LANGUAGE,
-    SPOTIFY_CANVAS,
     INTEGRATIONS,
     LICENSES,
 }

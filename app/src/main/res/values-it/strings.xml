@@ -244,7 +244,6 @@
     <string name="liquid_glass_subtitle">Vetro rifrangente reale sulla barra di navigazione flottante. Solo Android 12+; usa più GPU.</string>
     <string name="liquid_glass_unavailable">Richiede Android 12 o versioni successive</string>
     <string name="full_screen_cover_art">Copertina a tutto schermo</string>
-    <string name="animated_cover_art">Copertina animata</string>
     <string name="synced_lyrics">Testi sincronizzati</string>
     <string name="synced_lyrics_subtitle">Evidenzia le parole sul player mentre vengono cantate</string>
     <string name="lyrics_sources">Sorgenti testi</string>
@@ -271,7 +270,6 @@
     <string name="light">Chiaro</string>
     <string name="dark">Scuro</string>
     <string name="full_screen_cover_art_subtitle">Estende la copertina fino ai bordi del player invece di un quadrato</string>
-    <string name="animated_cover_art_subtitle">Riproduce il video in loop fornito da alcune release invece di una copertina statica</string>
     <string name="dont_repeat_songs_subtitle">AutoPlay non suggerirà un brano già riprodotto o suggerito in questa sessione</string>
     <string name="download_quality_subtitle">%1$s per brano, indipendentemente dalla connessione</string>
     <string name="filter_non_music_audio">Filtra audio non musicale</string>
@@ -417,7 +415,6 @@
         <item quantity="one">Log copiato · %1$d riga</item>
         <item quantity="other">Log copiato · %1$d righe</item>
     </plurals>
-    <string name="integrate_spotify_canvas">Configura Spotify Canvas</string>
     <string name="lastfm_login">Accesso Last.fm</string>
     <string name="lastfm_login_description">Accedi con il tuo account Last.fm per attivare lo scrobbling.</string>
     <string name="lastfm_now_playing_subtitle">Aggiorna Last.fm con quello che stai ascoltando</string>
@@ -495,13 +492,6 @@
     <string name="upgrade_length_slack_footer">Una tolleranza più ampia accetta più corrispondenze; una più stretta è più severa. Il valore predefinito è 3 secondi.</string>
     <string name="seconds_short">%1$d s</string>
     <string name="spdc_token">Token sp_dc</string>
-    <string name="spotify_canvas_setup">Configurazione Spotify Canvas</string>
-    <string name="spotify_canvas_setup_description">Per usare Spotify Canvas, fornisci il tuo cookie sp_dc di Spotify.</string>
-    <string name="spotify_canvas_setup_steps">1. Accedi su open.spotify.com in un browser.\n2. Apri gli Strumenti per sviluppatori, poi Applicazione e Cookie.\n3. Copia il valore del cookie sp_dc.\n4. Incollalo qui sotto.</string>
-    <string name="spotify_canvas_auto_hide">Nascondi automaticamente i controlli</string>
-    <string name="spotify_canvas_auto_hide_subtitle">Riduce il mezzo player dopo 5 secondi mentre è in riproduzione uno Spotify Canvas</string>
-    <string name="prioritize_spotify_canvas">Dai priorità a Spotify Canvas</string>
-    <string name="prioritize_spotify_canvas_subtitle">Prova Spotify prima di Apple Music e degli altri fornitori di copertine animate</string>
     <string name="status">Stato</string>
     <string name="status_dialog_message">Cosa mostra il tuo account mentre la presenza è attiva.</string>
     <string name="status_dnd">Non disturbare</string>
@@ -685,107 +675,7 @@
     <string name="switch_profile_hint">Cambia usando l\'avatar, poi usa questo profilo.</string>
     <string name="profile_unavailable">Nessun profilo con accesso effettuato è ancora disponibile su questa pagina.</string>
 
-    <!-- Listen together -->
-    <string name="listen_together">Ascoltare insieme</string>
-    <string name="listen_together_subtitle">Condividi un codice e ascoltate la stessa musica, in sincrono</string>
-    <string name="listen_together_in_party">In un party · %1$s</string>
-    <string name="listen_together_sign_in_footer">Per ascoltare insieme serve un account, così tutti nel party vedono chi altro c’è.</string>
-    <string name="listen_together_server">Server del party</string>
-    <string name="listen_together_server_online">Online · %1$d ms</string>
-    <string name="listen_together_server_online_fallback">Online (riserva predefinita) · %1$d ms</string>
-    <string name="listen_together_server_offline">Non raggiungibile in questo momento</string>
-    <string name="listen_together_server_checking">Controllo…</string>
-    <string name="listen_together_server_unknown">Tocca per controllare</string>
-    <string name="listen_together_custom_server">Usa il tuo server</string>
-    <string name="listen_together_custom_server_footer">Lascia vuoto per usare il server integrato. Se ne gestisci una copia tua, tutti nel party devono puntare alla stessa.</string>
-    <string name="listen_together_using_default">Si usa il server integrato</string>
-    <string name="listen_together_remove_server">Rimuovi server</string>
-    <string name="listen_together_switched_to_default">Passato al server predefinito</string>
-    <string name="listen_together_custom_server_saved">Server personalizzato salvato</string>
-    <string name="listen_together_create">Crea un party</string>
-    <string name="listen_together_create_subtitle">Ottieni un codice da condividere con gli amici</string>
-    <string name="listen_together_create_footer">Ricevi un codice di sei caratteri. Chi lo ha può entrare, fino a %1$d dispositivi compreso il tuo.</string>
-    <string name="listen_together_profile">Il tuo profilo nel party</string>
-    <string name="listen_together_nickname_hint">Soprannome per questo party</string>
-    <string name="listen_together_party_size">Dimensione del party</string>
-    <string name="listen_together_party_size_subtitle">Scegli da 2 a 10 ascoltatori</string>
-    <string name="listen_together_host_controls">Solo tu puoi cambiare la capienza o rimuovere ascoltatori</string>
-    <string name="listen_together_remove">Rimuovi</string>
-    <string name="listen_together_activity">Attività recenti</string>
-    <string name="listen_together_activity_footer">Solo questa sessione · prima le più recenti · fino a 100 azioni</string>
-    <string name="listen_together_activity_played">Ha avviato la riproduzione</string>
-    <string name="listen_together_activity_paused">Ha messo in pausa</string>
-    <string name="listen_together_activity_seeked">Si è spostato nel brano</string>
-    <string name="listen_together_activity_skipped">È andato avanti</string>
-    <string name="listen_together_activity_went_back">È tornato indietro</string>
-    <string name="listen_together_activity_added">Ha aggiunto alla coda</string>
-    <string name="listen_together_activity_removed_track">Ha rimosso un brano dalla coda</string>
-    <string name="listen_together_activity_cleared">Ha svuotato i brani successivi</string>
-    <string name="listen_together_activity_reordered">Ha riordinato la coda</string>
-    <string name="listen_together_activity_removed_member">Ha rimosso un ascoltatore</string>
-    <string name="listen_together_activity_changed_size">Ha cambiato la dimensione del party</string>
-    <string name="listen_together_activity_updated">Ha aggiornato il party</string>
-    <string name="listen_together_join">Entra in un party</string>
-    <string name="listen_together_join_action">Entra</string>
-    <string name="listen_together_code_hint">Sei lettere o cifre</string>
-    <string name="listen_together_code">Codice del party</string>
-    <string name="listen_together_code_footer">Leggilo ad alta voce o invialo. O e I non vengono usate, quindi una «o» è sempre uno zero.</string>
     <string name="copy_code">Copia codice</string>
-    <string name="listen_together_share_text">Ascolta con me su BeatChord — codice party %1$s</string>
-    <string name="listen_together_now_playing">In riproduzione</string>
-    <string name="listen_together_nothing_playing">Ancora nulla in riproduzione</string>
-    <string name="listen_together_listening">In ascolto · %1$d di %2$d</string>
-    <string name="listen_together_members_footer">Un party ospita %1$d dispositivi. Chiunque ci sia dentro può controllare la musica.</string>
-    <string name="listen_together_you">Tu</string>
-    <string name="listen_together_host">Host</string>
-    <string name="listen_together_away">Assente — il posto è tenuto</string>
-    <string name="listen_together_landing_title">Avvia un party</string>
-    <string name="listen_together_landing_subtitle">Perché la musica suona meglio in compagnia. Invita gli amici ad ascoltare e aggiungere brani in tempo reale, ovunque si trovino.</string>
-    <string name="listen_together_create_action">Crea un party</string>
-    <string name="listen_together_join_existing">Entra in uno esistente</string>
-    <string name="listen_together_create_sheet_subtitle">Scegli come apparire e quante persone possono entrare.</string>
-    <string name="listen_together_creating">Creazione…</string>
-    <string name="listen_together_joining">Accesso…</string>
-    <string name="listen_together_full">Questo party è al completo</string>
-    <string name="listen_together_join_question">Entrare nel party di %1$s?</string>
-    <string name="listen_together_join_question_unnamed">Entrare in questo party?</string>
-    <string name="listen_together_not_now">Non ora</string>
-    <string name="listen_together_preview_footer">Le persone nel party vedranno il tuo nome e la tua foto profilo.</string>
-    <string name="listen_together_invite_title">Invita amici al tuo party</string>
-    <string name="listen_together_share_link">Condividi link</string>
-    <string name="listen_together_scan_qr">Scansiona codice QR</string>
-    <string name="listen_together_scan_qr_subtitle">Fallo scansionare agli amici per entrare.</string>
-    <string name="listen_together_invite">Invita</string>
-    <string name="listen_together_host_only">Solo io controllo la musica</string>
-    <string name="listen_together_host_only_subtitle">Gli altri ascoltano con te e possono mettere in pausa sul proprio dispositivo</string>
-    <string name="listen_together_host_only_notice">Solo l\'host può controllare la musica</string>
-    <string name="listen_together_leave">Esci dal party</string>
-    <string name="listen_together_leave_subtitle">Gli altri continuano ad ascoltare</string>
-    <string name="listen_together_reconnecting">Riconnessione…</string>
-    <string name="listen_together_syncing_clock">Misurazione dell’orologio…</string>
-    <string name="listen_together_in_sync">In sincrono · %1$d ms di andata e ritorno</string>
-    <string name="listen_together_custom_server_dialog_title">Entrare nel party su un server personalizzato?</string>
-    <string name="listen_together_custom_server_dialog_message">Questo party è ospitato su un server esterno:\n\n%1$s\n\nVuoi cambiare server dei party ed entrare nel party %2$s?</string>
-    <string name="listen_together_custom_server_switch_and_join">Cambia ed entra</string>
-    <string name="listen_together_official_server_dialog_title">Passare al server ufficiale?</string>
-    <string name="listen_together_official_server_dialog_message">Questo party è ospitato sul server ufficiale di BeatChord.\n\nVuoi tornare al server ufficiale ed entrare nel party %1$s?</string>
-    <string name="listen_together_switch_failed_stayed_in_party">Impossibile entrare nel party: %1$s. Resti nel party %2$s.</string>
-    <string name="listen_together_switch_failed">Impossibile entrare nel party: %1$s.</string>
-    <string name="listen_together_ping">%1$d ms</string>
-    <string name="listen_together_server_offline_dash">—</string>
-    <string name="listen_together_invalid_server_url">URL del server non valido. Inserisci un indirizzo valido (es. https://your-server.com)</string>
-    <string name="listen_together_err_whitespace">Gli URL del server non possono contenere spazi</string>
-    <string name="listen_together_err_invalid_path">L\'URL del server contiene un percorso non valido</string>
-    <string name="listen_together_err_no_path">L\'URL del server non deve includere un percorso</string>
-    <string name="listen_together_err_no_query">L\'URL del server non deve includere parametri di query</string>
-    <string name="listen_together_err_no_fragment">L\'URL del server non deve includere frammenti</string>
-    <string name="listen_together_err_invalid_port">La porta del server deve essere compresa tra 1 e 65535</string>
-    <string name="listen_together_custom_server_connected">Connesso al server personalizzato</string>
-    <string name="listen_together_custom_server_unreachable_fallback">Server personalizzato non raggiungibile. Uso del server predefinito di riserva.</string>
-    <string name="listen_together_status_custom_online">Connesso al server personalizzato · %1$d ms</string>
-    <string name="listen_together_status_custom_fallback">Server personalizzato non raggiungibile · Riserva predefinita in uso (%1$d ms)</string>
-    <string name="listen_together_status_all_offline">Sia il server personalizzato sia quello predefinito sono offline</string>
-    <string name="listen_together_top_bar_fallback">Riserva · %1$s</string>
 
     <string name="vietnamese">Vietnamita</string>
 
@@ -881,7 +771,6 @@
 
     <string name="shelf_new_releases">Nuove uscite</string>
 
-    <string name="shelf_party">Festa</string>
 
     <string name="shelf_quick_picks">Scelte rapide</string>
 
@@ -1124,7 +1013,6 @@
         <item quantity="one">Aggiunto a %1$d playlist</item>
         <item quantity="other">Aggiunto a %1$d playlist</item>
     </plurals>
-    <string name="party_queue_full">La coda è piena (massimo %d brani nel party)</string>
 
     <string name="paxsenix_api_key">PaxSenix API key</string>
 
@@ -1157,36 +1045,13 @@
     <string name="song_cache_unlimited_subtitle">Nessun limite. L’audio in cache può crescere fino a riempire la memoria.</string>
     <string name="clear_song_cache_title">Svuotare la cache dei brani?</string>
     <string name="clear_song_cache_warning">Tutti i brani in cache verranno eliminati e la cartella dei brani in cache verrà svuotata. Verranno riprodotti di nuovo in streaming la prossima volta.</string>
-    <string name="import_spotify">Importa da Spotify</string>
-    <string name="import_spotify_subtitle">Da un collegamento playlist</string>
     <string name="local_playlist_subtitle">%1$d brani · Su questo dispositivo</string>
     <string name="lossless_output_permission_denied">L’autorizzazione Dispositivi nelle vicinanze è spenta</string>
     <string name="lossless_output_permission_denied_detail">Tocca per aprire Impostazioni e consentire Dispositivi nelle vicinanze — senza, non possiamo leggere il tuo codec Bluetooth</string>
     <string name="recent_album">Album recente</string>
     <string name="recent_ep">EP recente</string>
     <string name="recent_single">Singolo recente</string>
-    <string name="spotify">Spotify</string>
-    <string name="spotify_connect_subtitle">Accedi per caricare le tue playlist. La riproduzione usa YouTube Music.</string>
-    <string name="spotify_disconnect">Disconnetti</string>
-    <string name="spotify_empty_playlists">Nessuna playlist su questo account</string>
-    <string name="spotify_empty_tracks">Questa playlist non ha brani</string>
-    <string name="spotify_import_button">Importa</string>
-    <string name="spotify_import_description">Incolla il collegamento di una playlist pubblica. I brani vengono abbinati su YouTube Music.</string>
-    <string name="spotify_import_description_local">Incolla il collegamento di una playlist pubblica. I brani vengono abbinati su YouTube Music e salvati su questo dispositivo.</string>
-    <string name="spotify_import_done">«%1$s» importata</string>
     <string name="spotify_import_empty_playlist">Nessun brano in questa playlist</string>
-    <string name="spotify_import_failed">Impossibile importare la playlist: %1$s</string>
-    <string name="spotify_import_fetching">Lettura della playlist Spotify…</string>
-    <string name="spotify_import_hint">open.spotify.com/playlist/…</string>
-    <string name="spotify_import_invalid">Non è un collegamento a una playlist Spotify.</string>
-    <string name="spotify_import_local_fallback">Impossibile crearla su YouTube Music, quindi «%1$s» è stata salvata su questo dispositivo.</string>
-    <string name="spotify_import_matching">Abbinamento brani %1$d di %2$d</string>
-    <string name="spotify_import_none">Nessuno di quei brani è stato trovato su YouTube Music.</string>
-    <string name="spotify_import_title">Importa playlist Spotify</string>
-    <string name="spotify_import_unmatched">%1$d brani non sono stati trovati su YouTube Music</string>
-    <string name="spotify_library_subtitle">Le tue playlist Spotify</string>
-    <string name="spotify_sign_in">Accedi con Spotify</string>
-    <string name="spotify_track_unavailable">Impossibile trovare quel brano su YouTube Music</string>
     <string name="shelf_recently_added">Recently Added</string>
     <string name="shelf_artists">Artists</string>
     <string name="shelf_albums">Albums</string>
@@ -1239,7 +1104,6 @@
     <string name="chinese_traditional">Chinese (Traditional)</string>
     <string name="pipeline_pcm_data_rate" translatable="false">PCM Data Rate</string>
 
-    <!-- Listen together -->
 
 
 

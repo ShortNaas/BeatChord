@@ -51,7 +51,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
@@ -63,7 +62,6 @@ import coil3.compose.AsyncImagePainter
 import coil3.request.ImageRequest
 import com.music.bitchord.ui.haptics.Haptic
 import com.music.bitchord.ui.icons.BitChordIcons
-import com.music.bitchord.data.canvas.CanvasArtwork
 import com.music.bitchord.data.model.LikeStatus
 import com.music.bitchord.data.model.Song
 
@@ -259,29 +257,18 @@ internal fun LandscapePlayerLayout(
 }
 
 /**
- * The landscape player's sleeve: the still cover, and over it the looping
- * clip when there is one.
+ * The landscape player's sleeve: the still cover.
  *
  * Draws from the screen's own [request][PlayerArtwork.request] rather than a
  * request of its own, so it shares the portrait sleeve's bitmap, its retries
  * and its [loaded][PlayerArtwork.loaded] — rotating never reloads the cover.
- *
- * The clip keeps playing whichever pane is up. The portrait player stops it
- * because its sleeve shrinks to a thumbnail behind a panel; this one never
- * shrinks.
  */
 @Composable
 internal fun LandscapeArtwork(
     artRequest: ImageRequest,
     artLoaded: Boolean,
     onArtState: (AsyncImagePainter.State) -> Unit,
-    canvas: CanvasArtwork?,
-    canvasRendered: Boolean,
-    isPlaying: Boolean,
-    onCanvasRenderedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
-    /** Halts the clip for a transition — see [CanvasArtworkPlayer]'s own. */
-    pausedForTransition: Boolean = false,
     /**
      * The sleeve's shape, asked for each frame: its corner rounds off into the
      * mini player's cover's as the player docks into it.
@@ -291,7 +278,7 @@ internal fun LandscapeArtwork(
     shadowFraction: () -> Float = { 1f },
     overlay: @Composable BoxScope.() -> Unit = {},
 ) {
-    val casts = artLoaded || canvasRendered
+    val casts = artLoaded
     Box(modifier = modifier) {
         Box(
             modifier = Modifier
@@ -315,7 +302,7 @@ internal fun LandscapeArtwork(
                 .background(Color.Black.copy(alpha = 0.18f)),
             contentAlignment = Alignment.Center,
         ) {
-            if (!artLoaded && !canvasRendered) {
+            if (!artLoaded) {
                 Image(
                     painter = painterResource(Res.drawable.ic_logo),
                     contentDescription = null,
@@ -327,21 +314,8 @@ internal fun LandscapeArtwork(
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 onState = onArtState,
-                // Not drawn under a clip that got there first — see the
-                // portrait sleeve's note on TextureView stacking order.
-                modifier = Modifier
-                    .fillMaxSize()
-                    .drawWithContent { if (artLoaded || !canvasRendered) drawContent() },
+                modifier = Modifier.fillMaxSize(),
             )
-            canvas?.let { clip ->
-                CanvasArtworkPlayer(
-                    canvas = clip,
-                    isPlaying = isPlaying,
-                    pausedForTransition = pausedForTransition,
-                    onRenderedChanged = onCanvasRenderedChange,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
         }
         overlay()
     }

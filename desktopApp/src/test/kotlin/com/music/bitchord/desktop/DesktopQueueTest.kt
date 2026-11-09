@@ -169,32 +169,6 @@ class DesktopQueueTest {
     }
 
     @Test
-    fun aPartysUpcomingTracksReplaceOnlyWhatIsStillToCome() {
-        val local = DesktopQueue(songs("old", "cur", "ctx1", "ctx2"), index = 1)
-
-        val aligned = local.withPartyUpcoming(queued("p1") + mix("m1", "m2"))
-
-        assertEquals(listOf("old", "cur", "p1", "m1", "m2"), aligned.ids())
-        assertEquals(1, aligned.index)
-        assertEquals(
-            listOf(QueueTier.USER_QUEUE, QueueTier.AUTOPLAY, QueueTier.AUTOPLAY),
-            aligned.upcoming.map { it.queueTier },
-        )
-        // Already in line: the same object back, so nothing redraws.
-        assertTrue(aligned.withPartyUpcoming(queued("p1") + mix("m1", "m2")) === aligned)
-    }
-
-    @Test
-    fun aTrackInThePartyQueueTwiceStaysTwoRows() {
-        val local = DesktopQueue(songs("cur") + mix("m1"), index = 0)
-
-        val aligned = local.withPartyUpcoming(mix("m1", "m1"))
-
-        assertEquals(listOf("cur", "m1", "m1"), aligned.ids())
-        assertTrue(aligned.songs[1] !== aligned.songs[2])
-    }
-
-    @Test
     fun shufflingRearrangesOnlyWhatIsStillToCome() {
         val queue = DesktopQueue(songs("a", "b", "c", "d", "e"), index = 1).shuffledAhead()
 

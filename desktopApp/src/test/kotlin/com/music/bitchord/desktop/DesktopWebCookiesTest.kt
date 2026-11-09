@@ -6,14 +6,14 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class DesktopWebCookiesTest {
-    private val spotify = URI("https://open.spotify.com/")
+    private val youtube = URI("https://music.youtube.com/")
 
-    private fun cookieHeader() = DesktopWebCookies.get(spotify, emptyMap())["Cookie"].orEmpty().joinToString("; ")
+    private fun cookieHeader() = DesktopWebCookies.get(youtube, emptyMap())["Cookie"].orEmpty().joinToString("; ")
 
     @Test
     fun `starting over leaves no cookie behind`() {
-        DesktopWebCookies.put(spotify, mapOf("Set-Cookie" to listOf("sp_dc=secret; Domain=.spotify.com; Path=/; Secure; HttpOnly")))
-        assertEquals("sp_dc=secret", cookieHeader())
+        DesktopWebCookies.put(youtube, mapOf("Set-Cookie" to listOf("SID=secret; Domain=.youtube.com; Path=/; Secure; HttpOnly")))
+        assertEquals("SID=secret", cookieHeader())
 
         DesktopWebCookies.reset()
 

@@ -110,13 +110,8 @@ import androidx.compose.runtime.mutableIntStateOf
 import kotlinx.coroutines.delay
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.Constraints
-import com.music.bitchord.data.canvas.AppleArtistArt
-import com.music.bitchord.data.canvas.AppleArtistArtRepository
-import com.music.bitchord.data.canvas.keyColors
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.materials.HazeMaterials
-import com.music.bitchord.data.canvas.CanvasArtwork
-import com.music.bitchord.data.canvas.CanvasRepository
 import com.music.bitchord.data.model.BrowseType
 import com.music.bitchord.data.model.DetailPage
 import com.music.bitchord.data.model.CARD_ART_PX
@@ -152,7 +147,6 @@ import com.music.bitchord.ui.components.trackColumnWidth
 import com.music.bitchord.ui.haptics.Haptic
 import com.music.bitchord.ui.haptics.rememberHaptics
 import com.music.bitchord.ui.icons.BitChordIcons
-import com.music.bitchord.ui.player.CanvasArtworkPlayer
 import com.music.bitchord.ui.theme.ArtworkPalette
 import com.music.bitchord.ui.theme.rememberArtworkPalette
 import kotlin.math.roundToInt
@@ -211,13 +205,6 @@ private val ARTIST_PLAY_BUTTON = 70.dp
 private const val ARTIST_PLAY_ICON_SCALE = 0.56f
 private val ARTIST_SIDE_BUTTON = 52.dp
 private val ARTIST_ACTION_GAP = 24.dp
-
-/** The title logo's widest share of the page, and tallest share of the photo. */
-private const val ARTIST_LOGO_WIDTH = 0.82f
-private const val ARTIST_LOGO_MAX_HEIGHT = 0.30f
-
-private const val LOGO_RETRIES = 2
-private const val LOGO_RETRY_DELAY_MS = 800L
 
 private val CREDIT_SEPARATOR = Regex(""",\s|\s&\s|\s(?:x|and|feat\.?|ft\.?|with)\s""", RegexOption.IGNORE_CASE)
 
@@ -308,23 +295,7 @@ fun DetailScreen(
     // item; it is read off the album once, as soon as the card is known.
     val topReleaseId = if (isArtist) page.sections.topRelease()?.browseId else null
     LaunchedEffect(topReleaseId) { topReleaseId?.let { onLoadReleaseLibrary?.invoke(it) } }
-    // Apple Music's hero photo and title logo for this artist, found by name.
-    // Null until (and unless) it arrives; the YouTube header stands in meanwhile.
-    var appleArt by remember(page.browseId) {
-        mutableStateOf(if (isArtist) AppleArtistArtRepository.cached(page.title) else null)
-    }
-    // Opened from a track, the title is the whole credit ("A, B & C") until the
-    // page loads and swaps in the one artist's name. Searching a credit finds
-    // nobody, so a title that reads as several artists waits for that swap; any
-    // other name starts the moment the page opens.
-    val nameSettled = !page.title.looksLikeCredit() || page.songs !is UiState.Loading
-    LaunchedEffect(page.browseId, page.title, nameSettled) {
-        if (isArtist && nameSettled) appleArt = AppleArtistArtRepository.artFor(page.title) ?: appleArt
-    }
-    val palette = rememberArtworkPalette(
-        imageUrl = appleArt?.heroUrl ?: page.thumbnailUrl,
-        keyColors = appleArt?.keyColors(),
-    )
+    val palette = rememberArtworkPalette(imageUrl = page.thumbnailUrl)
 
     // Narrowing the running order in place — the release equivalent of the
     // filter box on the Local Music tab, and the one thing a long track list
@@ -363,34 +334,6 @@ fun DetailScreen(
     // device — the Downloads folder, one downloaded playlist — where every row
     // qualifies and the badge would be decoration rather than information.
     val downloadedTint = palette.accent.takeUnless { page.browseId.startsWith("local:") }
-
-    // Animated cover art on the header, the same feature the player has.
-    // Albums only: a playlist's artwork is a collage and an artist page's is a
-    // photograph, and neither is something a label publishes a canvas for.
-    val canvasEnabled by AppSettings.animatedCanvas.collectAsStateWithLifecycle()
-    val prioritizeSpotifyCanvas by AppSettings.prioritizeSpotifyCanvas.collectAsStateWithLifecycle()
-    // The credit line the header shows is the artist as far as the catalogue
-    // services are concerned. A browse card's subtitle sometimes omits it, in
-    // which case the tracks themselves know who it is.
-    val credit = page.headerLines(songs.size).first.ifBlank { songs.firstOrNull()?.artist.orEmpty() }
-    var canvas by remember(page.browseId) { mutableStateOf<CanvasArtwork?>(null) }
-    LaunchedEffect(page.browseId, page.title, credit, canvasEnabled, prioritizeSpotifyCanvas) {
-        // An artist's clip is set below, by the lookup that finds it.
-        if (isArtist) return@LaunchedEffect
-        if (!canvasEnabled || page.type != BrowseType.ALBUM) {
-            canvas = null
-            return@LaunchedEffect
-        }
-        // As on the player: the credit fills in once the tracks load, so this
-        // can run twice. Keep a clip that is already playing if the second
-        // pass comes back empty.
-        canvas = CanvasRepository.canvasForAlbum(page.title, credit) ?: canvas
-    }
-    // An artist's clip comes with the same Apple lookup as its photograph.
-    val artistVideo = appleArt?.videoUrl
-    LaunchedEffect(artistVideo, canvasEnabled) {
-        if (isArtist) canvas = artistVideo?.takeIf { canvasEnabled }?.let { CanvasArtwork(url = it) }
-    }
 
     // Opening the search carries the page up to it, so the field lands just
     // clear of the frosted bar with the tracks under it rather than at the foot
@@ -431,10 +374,8 @@ fun DetailScreen(
                 PageBackground(
                     page = page,
                     palette = palette,
-                    canvas = canvas,
                     artHeight = artHeight,
                     listState = listState,
-                    heroUrl = appleArt?.heroUrl,
                     modifier = Modifier.matchParentSize(),
                 )
 
@@ -447,7 +388,7 @@ fun DetailScreen(
                 ) {
             item(key = "header") {
                 if (isArtist) {
-                    ArtistHeader(page = page, palette = palette, artHeight = artHeight, appleArt = appleArt)
+                    ArtistHeader(page = page, palette = palette, artHeight = artHeight)
                 } else {
                     ReleaseHeader(
                         page = page,
@@ -498,7 +439,6 @@ fun DetailScreen(
                         subscription = page.subscription?.takeIf { onToggleSubscription != null },
                         onToggleSubscription = onToggleSubscription,
                         bottomSpace = 22.dp,
-                        playColor = appleArt?.keyColor?.let { Color(it) },
                     )
                 }
             }
@@ -1037,65 +977,10 @@ private fun ArtistHeader(
     page: DetailPage,
     palette: ArtworkPalette,
     artHeight: Dp,
-    appleArt: AppleArtistArt?,
 ) {
     Box(Modifier.fillMaxWidth()) {
         Spacer(Modifier.fillMaxWidth().height(artHeight + HEADER_DROP - ARTIST_HEADER_LIFT))
-        val logoUrl = appleArt?.logoUrl
-        // Whether the logo has actually been drawn. Until it has — a first fetch
-        // of an Apple logo is a few hundred KB the CDN may still be resizing — the
-        // name stands in for it, so the header is never left with nothing in it.
-        var logoShown by remember(logoUrl) { mutableStateOf(false) }
-        if (appleArt != null && logoUrl != null) {
-            val context = LocalPlatformContext.current
-            var attempt by remember(logoUrl) { mutableIntStateOf(0) }
-            var failed by remember(logoUrl) { mutableStateOf(false) }
-            // Remembered, and at the size the URL already names: nothing about the
-            // load waits on layout to decide how big to decode, and a recomposition
-            // can't hand Coil a new request that cancels the one in flight.
-            val request = remember(logoUrl, attempt) {
-                ImageRequest.Builder(context).data(logoUrl).size(coil3.size.Size.ORIGINAL).build()
-            }
-            // A dropped fetch gets two more tries before the name is left in place.
-            LaunchedEffect(failed) {
-                if (failed && attempt < LOGO_RETRIES) {
-                    delay(LOGO_RETRY_DELAY_MS)
-                    failed = false
-                    attempt++
-                }
-            }
-            // Apple's own title logo stands in for the name, laid over its photo.
-            // Capped in height as well as width: a logo set on two or three
-            // lines is nearly square, and by width alone it would swallow the
-            // photograph it is meant to sit on.
-            val aspect = appleArt.logoAspect.coerceIn(0.4f, 6f)
-            val maxLogoHeight = artHeight * ARTIST_LOGO_MAX_HEIGHT
-            AsyncImage(
-                model = request,
-                contentDescription = page.title,
-                contentScale = ContentScale.Fit,
-                onState = { state ->
-                    when (state) {
-                        is AsyncImagePainter.State.Success -> logoShown = true
-                        is AsyncImagePainter.State.Error -> failed = true
-                        else -> Unit
-                    }
-                },
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(top = 14.dp, bottom = 20.dp)
-                    // Sized from the incoming width in layout rather than through a
-                    // BoxWithConstraints, which would subcompose the image.
-                    .layout { measurable, constraints ->
-                        val widest = constraints.maxWidth * ARTIST_LOGO_WIDTH
-                        val height = minOf(widest / aspect, maxLogoHeight.toPx()).roundToInt()
-                        val width = (height * aspect).roundToInt()
-                        val placeable = measurable.measure(Constraints.fixed(width, height))
-                        layout(width, height) { placeable.place(0, 0) }
-                    },
-            )
-        }
-        if (!logoShown) Text(
+        Text(
             text = page.title,
             style = MaterialTheme.typography.displayLarge,
             color = palette.onBackground,
@@ -1132,18 +1017,14 @@ private fun ArtistHeader(
 private fun PageBackground(
     page: DetailPage,
     palette: ArtworkPalette,
-    canvas: CanvasArtwork?,
     artHeight: Dp,
     listState: LazyListState,
-    heroUrl: String? = null,
     modifier: Modifier = Modifier,
 ) {
     val reduceDynamicBlur by AppSettings.reduceDynamicBlur.collectAsStateWithLifecycle()
-    // Not under a canvas: a still blurred over the foot of a moving clip would
-    // freeze the bottom of the video into the wrong picture.
-    val softenFoot = canvas == null && !reduceDynamicBlur &&
+    val softenFoot = !reduceDynamicBlur &&
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-    val art = heroUrl ?: page.thumbnailUrl.artworkAt(HEADER_ART_PX)
+    val art = page.thumbnailUrl.artworkAt(HEADER_ART_PX)
 
     Box(modifier.clipToBounds()) {
         Box(
@@ -1162,18 +1043,6 @@ private fun PageBackground(
                     .matchParentSize()
                     .background(palette.elevated),
             )
-
-            // Above the still art but below the scrim, so the scrim that
-            // settles the header into the page still sits over it. Always
-            // running: unlike the player's sleeve there is no transport here
-            // to follow, and the page is only up while it's being read.
-            canvas?.let { clip ->
-                CanvasArtworkPlayer(
-                    canvas = clip,
-                    isPlaying = true,
-                    modifier = Modifier.matchParentSize(),
-                )
-            }
 
             // The same sleeve, blurred and faded in over the lower half, so the
             // picture loses its detail before it loses its colour — a merge

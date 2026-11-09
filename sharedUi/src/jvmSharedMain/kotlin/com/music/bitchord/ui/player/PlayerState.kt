@@ -24,7 +24,6 @@ import coil3.compose.LocalPlatformContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImagePainter
 import coil3.request.ImageRequest
-import com.music.bitchord.data.canvas.CanvasArtwork
 import com.music.bitchord.data.model.Song
 import com.music.bitchord.data.model.artworkAt
 import kotlin.math.abs
@@ -32,59 +31,6 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-
-/**
- * The looping clip some releases publish alongside their cover, for [song], or
- * null — a miss is the normal answer.
- */
-@Composable
-internal fun rememberCanvasArtwork(song: Song): CanvasArtwork? {
-    val canvasEnabled by PlayerSettings.animatedCanvas.collectAsStateWithLifecycle()
-    val canvasOverCellular by PlayerSettings.canvasOverCellular.collectAsStateWithLifecycle()
-    val prioritizeSpotifyCanvas by PlayerSettings.prioritizeSpotifyCanvas.collectAsStateWithLifecycle()
-    val meteredConnection by PlayerSettings.meteredConnection.collectAsStateWithLifecycle()
-    // The switch turns the feature off outright; this is the narrower "not
-    // over cellular" case — see [PlayerSettings.canvasOverCellular] for why a
-    // clip's own loop makes that worth guarding separately from a still image.
-    val canvasAllowedNow = canvasEnabled && (meteredConnection != true || canvasOverCellular)
-    // Keyed on the song's identity rather than its videoId: a version switch
-    // swaps the videoId for another cut of the *same* song, and a canvas is
-    // searched for by title and artist — resetting here threw the clip out
-    // mid-loop, blanked the player down to the still sleeve and restarted it,
-    // which is the flicker. A different song keys differently and starts
-    // clean; the same-titled-impostor case is guarded where the clip is
-    // adopted, by [CanvasArtwork.matches].
-    var canvas by remember(song.title, song.artist) { mutableStateOf<CanvasArtwork?>(null) }
-    LaunchedEffect(song.videoId, song.albumName, canvasAllowedNow, prioritizeSpotifyCanvas) {
-        if (!canvasAllowedNow) {
-            canvas = null
-            return@LaunchedEffect
-        }
-        // Anything already settled for this track paints immediately: a
-        // reopened player, or a track coming round again in the queue.
-        //
-        // Across a version switch the clip found for the last cut is carried
-        // over rather than dropped — same title and artist, so the same
-        // search, so the same clip — and only while it still *answers* to
-        // what is playing: [CanvasArtwork.matches] is what stops a preserved
-        // clip from being a different song's that happens to share a title.
-        canvas = PlayerPlatform.host.cachedCanvas(song)
-            ?: canvas?.takeIf { it.matches(song.title, song.artist, song.albumName) }
-
-        // The album name is looked up separately and lands a moment after the
-        // player opens, and it is the field that makes the catalogue searches
-        // match. Give it that moment: if it arrives, this effect restarts and
-        // all that was spent waiting is the wait. If it never does — a track
-        // with no album, or a lookup that failed — the search still goes out,
-        // just a beat later, which is imperceptible for decoration.
-        if (canvas == null && song.albumName == null) delay(ALBUM_SETTLE_MS)
-        // Keep what an earlier pass found if this one comes back empty, rather
-        // than pulling a playing clip out from under itself.
-        canvas = PlayerPlatform.host.canvasFor(song) ?: canvas
-    }
-
-    return canvas
-}
 
 /**
  * The player's cover: the one request every surface draws it from, whether it

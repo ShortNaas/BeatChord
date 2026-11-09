@@ -28,8 +28,8 @@ data class ContextQueueResult(
  *
  * Shared because the phone and the desktop used to run two queues that only
  * looked alike: the desktop gave "Add to queue" no tier at all, so a track
- * queued by hand landed in the album's section, was invisible to a party, and
- * a jump or a clear treated it like any other row. Android's `QueueCoordinator`
+ * queued by hand landed in the album's section, and a jump or a clear treated
+ * it like any other row. Android's `QueueCoordinator`
  * applies these to an ExoPlayer; the desktop applies them to its own list. Same
  * input, same queue.
  */
@@ -103,24 +103,6 @@ object QueueTimeline {
     ): List<Song> =
         listOf(tappedSong.from(source).asQueueEntry(QueueTier.CONTEXT)) +
             upcomingUserQueue(currentTimeline, currentIndex)
-
-    /**
-     * Constructs a single-song playback timeline for Listen Together mode:
-     *
-     * Invariant: [Tapped Track (CONTEXT)] + [Upcoming manual party tracks (USER_QUEUE)].
-     * Preceding and following context tracks from the album/playlist are excluded from the shared
-     * queue, and the previous track's AutoPlay suggestions are dropped. [upcomingPartySongs] is the
-     * party's own queue after its current track, in order.
-     */
-    fun buildPartyPlaybackQueue(
-        tappedSong: Song,
-        source: QueueSource,
-        upcomingPartySongs: List<Song>,
-    ): List<Song> =
-        listOf(tappedSong.from(source).asQueueEntry(QueueTier.CONTEXT)) +
-            upcomingPartySongs
-                .filterNot { it.fromAutoplay }
-                .map { it.asQueueEntry(QueueTier.USER_QUEUE) }
 
     /**
      * Finds the insertion index for user-queued tracks.

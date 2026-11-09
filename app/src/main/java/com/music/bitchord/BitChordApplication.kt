@@ -16,15 +16,11 @@ import com.music.bitchord.data.lyrics.LyricsTranslation
 import androidx.appcompat.app.AppCompatDelegate
 import com.music.bitchord.ui.player.AndroidPlayerHost
 import com.music.bitchord.ui.player.PlayerPlatform
-import com.music.bitchord.data.canvas.CanvasCache
-import com.music.bitchord.data.canvas.SpotifyToken
-import com.music.bitchord.data.spotify.SpotifyLibrary
 import com.music.bitchord.playback.AudioCache
 import com.music.bitchord.playback.LastPlayed
 import com.music.bitchord.playback.OriginalVersion
 import com.music.bitchord.data.innertube.Innertube
 import com.music.bitchord.data.innertube.AndroidStreamHooks
-import com.music.bitchord.data.listentogether.ListenTogether
 import com.music.bitchord.data.settings.AppSettings
 import com.music.bitchord.data.settings.SearchHistory
 import com.music.bitchord.data.sources.SourceRegistry
@@ -42,7 +38,7 @@ class BitChordApplication : Application(), SingletonImageLoader.Factory {
     override fun onCreate() {
         super.onCreate()
         // The player is drawn by the shared UI module; this is what it reads
-        // underneath — settings, the Canvas decoder, outputs, the party.
+        // underneath — settings and outputs.
         AndroidStreamHooks.installEarly()
         PlayerPlatform.install(AndroidPlayerHost(this))
         com.music.bitchord.ui.AppUi.install(com.music.bitchord.ui.AndroidAppUiHost)
@@ -57,10 +53,6 @@ class BitChordApplication : Application(), SingletonImageLoader.Factory {
                     else -> android.util.Log.e(tag, message, error)
                 }
             }
-        }
-        // The Spotify library and import live in the shared module; the tokens are the WebView's.
-        SpotifyLibrary.auth = SpotifyLibrary.Auth {
-            SpotifyToken.accessToken()?.let { SpotifyLibrary.Tokens(it, SpotifyToken.clientToken()) }
         }
         // The per-app language picker, which YouTube Music's `hl` follows.
         // Full tag (zh-Hant / zh-Hans preserved); Innertube maps to hl/gl.
@@ -80,12 +72,6 @@ class BitChordApplication : Application(), SingletonImageLoader.Factory {
         val backgroundInit = thread(name = "startup-init") {
             SourceRegistry.init(this)
             AndroidStreamHooks.initInnerTubeX(this)
-            // Its own directory: canvas clips are looping video, not audio, and
-            // belong in a cache AudioCache's own limit and eviction policy were
-            // never sized for. See CanvasCache's doc for why this one exists at
-            // all — it is the fix for canvas clips re-fetching the same few
-            // seconds of video from the network on every loop.
-            CanvasCache.init(this)
         }
         // Migration-safe: an old single cookie becomes the first encrypted
         // session, while newer installs restore the profile the listener chose.
@@ -112,14 +98,8 @@ class BitChordApplication : Application(), SingletonImageLoader.Factory {
         // Before anything resolves a track: an addon with `checkValidLossless`
         // is gated on this, and the gate reads "no" until it has looked.
         com.music.bitchord.playback.audio.LosslessOutput.init(this)
-        // Restores a party this device is still a member of, so a process death
-        // mid-session is something the rest of the party never sees. The socket
-        // and the clock offset are not restored — both are re-established on
-        // the next connect, which is the only way to be sure they are current.
-        ListenTogether.init(this)
         SearchHistory.init(this)
         LastPlayed.init(this)
-        com.music.bitchord.playback.PartyPersonalQueueStash.init(this)
         // Which tracks the listener has reverted to YouTube's own upload. Read
         // by [Song.toMediaItem], so it has to be open before the restart
         // snapshot below is turned back into queue items.
@@ -136,11 +116,6 @@ class BitChordApplication : Application(), SingletonImageLoader.Factory {
         // One cache directory can only be opened once per process, and
         // PlaybackService shares this one — so it's opened here, not there.
         AudioCache.init(this)
-        // The offscreen WebView that mints a Spotify access token from the
-        // listener's own session cookie needs a Context, and nothing in the
-        // suspend call chain that reaches it (a track's canvas lookup) has
-        // one to hand — see SpotifyToken's doc for why.
-        SpotifyToken.init(this)
         // A sideloaded update is just a new APK over the old one, so app data —
         // including whatever the old build left in these caches — survives it
         // untouched. Wipe both on the first launch of a higher versionCode so a

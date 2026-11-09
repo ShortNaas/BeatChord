@@ -135,7 +135,6 @@ import com.music.bitchord.ui.performance.supportedPerformanceRefreshRates
 import com.music.bitchord.data.model.Account
 import com.music.bitchord.data.LocalMediaRepository
 import com.music.bitchord.data.NerdStats
-import com.music.bitchord.data.listentogether.ListenTogether
 import com.music.bitchord.data.settings.AppSettings
 import com.music.bitchord.data.settings.OutputPcmMode
 import com.music.bitchord.playback.AudioOutputStatus
@@ -173,7 +172,6 @@ fun SettingsScreen(
     onOpenReplay: () -> Unit,
     onLyricsSources: () -> Unit,
     onTranslationLanguage: () -> Unit,
-    onListenTogether: () -> Unit,
     onAppLanguage: () -> Unit,
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
@@ -199,8 +197,6 @@ fun SettingsScreen(
     val liquidGlass by AppSettings.liquidGlass.collectAsStateWithLifecycle()
     val liquidGlassSupported = isGlassSupported()
     val lyricsBlur by AppSettings.lyricsBlur.collectAsStateWithLifecycle()
-    val animatedCanvas by AppSettings.animatedCanvas.collectAsStateWithLifecycle()
-    val canvasOverCellular by AppSettings.canvasOverCellular.collectAsStateWithLifecycle()
     val fullBleedArtwork by AppSettings.fullBleedArtwork.collectAsStateWithLifecycle()
     val legacyMeshGradient by AppSettings.legacyMeshGradient.collectAsStateWithLifecycle()
     val syncedLyrics by AppSettings.syncedLyrics.collectAsStateWithLifecycle()
@@ -257,10 +253,6 @@ fun SettingsScreen(
     val listenBrainzEnabled by AppSettings.listenBrainzEnabled.collectAsStateWithLifecycle()
 
     val replayGenres by AppSettings.replayGenres.collectAsStateWithLifecycle()
-
-    // Read here so the row can say "In a party · ABC123" rather than making
-    // somebody open the screen to find out whether they are still in one.
-    val party by ListenTogether.state.collectAsStateWithLifecycle()
 
     // Filters the rows below — see [SettingsSearch]. Blank shows everything,
     // exactly as if the field weren't there.
@@ -1785,8 +1777,7 @@ private class SettingsGroupScope(
     /**
      * One searchable setting. [keywords] is everything somebody might type
      * looking for it: its title at least, plus whatever its subtitle or the
-     * controls under it say that the title doesn't — "Spotify", say, for the
-     * canvas link that lives under Animated cover art.
+     * controls under it say that the title doesn't.
      *
      * [divided] is false for the rows drawn as part of the row above them
      * rather than as settings in their own right, so they keep hugging their

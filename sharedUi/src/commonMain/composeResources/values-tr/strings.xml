@@ -8,7 +8,6 @@
     <string name="audio_pipeline">Audio Pipeline</string>
     <string name="automix_analysis_status">Automix · bu şarkı: %1$s · sonraki: %2$s</string>
     <string name="automix_not_supported_video">Automix video şarkılarında desteklenmiyor</string>
-    <string name="automix_stopped_in_party">Automix: Birlikte dinle sırasında durduruldu</string>
     <string name="autoplay">AutoPlay</string>
     <string name="autoplay_empty_description">Benzer müzikler çalmaya devam edecek</string>
     <string name="autoplay_off">AutoPlay kapalı</string>
@@ -35,16 +34,6 @@
     <string name="increase_lyrics_offset">Increase lyrics offset</string>
     <string name="instrumental">Enstrümantal</string>
     <string name="like">Beğen</string>
-    <string name="listen_together">Birlikte dinle</string>
-    <string name="listen_together_away">Uzakta — yeri tutuluyor</string>
-    <string name="listen_together_host">Kurucu</string>
-    <string name="listen_together_in_party">Partide · %1$s</string>
-    <string name="listen_together_jam">%1$s’in Jam’ı</string>
-    <string name="listen_together_jam_unnamed">Birlikte dinleme</string>
-    <string name="listen_together_manage">Yönet</string>
-    <string name="listen_together_open">Birlikte dinle</string>
-    <string name="listen_together_open_count">Birlikte dinleme · %1$d</string>
-    <string name="listen_together_you">Sen</string>
     <string name="mixing">Miksleniyor</string>
     <string name="lossless">Kayıpsız</string>
     <string name="lyrics_already_in_language">Bu sözler zaten %1$s dilinde</string>
@@ -104,7 +93,6 @@
     <string name="open_lyrics">Lyrics</string>
     <string name="pause">Duraklat</string>
     <string name="play">Çal</string>
-    <string name="played_by">Played by %1$s</string>
     <string name="playing_from">Playing from %1$s</string>
     <string name="playing_radio">%1$s Radyosu çalıyor</string>
     <string name="queue">Sıra</string>
@@ -195,8 +183,6 @@
     <string name="your_listening_experience">Dinleme deneyimin</string>
     <string name="default_replay_holder">BitChord dinleyicisi</string>
     <string name="member_since">Üyelik başlangıcı</string>
-    <string name="import_spotify">Spotify’den içe aktar</string>
-    <string name="import_spotify_subtitle">Bir çalma listesi bağlantısından</string>
     <string name="search_library_empty">Yerel Müzik klasörünüzdeki şarkıları arar.</string>
     <string name="search_library_hint">Şarkılar, Sanatçılar ve Albümler</string>
     <string name="search_library_no_results">Yerel Müzik’te “%1$s” ile eşleşen bir şey yok.</string>

@@ -10,11 +10,7 @@ import android.provider.Settings
 import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.music.bitchord.data.canvas.CanvasArtwork
-import com.music.bitchord.data.canvas.CanvasRepository
-import com.music.bitchord.data.listentogether.ListenTogether
 import com.music.bitchord.data.lyrics.LyricLine
 import com.music.bitchord.data.lyrics.LyricsTranslation
 import com.music.bitchord.data.model.Song
@@ -38,10 +34,9 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 /**
- * The phone's answers to [PlayerHost]: AppSettings, the Media3 Canvas decoder,
- * AudioRouting and the music stream's volume, the party, and the lyric
- * translation endpoint — each exactly what the player read directly before it
- * moved into the shared module.
+ * The phone's answers to [PlayerHost]: AppSettings, AudioRouting and the music
+ * stream's volume, and the lyric translation endpoint — each exactly what the
+ * player read directly before it moved into the shared module.
  */
 class AndroidPlayerHost(context: Context) : PlayerHost {
     private val app = context.applicationContext
@@ -49,10 +44,8 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
     private val main = Handler(Looper.getMainLooper())
 
     override val settings: PlayerSettingsSource = object : PlayerSettingsSource {
-        override val animatedCanvas get() = AppSettings.animatedCanvas
         override val audioQualityCellular get() = AppSettings.audioQualityCellular
         override val audioQualityWifi get() = AppSettings.audioQualityWifi
-        override val canvasOverCellular get() = AppSettings.canvasOverCellular
         override val fullBleedArtwork get() = AppSettings.fullBleedArtwork
         override val hideSongStatus get() = AppSettings.hideSongStatus
         override val hideVolumeBar get() = AppSettings.hideVolumeBar
@@ -63,7 +56,6 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
         override val lyricsSourceOrder get() = AppSettings.lyricsSourceOrder
         override val meteredConnection get() = AppSettings.meteredConnection
         override val preferUsbDac get() = AppSettings.preferUsbDac
-        override val prioritizeSpotifyCanvas get() = AppSettings.prioritizeSpotifyCanvas
         override val reduceAnimation get() = AppSettings.reduceAnimation
         override val reduceDynamicBlur get() = AppSettings.reduceDynamicBlur
         override val showNerdStats get() = AppSettings.showNerdStats
@@ -72,7 +64,6 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
         override val smartMixInProgress get() = AppSettings.smartMixInProgress
         override val smartMixBlend get() = AppSettings.smartMixBlend
         override val smartTransitionWindow get() = AppSettings.smartTransitionWindow
-        override val spotifyCanvasAutoHide get() = AppSettings.spotifyCanvasAutoHide
         override val syncedLyrics get() = AppSettings.syncedLyrics
         override val translationLanguage get() = AppSettings.translationLanguage
         override val versionAlignmentInProgress get() = AppSettings.versionAlignmentInProgress
@@ -80,13 +71,6 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
         override fun setLastPlayerScreen(value: LastPlayerScreen) = AppSettings.setLastPlayerScreen(value)
         override fun setLyricsOffsetMs(value: Int) = AppSettings.setLyricsOffsetMs(value)
     }
-
-    override fun cachedCanvas(song: Song): CanvasArtwork? = CanvasRepository.cached(song)
-
-    override suspend fun canvasFor(song: Song): CanvasArtwork? = CanvasRepository.canvasFor(song)
-
-    @Composable
-    override fun CanvasVideo(spec: CanvasVideoSpec, modifier: Modifier) = AndroidCanvasVideo(spec, modifier)
 
     @Composable
     override fun rememberRemoteArtworkUrl(song: Song?): String? = song?.thumbnailUrl
@@ -118,12 +102,6 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
         AudioOutputStatus.current
             .map { it.toOutputFormat() }
             .stateIn(scope, SharingStarted.Eagerly, AudioOutputStatus.current.value.toOutputFormat())
-    }
-
-    override val party: StateFlow<PartyUi> by lazy {
-        ListenTogether.state
-            .map { it.toPartyUi() }
-            .stateIn(scope, SharingStarted.Eagerly, ListenTogether.state.value.toPartyUi())
     }
 
     override suspend fun translateLyrics(
@@ -202,14 +180,6 @@ private fun AudioOutputStatus.Snapshot.toOutputFormat(): OutputFormatUi {
     }
     return OutputFormatUi(summary = summary, carriesHiRes = carriesHiRes)
 }
-
-private fun ListenTogether.State.toPartyUi() = PartyUi(
-    inParty = inParty,
-    controlsLocked = controlsLocked,
-    members = members,
-    you = you,
-    code = code,
-)
 
 /**
  * The volume bar's level: the receiver's while the music is on one, the music

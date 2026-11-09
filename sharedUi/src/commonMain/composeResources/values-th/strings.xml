@@ -8,7 +8,6 @@
     <string name="audio_pipeline">Audio Pipeline</string>
     <string name="automix_analysis_status">Automix · เพลงนี้: %1$s · ถัดไป: %2$s</string>
     <string name="automix_not_supported_video">Automix ไม่รองรับเพลงแบบวิดีโอ</string>
-    <string name="automix_stopped_in_party">Automix: หยุดทำงานขณะฟังด้วยกัน</string>
     <string name="autoplay">AutoPlay</string>
     <string name="autoplay_empty_description">เพลงที่คล้ายกันจะเล่นต่อไปเรื่อย ๆ</string>
     <string name="autoplay_off">ปิด AutoPlay</string>
@@ -35,16 +34,6 @@
     <string name="increase_lyrics_offset">Increase lyrics offset</string>
     <string name="instrumental">บรรเลง</string>
     <string name="like">ถูกใจ</string>
-    <string name="listen_together">ฟังด้วยกัน</string>
-    <string name="listen_together_away">ไม่อยู่ — ที่นั่งยังถูกจองไว้</string>
-    <string name="listen_together_host">เจ้าของปาร์ตี้</string>
-    <string name="listen_together_in_party">อยู่ในปาร์ตี้ · %1$s</string>
-    <string name="listen_together_jam">แจมของ %1$s</string>
-    <string name="listen_together_jam_unnamed">กำลังฟังด้วยกัน</string>
-    <string name="listen_together_manage">จัดการ</string>
-    <string name="listen_together_open">ฟังด้วยกัน</string>
-    <string name="listen_together_open_count">กำลังฟังด้วยกัน · %1$d</string>
-    <string name="listen_together_you">คุณ</string>
     <string name="mixing">กำลังมิกซ์</string>
     <string name="lossless">ไม่สูญเสียคุณภาพ</string>
     <string name="lyrics_already_in_language">เนื้อเพลงนี้เป็นภาษา %1$s อยู่แล้ว</string>
@@ -104,7 +93,6 @@
     <string name="open_lyrics">Lyrics</string>
     <string name="pause">หยุดชั่วคราว</string>
     <string name="play">เล่น</string>
-    <string name="played_by">Played by %1$s</string>
     <string name="playing_from">Playing from %1$s</string>
     <string name="playing_radio">กำลังเล่นวิทยุ %1$s</string>
     <string name="queue">คิว</string>
@@ -195,8 +183,6 @@
     <string name="your_listening_experience">ประสบการณ์การฟังของคุณ</string>
     <string name="default_replay_holder">ผู้ฟัง BitChord</string>
     <string name="member_since">สมาชิกตั้งแต่</string>
-    <string name="import_spotify">นำเข้าจาก Spotify</string>
-    <string name="import_spotify_subtitle">จากลิงก์เพลย์ลิสต์</string>
     <string name="search_library_empty">ค้นหาเพลงในโฟลเดอร์เพลงในเครื่องของคุณ</string>
     <string name="search_library_hint">เพลง ศิลปิน และอัลบั้ม</string>
     <string name="search_library_no_results">ไม่มีอะไรในเพลงในเครื่องตรงกับ “%1$s”</string>

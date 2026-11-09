@@ -8,7 +8,6 @@
     <string name="audio_pipeline">Audio Pipeline</string>
     <string name="automix_analysis_status">Automix · cette chanson : %1$s · suivante : %2$s</string>
     <string name="automix_not_supported_video">Automix non pris en charge sur les morceaux vidéo</string>
-    <string name="automix_stopped_in_party">Automix : arrêté pendant Écouter ensemble</string>
     <string name="autoplay">Lecture automatique</string>
     <string name="autoplay_empty_description">De la musique similaire continuera d\'être lue</string>
     <string name="autoplay_off">AutoPlay désactivé</string>
@@ -35,16 +34,6 @@
     <string name="increase_lyrics_offset">Increase lyrics offset</string>
     <string name="instrumental">Instrumental</string>
     <string name="like">J\'aime</string>
-    <string name="listen_together">Écouter ensemble</string>
-    <string name="listen_together_away">Absent — sa place est gardée</string>
-    <string name="listen_together_host">Hôte</string>
-    <string name="listen_together_in_party">Dans une session · %1$s</string>
-    <string name="listen_together_jam">Jam de %1$s</string>
-    <string name="listen_together_jam_unnamed">Écoute commune</string>
-    <string name="listen_together_manage">Gérer</string>
-    <string name="listen_together_open">Écouter ensemble</string>
-    <string name="listen_together_open_count">Écoute commune · %1$d</string>
-    <string name="listen_together_you">Toi</string>
     <string name="mixing">Mixage</string>
     <string name="lossless">Sans perte</string>
     <string name="lyrics_already_in_language">Ces paroles sont déjà en %1$s</string>
@@ -104,7 +93,6 @@
     <string name="open_lyrics">Lyrics</string>
     <string name="pause">Pause</string>
     <string name="play">Lecture</string>
-    <string name="played_by">Played by %1$s</string>
     <string name="playing_from">Playing from %1$s</string>
     <string name="playing_radio">Lecture de la radio %1$s</string>
     <string name="queue">File d\'attente</string>
@@ -195,8 +183,6 @@
     <string name="your_listening_experience">Votre expérience d\'écoute</string>
     <string name="default_replay_holder">Auditeur BitChord</string>
     <string name="member_since">Membre depuis</string>
-    <string name="import_spotify">Importer depuis Spotify</string>
-    <string name="import_spotify_subtitle">Depuis un lien de playlist</string>
     <string name="search_library_empty">Recherche les titres de votre dossier Musique locale.</string>
     <string name="search_library_hint">Titres, artistes et albums</string>
     <string name="search_library_no_results">Rien dans Musique locale ne correspond à « %1$s ».</string>

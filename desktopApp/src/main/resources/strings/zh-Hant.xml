@@ -194,7 +194,6 @@
     <string name="reduce_dynamic_blur">減少動態模糊</string>
     <string name="reduce_dynamic_blur_subtitle">在整個應用中用純色填充替代磨砂玻璃效果</string>
     <string name="full_screen_cover_art">全屏封面</string>
-    <string name="animated_cover_art">動態封面</string>
     <string name="synced_lyrics">同步歌詞</string>
     <string name="synced_lyrics_subtitle">隨著演唱在播放器上高亮顯示歌詞</string>
     <string name="lyrics_sources">歌詞來源</string>
@@ -219,7 +218,6 @@
     <string name="light">淺色</string>
     <string name="dark">深色</string>
     <string name="full_screen_cover_art_subtitle">讓封面延伸至播放器邊緣，而不是顯示為方形</string>
-    <string name="animated_cover_art_subtitle">播放部分發行版自帶的迴圈影片，而不是靜態封面</string>
     <string name="dont_repeat_songs_subtitle">自動播放不會在本次會話中重複推薦已播放或已推薦過的歌曲</string>
     <string name="download_quality_subtitle">無論何種網路連線，每首曲目均為%1$s</string>
     <string name="filter_non_music_audio">過濾非音樂音訊</string>
@@ -379,7 +377,6 @@
     <plurals name="log_copied_line_count">
         <item quantity="other">日誌已複製 · %1$d 行</item>
     </plurals>
-    <string name="integrate_spotify_canvas">設定 Spotify Canvas</string>
     <string name="lastfm_login">Last.fm 登入</string>
     <string name="lastfm_login_description">使用你的 Last.fm 賬號登入以啟用 Scrobbling。</string>
     <string name="lastfm_now_playing_subtitle">將你正在收聽的內容更新到 Last.fm</string>
@@ -451,9 +448,6 @@
     <string name="sources_quality_capped">此連線的設定低於高品質，因此串流會被轉碼以符合該限制，下載不受影響。</string>
     <string name="sources_subtitle">音訊的來源及使用順序</string>
     <string name="spdc_token">sp_dc 令牌</string>
-    <string name="spotify_canvas_setup">Spotify Canvas 設定</string>
-    <string name="spotify_canvas_setup_description">要使用 Spotify Canvas，請提供你的 Spotify sp_dc cookie。</string>
-    <string name="spotify_canvas_setup_steps">1. 在瀏覽器中登入 open.spotify.com。\n2. 開啟開發者工具，然後進入“應用程式”和“Cookie”。\n3. 複製 sp_dc cookie 的值。\n4. 將其貼上到下方。</string>
     <string name="status">狀態</string>
     <string name="status_dialog_message">狀態顯示開啟時，你的賬號所展示的內容。</string>
     <string name="status_dnd">請勿打擾</string>
@@ -630,45 +624,7 @@
         <item>就快找到歌詞了</item>
     </string-array>
 
-    <!-- Listen together -->
-    <string name="listen_together">一起聽</string>
-    <string name="listen_together_subtitle">分享一個程式碼，同步播放同一首音樂</string>
-    <string name="listen_together_in_party">派對中 · %1$s</string>
-    <string name="listen_together_sign_in_footer">一起聽需要賬號，這樣派對裡的每個人都能看到還有誰在。</string>
-    <string name="listen_together_server">派對伺服器</string>
-    <string name="listen_together_server_online">線上 · %1$d 毫秒</string>
-    <string name="listen_together_server_offline">目前無法連線</string>
-    <string name="listen_together_server_checking">正在檢查…</string>
-    <string name="listen_together_server_unknown">點按以檢查</string>
-    <string name="listen_together_custom_server">使用自己的伺服器</string>
-    <string name="listen_together_custom_server_footer">留空則使用內建伺服器。如果你執行自己的副本，派對中的所有人都必須指向同一個。</string>
-    <string name="listen_together_using_builtin">正在使用內建伺服器</string>
-    <string name="listen_together_create">建立派對</string>
-    <string name="listen_together_create_subtitle">獲取程式碼，分享給朋友</string>
-    <string name="listen_together_create_footer">你會得到一個六位程式碼。拿到程式碼的人都能加入，包括你自己最多五臺裝置。</string>
-    <string name="listen_together_join">加入派對</string>
-    <string name="listen_together_join_action">加入</string>
-    <string name="listen_together_code_hint">六位字母或數字</string>
-    <string name="listen_together_code">派對程式碼</string>
-    <string name="listen_together_code_footer">讀出來或發出去。字母 O 和 I 不會用到，所以“歐”永遠是零。</string>
     <string name="copy_code">複製程式碼</string>
-    <string name="listen_together_share_text">在 BeatChord 上和我一起聽 — 派對程式碼 %1$s</string>
-    <string name="listen_together_now_playing">正在播放</string>
-    <string name="listen_together_nothing_playing">還沒有播放任何內容</string>
-    <string name="listen_together_listening">正在收聽 · %1$d / %2$d</string>
-    <string name="listen_together_members_footer">一個派對可容納 %1$d 臺裝置。其中任何人都可以控制音樂。</string>
-    <string name="listen_together_you">你</string>
-    <string name="listen_together_host">主持人</string>
-    <string name="listen_together_away">暫離 — 位置為其保留</string>
-    <string name="listen_together_leave">離開派對</string>
-    <string name="listen_together_leave_subtitle">其他人繼續收聽</string>
-    <string name="listen_together_reconnecting">正在重新連線…</string>
-    <string name="listen_together_syncing_clock">正在校準時鐘…</string>
-    <string name="listen_together_in_sync">已同步 · 往返 %1$d 毫秒</string>
-    <string name="listen_together_jam">%1$s 的同聽</string>
-    <string name="listen_together_jam_unnamed">一起聽</string>
-    <string name="listen_together_open">一起聽</string>
-    <string name="listen_together_open_count">一起聽 · %1$d</string>
     <string name="miscellaneous_footer">啟用後，從最近任務介面關閉應用也會停止音樂播放。</string>
     <string name="lyrics_original_title">用原標題搜歌詞</string>
     <string name="lyrics_original_title_desc">先還原 YouTube 原標題再搜歌詞，翻譯過的標題也能找到</string>

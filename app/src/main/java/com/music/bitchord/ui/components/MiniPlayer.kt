@@ -211,9 +211,6 @@ internal fun Modifier.miniPlayerGestures(
     pull: MiniPlayerPull?,
     onNext: () -> Unit,
     onPrevious: () -> Unit,
-    /** Listening in a party whose host holds the controls. Swipes say so instead of skipping. */
-    locked: Boolean = false,
-    onBlocked: () -> Unit = {},
 ): Modifier {
     // Playback state updates can recompose the bar while a finger is down.
     // Keep the gesture coroutine alive through those updates while still
@@ -221,8 +218,6 @@ internal fun Modifier.miniPlayerGestures(
     val currentPull by rememberUpdatedState(pull)
     val currentOnNext by rememberUpdatedState(onNext)
     val currentOnPrevious by rememberUpdatedState(onPrevious)
-    val currentLocked by rememberUpdatedState(locked)
-    val currentOnBlocked by rememberUpdatedState(onBlocked)
     val scope = rememberCoroutineScope()
     // Read at draw only, in the layer below: a pull moves the bar without
     // recomposing it.
@@ -264,9 +259,7 @@ internal fun Modifier.miniPlayerGestures(
                     change.consume()
                 }
                 if (!finished) return@awaitEachGesture
-                val crossed = dragged <= -trackThreshold || dragged >= trackThreshold
                 when {
-                    currentLocked -> if (crossed) currentOnBlocked()
                     dragged <= -trackThreshold -> currentOnNext()
                     dragged >= trackThreshold -> currentOnPrevious()
                 }
@@ -352,9 +345,6 @@ fun MiniPlayer(
     onNext: () -> Unit,
     onPrevious: () -> Unit,
     onExpand: () -> Unit,
-    /** @see com.music.bitchord.data.listentogether.ListenTogether.State.controlsLocked */
-    controlsLocked: Boolean = false,
-    onBlockedControl: () -> Unit = {},
     /** Where the player's artwork lands when it closes into this bar. */
     dock: PlayerDock? = null,
     /** Dragging the bar up into the player. */
@@ -382,8 +372,6 @@ fun MiniPlayer(
                     haptics.play(Haptic.SkipPrevious)
                     onPrevious()
                 },
-                locked = controlsLocked,
-                onBlocked = onBlockedControl,
             )
             .clip(shape)
             .then(
@@ -464,20 +452,14 @@ fun MiniPlayer(
                 }
             }
             Spacer(Modifier.width(TRANSPORT_GAP))
-            // Faded and inert rather than removed while the host holds the
-            // controls, so the bar keeps its shape — see [controlsLocked].
             IconButton(
                 onClick = {
                     haptics.play(Haptic.SkipNext)
                     onNext()
                 },
-                enabled = !controlsLocked,
                 modifier = Modifier.size(GLYPH_SLOT),
             ) {
-                MiniPlayerNextGlyph(
-                    tint = MaterialTheme.colorScheme.onBackground
-                        .copy(alpha = if (controlsLocked) 0.3f else 1f),
-                )
+                MiniPlayerNextGlyph(tint = MaterialTheme.colorScheme.onBackground)
             }
         }
     }

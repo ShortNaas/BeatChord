@@ -1,6 +1,5 @@
 package com.music.bitchord
 
-import com.music.bitchord.data.canvas.normalizeForMatch
 import com.music.bitchord.data.model.isExactArtistMatch
 import com.music.bitchord.data.model.normalizedArtistName
 import org.junit.Assert.assertEquals
@@ -68,7 +67,7 @@ class ArtistNameMatchTest {
 
     @Test
     fun `punctuation is not folded away`() {
-        // Deliberately the opposite of the canvas matcher, which turns every
+        // Deliberately the opposite of a looser fold that turns every
         // non-alphanumeric character into a space. That is how `AC/DC` and
         // `AC DC` come to mean one thing there; here they stay two, because the
         // cost of a false match is opening somebody else's page. Trimming is
@@ -139,22 +138,5 @@ class ArtistNameMatchTest {
         assertFalse(matches("   ", ""))
         assertFalse(matches("Monday Waxie", "  "))
         assertFalse(matches("  ", "Monday Waxie"))
-    }
-
-    @Test
-    fun `a name in a script the canvas matcher cannot read is still readable here`() {
-        // The reason this has its own folding rather than reusing the canvas
-        // matcher's. That one reduces everything outside a-z0-9 to a space, so
-        // all four of these fold to the same empty string, and an exact-name
-        // check built on it would accept any of them for any of the others.
-        val empty = ""
-        for (name in listOf("Мата", "Мета", "中島美嘉", "माता")) {
-            assertEquals("$name folds to nothing there", empty, name.normalizeForMatch())
-        }
-
-        assertNotEquals(normalizedArtistName("Мата"), normalizedArtistName("Мета"))
-        assertNotEquals(normalizedArtistName("中島美嘉"), normalizedArtistName("椎名林檎"))
-        assertNotEquals(normalizedArtistName("माता"), normalizedArtistName("मेता"))
-        assertTrue(matches("Мата", "Мата"))
     }
 }

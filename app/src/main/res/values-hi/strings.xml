@@ -202,7 +202,6 @@
     <string name="reduce_dynamic_blur">डायनामिक ब्लर कम करें</string>
     <string name="reduce_dynamic_blur_subtitle">पूरे ऐप में फ्रॉस्टेड ग्लास की जगह ठोस रंग लगाता है</string>
     <string name="full_screen_cover_art">फ़ुल-स्क्रीन कवर आर्ट</string>
-    <string name="animated_cover_art">एनिमेटेड कवर आर्ट</string>
     <string name="synced_lyrics">सिंक किए गए लिरिक्स</string>
     <string name="synced_lyrics_subtitle">गाए जाने के साथ प्लेयर पर शब्दों को हाइलाइट करता है</string>
     <string name="lyrics_sources">लिरिक्स के स्रोत</string>
@@ -229,7 +228,6 @@
     <string name="light">लाइट</string>
     <string name="dark">डार्क</string>
     <string name="full_screen_cover_art_subtitle">चौकोर स्लीव के बजाय कवर को प्लेयर के किनारों तक ले जाता है</string>
-    <string name="animated_cover_art_subtitle">स्थिर स्लीव के बजाय कुछ रिलीज़ में मौजूद लूपिंग वीडियो चलाता है</string>
     <string name="dont_repeat_songs_subtitle">ऑटोप्ले इस सेशन में पहले से चलाया या सुझाया गया गाना दोबारा सुझाव नहीं देगा</string>
     <string name="download_quality_subtitle">%1$s प्रति ट्रैक, कनेक्शन चाहे जो भी हो</string>
     <string name="filter_non_music_audio">गैर-संगीत ऑडियो फ़िल्टर करें</string>
@@ -373,7 +371,6 @@
         <item quantity="one">लॉग कॉपी किया गया · %1$d लाइन</item>
         <item quantity="other">लॉग कॉपी किया गया · %1$d लाइनें</item>
     </plurals>
-    <string name="integrate_spotify_canvas">Spotify Canvas सेट अप करें</string>
     <string name="lastfm_login">Last.fm लॉगिन</string>
     <string name="lastfm_login_description">स्क्रॉबलिंग चालू करने के लिए अपने Last.fm खाते से साइन इन करें।</string>
     <string name="lastfm_now_playing_subtitle">आप जो सुन रहे हैं उससे Last.fm अपडेट करें</string>
@@ -449,13 +446,6 @@
     <string name="upgrade_length_slack_footer">ज़्यादा छूट से ज़्यादा स्रोत मिलान स्वीकार होते हैं; कम छूट ज़्यादा सख़्त है। डिफ़ॉल्ट 3 सेकंड है।</string>
     <string name="seconds_short">%1$d से.</string>
     <string name="spdc_token">sp_dc टोकन</string>
-    <string name="spotify_canvas_setup">Spotify Canvas सेटअप</string>
-    <string name="spotify_canvas_setup_description">Spotify Canvas इस्तेमाल करने के लिए, अपनी Spotify sp_dc कुकी दें।</string>
-    <string name="spotify_canvas_setup_steps">1. ब्राउज़र में open.spotify.com पर साइन इन करें।\n2. Developer Tools खोलें, फिर Application और Cookies पर जाएं।\n3. sp_dc कुकी की वैल्यू कॉपी करें।\n4. इसे नीचे पेस्ट करें।</string>
-    <string name="spotify_canvas_auto_hide">प्लेयर कंट्रोल अपने-आप छिपाएँ</string>
-    <string name="spotify_canvas_auto_hide_subtitle">Spotify Canvas चलते समय 5 सेकंड बाद आधा प्लेयर छोटा कर देता है</string>
-    <string name="prioritize_spotify_canvas">Spotify Canvas को प्राथमिकता दें</string>
-    <string name="prioritize_spotify_canvas_subtitle">Apple Music और दूसरे एनिमेटेड कवर प्रदाताओं से पहले Spotify आज़माएँ</string>
     <string name="status">स्टेटस</string>
     <string name="status_dialog_message">प्रेज़ेंस चालू रहते हुए आपका खाता क्या दिखाता है।</string>
     <string name="status_dnd">डिस्टर्ब न करें</string>
@@ -621,107 +611,7 @@
     <string name="this_year">इस साल</string>
     <string name="all_time">अब तक</string>
 
-    <!-- Listen together -->
-    <string name="listen_together">साथ में सुनें</string>
-    <string name="listen_together_subtitle">एक कोड शेयर करें और एक ही म्यूज़िक, एक साथ सुनें</string>
-    <string name="listen_together_in_party">पार्टी में · %1$s</string>
-    <string name="listen_together_sign_in_footer">साथ में सुनने के लिए अकाउंट चाहिए, ताकि पार्टी में सबको दिखे कि और कौन है।</string>
-    <string name="listen_together_server">पार्टी सर्वर</string>
-    <string name="listen_together_server_online">ऑनलाइन · %1$d मि.से.</string>
-    <string name="listen_together_server_online_fallback">ऑनलाइन (डिफ़ॉल्ट फ़ॉलबैक) · %1$d मि.से.</string>
-    <string name="listen_together_server_offline">अभी पहुँच में नहीं है</string>
-    <string name="listen_together_server_checking">जाँच हो रही है…</string>
-    <string name="listen_together_server_unknown">जाँचने के लिए टैप करें</string>
-    <string name="listen_together_custom_server">अपना सर्वर इस्तेमाल करें</string>
-    <string name="listen_together_custom_server_footer">बिल्ट-इन सर्वर इस्तेमाल करने के लिए इसे खाली छोड़ दें। अगर आप अपनी कॉपी चलाते हैं, तो पार्टी में सबको वही सर्वर देना होगा।</string>
-    <string name="listen_together_using_default">बिल्ट-इन सर्वर इस्तेमाल हो रहा है</string>
-    <string name="listen_together_remove_server">सर्वर हटाएँ</string>
-    <string name="listen_together_switched_to_default">डिफ़ॉल्ट सर्वर पर स्विच किया गया</string>
-    <string name="listen_together_custom_server_saved">कस्टम सर्वर सेव हो गया</string>
-    <string name="listen_together_create">पार्टी बनाएँ</string>
-    <string name="listen_together_create_subtitle">दोस्तों के साथ शेयर करने के लिए कोड पाएँ</string>
-    <string name="listen_together_create_footer">आपको छह अक्षरों का कोड मिलेगा। जिसके पास यह है वह जुड़ सकता है — आपके साथ मिलाकर %1$d डिवाइस तक।</string>
-    <string name="listen_together_profile">आपकी पार्टी प्रोफ़ाइल</string>
-    <string name="listen_together_nickname_hint">इस पार्टी के लिए उपनाम</string>
-    <string name="listen_together_party_size">पार्टी का आकार</string>
-    <string name="listen_together_party_size_subtitle">2–10 श्रोता चुनें</string>
-    <string name="listen_together_host_controls">सिर्फ़ आप क्षमता बदल सकते हैं या श्रोताओं को हटा सकते हैं</string>
-    <string name="listen_together_remove">हटाएँ</string>
-    <string name="listen_together_activity">हाल की गतिविधि</string>
-    <string name="listen_together_activity_footer">सिर्फ़ यह सेशन · नया पहले · अधिकतम 100 गतिविधियाँ</string>
-    <string name="listen_together_activity_played">प्लेबैक शुरू किया</string>
-    <string name="listen_together_activity_paused">प्लेबैक रोका</string>
-    <string name="listen_together_activity_seeked">ट्रैक में आगे-पीछे किया</string>
-    <string name="listen_together_activity_skipped">आगे बढ़ाया</string>
-    <string name="listen_together_activity_went_back">पीछे गए</string>
-    <string name="listen_together_activity_added">कतार में जोड़ा</string>
-    <string name="listen_together_activity_removed_track">कतार से एक ट्रैक हटाया</string>
-    <string name="listen_together_activity_cleared">आने वाले ट्रैक साफ़ किए</string>
-    <string name="listen_together_activity_reordered">कतार का क्रम बदला</string>
-    <string name="listen_together_activity_removed_member">एक श्रोता को हटाया</string>
-    <string name="listen_together_activity_changed_size">पार्टी का आकार बदला</string>
-    <string name="listen_together_activity_updated">पार्टी अपडेट की</string>
-    <string name="listen_together_join">पार्टी में शामिल हों</string>
-    <string name="listen_together_join_action">शामिल हों</string>
-    <string name="listen_together_code_hint">छह अक्षर या अंक</string>
-    <string name="listen_together_code">पार्टी कोड</string>
-    <string name="listen_together_code_footer">इसे बोलकर बताएँ या भेज दें। O और I इस्तेमाल नहीं होते, इसलिए “ओ” हमेशा शून्य है।</string>
     <string name="copy_code">कोड कॉपी करें</string>
-    <string name="listen_together_share_text">BeatChord पर मेरे साथ सुनो — पार्टी कोड %1$s</string>
-    <string name="listen_together_now_playing">अभी चल रहा है</string>
-    <string name="listen_together_nothing_playing">अभी कुछ नहीं चल रहा</string>
-    <string name="listen_together_listening">सुन रहे हैं · %2$d में से %1$d</string>
-    <string name="listen_together_members_footer">एक पार्टी में %1$d डिवाइस आते हैं। इसमें कोई भी म्यूज़िक कंट्रोल कर सकता है।</string>
-    <string name="listen_together_you">आप</string>
-    <string name="listen_together_host">होस्ट</string>
-    <string name="listen_together_away">दूर हैं — उनकी जगह रखी है</string>
-    <string name="listen_together_landing_title">पार्टी शुरू करें</string>
-    <string name="listen_together_landing_subtitle">क्योंकि संगीत साथ में बेहतर लगता है। दोस्तों को साथ सुनने और रियल टाइम में गाने जोड़ने के लिए बुलाएँ, चाहे वे कहीं भी हों।</string>
-    <string name="listen_together_create_action">पार्टी बनाएँ</string>
-    <string name="listen_together_join_existing">मौजूदा पार्टी में शामिल हों</string>
-    <string name="listen_together_create_sheet_subtitle">चुनें कि आप कैसे दिखेंगे, और कितने लोग शामिल हो सकते हैं।</string>
-    <string name="listen_together_creating">बनाई जा रही है…</string>
-    <string name="listen_together_joining">शामिल हो रहे हैं…</string>
-    <string name="listen_together_full">यह पार्टी भर गई है</string>
-    <string name="listen_together_join_question">%1$s की पार्टी में शामिल हों?</string>
-    <string name="listen_together_join_question_unnamed">इस पार्टी में शामिल हों?</string>
-    <string name="listen_together_not_now">अभी नहीं</string>
-    <string name="listen_together_preview_footer">पार्टी के लोग आपका नाम और प्रोफ़ाइल फ़ोटो देखेंगे।</string>
-    <string name="listen_together_invite_title">दोस्तों को अपनी पार्टी में बुलाएँ</string>
-    <string name="listen_together_share_link">लिंक शेयर करें</string>
-    <string name="listen_together_scan_qr">QR कोड स्कैन करें</string>
-    <string name="listen_together_scan_qr_subtitle">शामिल होने के लिए दोस्त इसे स्कैन करें।</string>
-    <string name="listen_together_invite">आमंत्रित करें</string>
-    <string name="listen_together_host_only">संगीत सिर्फ़ मैं कंट्रोल करूँ</string>
-    <string name="listen_together_host_only_subtitle">बाकी सब साथ सुनते हैं और अपने डिवाइस पर रोक सकते हैं</string>
-    <string name="listen_together_host_only_notice">सिर्फ़ होस्ट संगीत कंट्रोल कर सकता है</string>
-    <string name="listen_together_leave">पार्टी छोड़ें</string>
-    <string name="listen_together_leave_subtitle">बाकी लोग सुनते रहेंगे</string>
-    <string name="listen_together_reconnecting">दोबारा जुड़ रहे हैं…</string>
-    <string name="listen_together_syncing_clock">घड़ी मिलाई जा रही है…</string>
-    <string name="listen_together_in_sync">सिंक में · %1$d मि.से. राउंड ट्रिप</string>
-    <string name="listen_together_custom_server_dialog_title">कस्टम सर्वर की पार्टी में शामिल हों?</string>
-    <string name="listen_together_custom_server_dialog_message">यह पार्टी एक बाहरी सर्वर पर चल रही है:\n\n%1$s\n\nक्या आप अपना पार्टी सर्वर बदलकर पार्टी %2$s में शामिल होना चाहते हैं?</string>
-    <string name="listen_together_custom_server_switch_and_join">बदलें और शामिल हों</string>
-    <string name="listen_together_official_server_dialog_title">आधिकारिक सर्वर पर जाएँ?</string>
-    <string name="listen_together_official_server_dialog_message">यह पार्टी BeatChord के आधिकारिक सर्वर पर चल रही है।\n\nक्या आप आधिकारिक सर्वर पर लौटकर पार्टी %1$s में शामिल होना चाहते हैं?</string>
-    <string name="listen_together_switch_failed_stayed_in_party">पार्टी में शामिल नहीं हो सके: %1$s। आप पार्टी %2$s में बने रहेंगे।</string>
-    <string name="listen_together_switch_failed">पार्टी में शामिल नहीं हो सके: %1$s।</string>
-    <string name="listen_together_ping">%1$d ms</string>
-    <string name="listen_together_server_offline_dash">—</string>
-    <string name="listen_together_invalid_server_url">सर्वर URL अमान्य है। कृपया सही पता डालें (जैसे https://your-server.com)</string>
-    <string name="listen_together_err_whitespace">सर्वर URL में स्पेस नहीं हो सकते</string>
-    <string name="listen_together_err_invalid_path">सर्वर URL में अमान्य पाथ है</string>
-    <string name="listen_together_err_no_path">सर्वर URL में पाथ नहीं होना चाहिए</string>
-    <string name="listen_together_err_no_query">सर्वर URL में क्वेरी पैरामीटर नहीं होने चाहिए</string>
-    <string name="listen_together_err_no_fragment">सर्वर URL में फ़्रैगमेंट नहीं होने चाहिए</string>
-    <string name="listen_together_err_invalid_port">सर्वर पोर्ट 1 से 65535 के बीच होना चाहिए</string>
-    <string name="listen_together_custom_server_connected">कस्टम सर्वर से कनेक्ट हो गया</string>
-    <string name="listen_together_custom_server_unreachable_fallback">कस्टम सर्वर तक नहीं पहुँच सके। डिफ़ॉल्ट फ़ॉलबैक सर्वर इस्तेमाल हो रहा है।</string>
-    <string name="listen_together_status_custom_online">कस्टम सर्वर से कनेक्टेड · %1$d मि.से.</string>
-    <string name="listen_together_status_custom_fallback">कस्टम सर्वर तक नहीं पहुँच सके · डिफ़ॉल्ट फ़ॉलबैक इस्तेमाल हो रहा है (%1$d मि.से.)</string>
-    <string name="listen_together_status_all_offline">कस्टम सर्वर और डिफ़ॉल्ट सर्वर दोनों ऑफ़लाइन हैं</string>
-    <string name="listen_together_top_bar_fallback">फ़ॉलबैक · %1$s</string>
 
     <string name="vietnamese">वियतनामी</string>
 
@@ -899,7 +789,6 @@
 
     <string name="shelf_new_releases">नई रिलीज़</string>
 
-    <string name="shelf_party">पार्टी</string>
 
     <string name="shelf_quick_picks">त्वरित चयन</string>
 
@@ -1186,7 +1075,6 @@
         <item quantity="one">%1$d प्लेलिस्ट में जोड़ा गया</item>
         <item quantity="other">%1$d प्लेलिस्ट में जोड़ा गया</item>
     </plurals>
-    <string name="party_queue_full">कतार भर गई है (पार्टी में अधिकतम %d गाने)</string>
 
     <string name="paxsenix_api_key">PaxSenix API key</string>
 
@@ -1219,36 +1107,13 @@
     <string name="song_cache_unlimited_subtitle">कोई सीमा नहीं। कैश ऑडियो स्टोरेज भरने तक बढ़ सकता है।</string>
     <string name="clear_song_cache_title">सॉन्ग कैश साफ़ करें?</string>
     <string name="clear_song_cache_warning">सभी कैश किए गए गाने हटा दिए जाएँगे और कैश किए गए गानों का फ़ोल्डर खाली हो जाएगा। अगली बार चलाने पर वे फिर से स्ट्रीम होंगे।</string>
-    <string name="import_spotify">Spotify से आयात करें</string>
-    <string name="import_spotify_subtitle">प्लेलिस्ट लिंक से</string>
     <string name="local_playlist_subtitle">%1$d गाने · इस डिवाइस पर</string>
     <string name="lossless_output_permission_denied">नज़दीकी डिवाइस अनुमति बंद है</string>
     <string name="lossless_output_permission_denied_detail">सेटिंग्स खोलने और नज़दीकी डिवाइस अनुमति देने के लिए टैप करें — इसके बिना आपका ब्लूटूथ कोडेक नहीं पढ़ा जा सकता</string>
     <string name="recent_album">हाल का एल्बम</string>
     <string name="recent_ep">हाल की EP</string>
     <string name="recent_single">हाल का सिंगल</string>
-    <string name="spotify">Spotify</string>
-    <string name="spotify_connect_subtitle">अपनी प्लेलिस्ट लाने के लिए साइन इन करें. प्लेबैक YouTube Music से होता है.</string>
-    <string name="spotify_disconnect">डिस्कनेक्ट</string>
-    <string name="spotify_empty_playlists">इस खाते में कोई प्लेलिस्ट नहीं</string>
-    <string name="spotify_empty_tracks">इस प्लेलिस्ट में कोई गाना नहीं</string>
-    <string name="spotify_import_button">आयात</string>
-    <string name="spotify_import_description">सार्वजनिक प्लेलिस्ट लिंक चिपकाएँ. गाने YouTube Music पर मिलाए जाते हैं.</string>
-    <string name="spotify_import_description_local">सार्वजनिक प्लेलिस्ट लिंक चिपकाएँ. गाने YouTube Music पर मिलाए जाते हैं और इस डिवाइस पर सहेजे जाते हैं.</string>
-    <string name="spotify_import_done">‘%1$s’ आयात हुई</string>
     <string name="spotify_import_empty_playlist">इस प्लेलिस्ट में कोई गाना नहीं</string>
-    <string name="spotify_import_failed">प्लेलिस्ट आयात नहीं हो सकी: %1$s</string>
-    <string name="spotify_import_fetching">Spotify प्लेलिस्ट पढ़ी जा रही है…</string>
-    <string name="spotify_import_hint">open.spotify.com/playlist/…</string>
-    <string name="spotify_import_invalid">यह Spotify प्लेलिस्ट लिंक नहीं है.</string>
-    <string name="spotify_import_local_fallback">इसे YouTube Music पर नहीं बनाया जा सका, इसलिए ‘%1$s’ इस डिवाइस पर सहेज ली गई.</string>
-    <string name="spotify_import_matching">गाने मिलाए जा रहे हैं %1$d / %2$d</string>
-    <string name="spotify_import_none">वे गाने YouTube Music पर नहीं मिले.</string>
-    <string name="spotify_import_title">Spotify प्लेलिस्ट आयात करें</string>
-    <string name="spotify_import_unmatched">%1$d गाने YouTube Music पर नहीं मिले</string>
-    <string name="spotify_library_subtitle">आपकी Spotify प्लेलिस्ट</string>
-    <string name="spotify_sign_in">Spotify से साइन इन करें</string>
-    <string name="spotify_track_unavailable">वह गाना YouTube Music पर नहीं मिला</string>
     <string name="shelf_recently_added">Recently Added</string>
     <string name="shelf_artists">Artists</string>
     <string name="shelf_albums">Albums</string>

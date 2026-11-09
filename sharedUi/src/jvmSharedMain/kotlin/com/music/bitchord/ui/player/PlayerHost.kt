@@ -1,11 +1,6 @@
 package com.music.bitchord.ui.player
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.unit.IntSize
-import com.music.bitchord.data.canvas.CanvasArtwork
-import com.music.bitchord.data.listentogether.PartyMember
 import com.music.bitchord.data.lyrics.LyricLine
 import com.music.bitchord.data.lyrics.LyricsSource
 import com.music.bitchord.data.model.Song
@@ -23,23 +18,12 @@ import kotlinx.coroutines.flow.StateFlow
  *
  * The player itself — its layout, its gestures, its animations, the lyric sheet
  * and the queue — is one piece of code for the phone and the desktop alike.
- * What differs is underneath it: where settings are kept, how a looping clip is
- * decoded, what an audio output is, which party this device is in. Each
- * application answers those once, here, and installs its answer with
+ * What differs is underneath it: where settings are kept, what an audio output
+ * is. Each application answers those once, here, and installs its answer with
  * [PlayerPlatform.install] before the player is first drawn.
  */
 interface PlayerHost {
     val settings: PlayerSettingsSource
-
-    /** A Canvas already settled for [song], without a lookup. */
-    fun cachedCanvas(song: Song): CanvasArtwork?
-
-    /** Looks a Canvas up for [song]; null is the normal answer. */
-    suspend fun canvasFor(song: Song): CanvasArtwork?
-
-    /** The looping clip over the cover, decoded however this platform decodes video. */
-    @Composable
-    fun CanvasVideo(spec: CanvasVideoSpec, modifier: Modifier)
 
     /** Artwork for [song] — its own [Song.thumbnailUrl]. */
     @Composable
@@ -63,9 +47,6 @@ interface PlayerHost {
 
     /** The negotiated output format, as the pipeline row and the hi-res shine read it. */
     val outputFormat: StateFlow<OutputFormatUi>
-
-    /** The Listen Together party this device is in, as the player draws it. */
-    val party: StateFlow<PartyUi>
 
     suspend fun translateLyrics(
         trackId: String,
@@ -133,10 +114,8 @@ object PlayerPlatform {
 
 /** The settings the player reads, named and typed as the phone's AppSettings has them. */
 interface PlayerSettingsSource {
-    val animatedCanvas: StateFlow<Boolean>
     val audioQualityCellular: StateFlow<AudioQuality>
     val audioQualityWifi: StateFlow<AudioQuality>
-    val canvasOverCellular: StateFlow<Boolean>
     val fullBleedArtwork: StateFlow<Boolean>
     val hideSongStatus: StateFlow<Boolean>
     val hideVolumeBar: StateFlow<Boolean>
@@ -147,7 +126,6 @@ interface PlayerSettingsSource {
     val lyricsSourceOrder: StateFlow<List<LyricsSource>>
     val meteredConnection: StateFlow<Boolean?>
     val preferUsbDac: StateFlow<Boolean>
-    val prioritizeSpotifyCanvas: StateFlow<Boolean>
     val reduceAnimation: StateFlow<Boolean>
     val reduceDynamicBlur: StateFlow<Boolean>
     val showNerdStats: StateFlow<Boolean>
@@ -158,7 +136,6 @@ interface PlayerSettingsSource {
     /** The Automix blend in flight, for the scrubber's beat glow; null between blends. */
     val smartMixBlend: StateFlow<MixBlend?>
     val smartTransitionWindow: StateFlow<TransitionWindow?>
-    val spotifyCanvasAutoHide: StateFlow<Boolean>
     val syncedLyrics: StateFlow<Boolean>
     val translationLanguage: StateFlow<String>
     val versionAlignmentInProgress: StateFlow<Boolean>
@@ -205,14 +182,6 @@ data class OutputFormatUi(
     val carriesHiRes: Boolean = false,
 )
 
-data class PartyUi(
-    val inParty: Boolean = false,
-    val controlsLocked: Boolean = false,
-    val members: List<PartyMember> = emptyList(),
-    val you: PartyMember? = null,
-    val code: String? = null,
-)
-
 sealed interface LyricsTranslationResult {
     data class Translated(val lines: List<LyricLine>) : LyricsTranslationResult
     data class SameLanguage(val language: String) : LyricsTranslationResult
@@ -224,79 +193,6 @@ sealed interface LyricsRomanizationResult {
     data object AlreadyRomanized : LyricsRomanizationResult
     data object Unavailable : LyricsRomanizationResult
 }
-
-/** How a clip fills the bounds supplied by its caller. */
-enum class CanvasContentMode {
-    CROP,
-    FIT_PORTRAIT,
-}
-
-/** Everything [CanvasArtworkPlayer] is asked, handed to the platform's decoder as one value. */
-class CanvasVideoSpec(
-    val canvas: CanvasArtwork,
-    val isPlaying: Boolean,
-    val contentMode: CanvasContentMode,
-    val alignPortraitTop: Boolean,
-    val onAspectRatioChanged: (Float) -> Unit,
-    val portraitRevealBounds: IntSize,
-    val presentationAlpha: () -> Float,
-    val onRenderedChanged: (Boolean) -> Unit,
-    val onFrameCaptured: (ImageBitmap) -> Unit,
-    val refreshFrameEveryMs: Long?,
-    val frameCapturePx: Int,
-    val onCoverChanged: (Float) -> Unit,
-    val bottomFade: Float,
-    val bottomFadeEndPx: Float?,
-    val pausedForTransition: Boolean,
-)
-
-/**
- * The looping video that plays over a track's cover art — see
- * [PlayerHost.CanvasVideo] for the decoder behind it on each platform.
- */
-@Composable
-fun CanvasArtworkPlayer(
-    canvas: CanvasArtwork,
-    isPlaying: Boolean,
-    modifier: Modifier = Modifier,
-    contentMode: CanvasContentMode = CanvasContentMode.CROP,
-    alignPortraitTop: Boolean = false,
-    onAspectRatioChanged: (Float) -> Unit = {},
-    portraitRevealBounds: IntSize = IntSize.Zero,
-    presentationAlpha: () -> Float = { 1f },
-    onRenderedChanged: (Boolean) -> Unit = {},
-    onFrameCaptured: (ImageBitmap) -> Unit = {},
-    refreshFrameEveryMs: Long? = null,
-    frameCapturePx: Int = CANVAS_FRAME_CAPTURE_PX,
-    onCoverChanged: (Float) -> Unit = {},
-    bottomFade: Float = 0f,
-    bottomFadeEndPx: Float? = null,
-    pausedForTransition: Boolean = false,
-) {
-    PlayerPlatform.host.CanvasVideo(
-        CanvasVideoSpec(
-            canvas = canvas,
-            isPlaying = isPlaying,
-            contentMode = contentMode,
-            alignPortraitTop = alignPortraitTop,
-            onAspectRatioChanged = onAspectRatioChanged,
-            portraitRevealBounds = portraitRevealBounds,
-            presentationAlpha = presentationAlpha,
-            onRenderedChanged = onRenderedChanged,
-            onFrameCaptured = onFrameCaptured,
-            refreshFrameEveryMs = refreshFrameEveryMs,
-            frameCapturePx = frameCapturePx,
-            onCoverChanged = onCoverChanged,
-            bottomFade = bottomFade,
-            bottomFadeEndPx = bottomFadeEndPx,
-            pausedForTransition = pausedForTransition,
-        ),
-        modifier,
-    )
-}
-
-/** The longest edge of a frame handed to [CanvasArtworkPlayer]'s onFrameCaptured. */
-const val CANVAS_FRAME_CAPTURE_PX = 128
 
 /** Media3's repeat modes, by value, so the transport can speak them without Media3. */
 object RepeatModes {

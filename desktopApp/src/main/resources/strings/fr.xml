@@ -196,7 +196,6 @@
     <string name="reduce_dynamic_blur">Réduire le flou dynamique</string>
     <string name="reduce_dynamic_blur_subtitle">Remplace le verre dépoli par des couleurs unies dans toute l\'application</string>
     <string name="full_screen_cover_art">Pochette plein écran</string>
-    <string name="animated_cover_art">Pochette animée</string>
     <string name="synced_lyrics">Paroles synchronisées</string>
     <string name="synced_lyrics_subtitle">Met en surbrillance les mots au fil de la chanson</string>
     <string name="lyrics_sources">Sources des paroles</string>
@@ -221,7 +220,6 @@
     <string name="light">Clair</string>
     <string name="dark">Sombre</string>
     <string name="full_screen_cover_art_subtitle">Étend la pochette jusqu\'aux bords du lecteur au lieu d\'un carré</string>
-    <string name="animated_cover_art_subtitle">Lit la vidéo en boucle que proposent certaines sorties au lieu d\'une pochette fixe</string>
     <string name="dont_repeat_songs_subtitle">La lecture automatique ne proposera pas une chanson déjà jouée ou suggérée pendant cette session</string>
     <string name="download_quality_subtitle">%1$s par piste, quelle que soit la connexion</string>
     <string name="filter_non_music_audio">Filtrer l\'audio non musical</string>
@@ -390,7 +388,6 @@
         <item quantity="one">Journal copié · %1$d ligne</item>
         <item quantity="other">Journal copié · %1$d lignes</item>
     </plurals>
-    <string name="integrate_spotify_canvas">Configurer Spotify Canvas</string>
     <string name="lastfm_login">Connexion à Last.fm</string>
     <string name="lastfm_login_description">Connectez-vous avec votre compte Last.fm pour activer le scrobbling.</string>
     <string name="lastfm_now_playing_subtitle">Met à jour Last.fm avec ce que vous écoutez</string>
@@ -462,9 +459,6 @@
     <string name="sources_quality_capped">Cette connexion est réglée en dessous de la qualité Élevée, les flux sont donc transcodés pour respecter cette limite. Les téléchargements ne sont pas concernés.</string>
     <string name="sources_subtitle">D\'où vient l\'audio et l\'ordre utilisé</string>
     <string name="spdc_token">Jeton sp_dc</string>
-    <string name="spotify_canvas_setup">Configuration de Spotify Canvas</string>
-    <string name="spotify_canvas_setup_description">Pour utiliser Spotify Canvas, indiquez votre cookie sp_dc Spotify.</string>
-    <string name="spotify_canvas_setup_steps">1. Connectez-vous sur open.spotify.com dans un navigateur.\n2. Ouvrez les outils de développement, puis Application et Cookies.\n3. Copiez la valeur du cookie sp_dc.\n4. Collez-la ci-dessous.</string>
     <string name="status">Statut</string>
     <string name="status_dialog_message">Ce que votre compte affiche lorsque la présence est active.</string>
     <string name="status_dnd">Ne pas déranger</string>
@@ -646,44 +640,6 @@
         <item>Presque trouvé les mots</item>
     </string-array>
 
-    <!-- Listen together -->
-    <string name="listen_together">Écouter ensemble</string>
-    <string name="listen_together_subtitle">Partage un code et écoutez la même musique, en même temps</string>
-    <string name="listen_together_in_party">Dans une session · %1$s</string>
-    <string name="listen_together_sign_in_footer">L’écoute commune nécessite un compte, pour que chacun puisse voir qui d’autre participe.</string>
-    <string name="listen_together_server">Serveur de session</string>
-    <string name="listen_together_server_online">En ligne · %1$d ms</string>
-    <string name="listen_together_server_offline">Injoignable pour le moment</string>
-    <string name="listen_together_server_checking">Vérification…</string>
-    <string name="listen_together_server_unknown">Appuie pour vérifier</string>
-    <string name="listen_together_custom_server">Utiliser ton propre serveur</string>
-    <string name="listen_together_custom_server_footer">Laisse ce champ vide pour utiliser le serveur intégré. Si tu héberges ta propre copie, tout le monde dans la session doit pointer vers le même.</string>
-    <string name="listen_together_using_builtin">Serveur intégré utilisé</string>
-    <string name="listen_together_create">Créer une session</string>
-    <string name="listen_together_create_subtitle">Obtiens un code à partager avec tes amis</string>
-    <string name="listen_together_create_footer">Tu reçois un code de six caractères. Quiconque l’a peut rejoindre, jusqu’à cinq appareils, le tien compris.</string>
-    <string name="listen_together_join">Rejoindre une session</string>
-    <string name="listen_together_join_action">Rejoindre</string>
-    <string name="listen_together_code_hint">Six lettres ou chiffres</string>
-    <string name="listen_together_code">Code de session</string>
-    <string name="listen_together_code_footer">Lis-le à voix haute ou envoie-le. Les lettres O et I ne sont pas utilisées, un « o » est donc toujours un zéro.</string>
     <string name="copy_code">Copier le code</string>
-    <string name="listen_together_share_text">Écoute avec moi sur BeatChord — code de session %1$s</string>
-    <string name="listen_together_now_playing">Lecture en cours</string>
-    <string name="listen_together_nothing_playing">Rien en lecture pour l’instant</string>
-    <string name="listen_together_listening">À l’écoute · %1$d sur %2$d</string>
-    <string name="listen_together_members_footer">Une session accueille %1$d appareils. Tous ceux qui y sont peuvent contrôler la musique.</string>
-    <string name="listen_together_you">Toi</string>
-    <string name="listen_together_host">Hôte</string>
-    <string name="listen_together_away">Absent — sa place est gardée</string>
-    <string name="listen_together_leave">Quitter la session</string>
-    <string name="listen_together_leave_subtitle">Les autres continuent d’écouter</string>
-    <string name="listen_together_reconnecting">Reconnexion…</string>
-    <string name="listen_together_syncing_clock">Mesure de l’horloge…</string>
-    <string name="listen_together_in_sync">Synchronisé · %1$d ms aller-retour</string>
-    <string name="listen_together_jam">Jam de %1$s</string>
-    <string name="listen_together_jam_unnamed">Écoute commune</string>
-    <string name="listen_together_open">Écouter ensemble</string>
-    <string name="listen_together_open_count">Écoute commune · %1$d</string>
     <string name="miscellaneous_footer">Une fois activé, fermer l\'application depuis les applications récentes arrête aussi la musique.</string>
 </resources>

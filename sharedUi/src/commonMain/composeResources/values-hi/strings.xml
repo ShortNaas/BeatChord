@@ -8,7 +8,6 @@
     <string name="audio_pipeline">Audio Pipeline</string>
     <string name="automix_analysis_status">ऑटोमिक्स · यह गाना: %1$s · अगला: %2$s</string>
     <string name="automix_not_supported_video">वीडियो गानों पर Automix समर्थित नहीं है</string>
-    <string name="automix_stopped_in_party">Automix: साथ में सुनें के दौरान बंद</string>
     <string name="autoplay">ऑटोप्ले</string>
     <string name="autoplay_empty_description">मिलता-जुलता संगीत चलता रहेगा</string>
     <string name="autoplay_off">ऑटोप्ले बंद</string>
@@ -35,16 +34,6 @@
     <string name="increase_lyrics_offset">Increase lyrics offset</string>
     <string name="instrumental">इंस्ट्रूमेंटल</string>
     <string name="like">पसंद</string>
-    <string name="listen_together">साथ में सुनें</string>
-    <string name="listen_together_away">दूर हैं — उनकी जगह रखी है</string>
-    <string name="listen_together_host">होस्ट</string>
-    <string name="listen_together_in_party">पार्टी में · %1$s</string>
-    <string name="listen_together_jam">%1$s का जैम</string>
-    <string name="listen_together_jam_unnamed">साथ में सुन रहे हैं</string>
-    <string name="listen_together_manage">मैनेज करें</string>
-    <string name="listen_together_open">साथ में सुनें</string>
-    <string name="listen_together_open_count">साथ में सुन रहे हैं · %1$d</string>
-    <string name="listen_together_you">आप</string>
     <string name="mixing">मिक्सिंग</string>
     <string name="lossless">लॉसलेस</string>
     <string name="lyrics_already_in_language">ये लिरिक्स पहले से %1$s में हैं</string>
@@ -104,7 +93,6 @@
     <string name="open_lyrics">Lyrics</string>
     <string name="pause">रोकें</string>
     <string name="play">चलाएं</string>
-    <string name="played_by">Played by %1$s</string>
     <string name="playing_from">Playing from %1$s</string>
     <string name="playing_radio">%1$s रेडियो चल रहा है</string>
     <string name="queue">कतार</string>
@@ -195,8 +183,6 @@
     <string name="your_listening_experience">आपका सुनने का अनुभव</string>
     <string name="default_replay_holder">BitChord श्रोता</string>
     <string name="member_since">सदस्य बने</string>
-    <string name="import_spotify">Spotify से आयात करें</string>
-    <string name="import_spotify_subtitle">प्लेलिस्ट लिंक से</string>
     <string name="search_library_empty">आपके लोकल म्यूज़िक फ़ोल्डर के गाने खोजें.</string>
     <string name="search_library_hint">गाने, कलाकार और एल्बम</string>
     <string name="search_library_no_results">लोकल म्यूज़िक में “%1$s” से मेल खाता कुछ नहीं.</string>

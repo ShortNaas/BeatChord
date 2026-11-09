@@ -200,7 +200,6 @@
     <string name="reduce_dynamic_blur">减少动态模糊</string>
     <string name="reduce_dynamic_blur_subtitle">在整个应用中用纯色填充替代磨砂玻璃效果</string>
     <string name="full_screen_cover_art">全屏封面</string>
-    <string name="animated_cover_art">动态封面</string>
     <string name="synced_lyrics">同步歌词</string>
     <string name="synced_lyrics_subtitle">随着演唱在播放器上高亮显示歌词</string>
     <string name="lyrics_sources">歌词来源</string>
@@ -227,7 +226,6 @@
     <string name="light">浅色</string>
     <string name="dark">深色</string>
     <string name="full_screen_cover_art_subtitle">让封面延伸至播放器边缘，而不是显示为方形</string>
-    <string name="animated_cover_art_subtitle">播放部分发行版自带的循环视频，而不是静态封面</string>
     <string name="dont_repeat_songs_subtitle">自动播放不会在本次会话中重复推荐已播放或已推荐过的歌曲</string>
     <string name="download_quality_subtitle">无论何种网络连接，每首曲目均为%1$s</string>
     <string name="filter_non_music_audio">过滤非音乐音频</string>
@@ -362,7 +360,6 @@
     <plurals name="log_copied_line_count">
         <item quantity="other">日志已复制 · %1$d 行</item>
     </plurals>
-    <string name="integrate_spotify_canvas">设置 Spotify Canvas</string>
     <string name="lastfm_login">Last.fm 登录</string>
     <string name="lastfm_login_description">使用你的 Last.fm 账号登录以启用 Scrobbling。</string>
     <string name="lastfm_now_playing_subtitle">将你正在收听的内容更新到 Last.fm</string>
@@ -438,13 +435,6 @@
     <string name="upgrade_length_slack_footer">容差越大，接受的来源匹配越多；容差越小则越严格。默认为 3 秒。</string>
     <string name="seconds_short">%1$d 秒</string>
     <string name="spdc_token">sp_dc 令牌</string>
-    <string name="spotify_canvas_setup">Spotify Canvas 设置</string>
-    <string name="spotify_canvas_setup_description">要使用 Spotify Canvas，请提供你的 Spotify sp_dc cookie。</string>
-    <string name="spotify_canvas_setup_steps">1. 在浏览器中登录 open.spotify.com。\n2. 打开开发者工具，然后进入“应用程序”和“Cookie”。\n3. 复制 sp_dc cookie 的值。\n4. 将其粘贴到下方。</string>
-    <string name="spotify_canvas_auto_hide">自动隐藏播放控件</string>
-    <string name="spotify_canvas_auto_hide_subtitle">播放 Spotify Canvas 时，5 秒后收起半屏播放器</string>
-    <string name="prioritize_spotify_canvas">优先使用 Spotify Canvas</string>
-    <string name="prioritize_spotify_canvas_subtitle">先尝试 Spotify，再尝试 Apple Music 和其他动态封面来源</string>
     <string name="status">状态</string>
     <string name="status_dialog_message">状态显示开启时，你的账号所展示的内容。</string>
     <string name="status_dnd">请勿打扰</string>
@@ -604,107 +594,7 @@
     <string name="this_year">今年</string>
     <string name="all_time">全部时间</string>
 
-    <!-- Listen together -->
-    <string name="listen_together">一起听</string>
-    <string name="listen_together_subtitle">分享一个代码，同步播放同一首音乐</string>
-    <string name="listen_together_in_party">派对中 · %1$s</string>
-    <string name="listen_together_sign_in_footer">一起听需要账号，这样派对里的每个人都能看到还有谁在。</string>
-    <string name="listen_together_server">派对服务器</string>
-    <string name="listen_together_server_online">在线 · %1$d 毫秒</string>
-    <string name="listen_together_server_online_fallback">在线（默认备用）· %1$d 毫秒</string>
-    <string name="listen_together_server_offline">目前无法连接</string>
-    <string name="listen_together_server_checking">正在检查…</string>
-    <string name="listen_together_server_unknown">点按以检查</string>
-    <string name="listen_together_custom_server">使用自己的服务器</string>
-    <string name="listen_together_custom_server_footer">留空则使用内置服务器。如果你运行自己的副本，派对中的所有人都必须指向同一个。</string>
-    <string name="listen_together_using_default">正在使用内置服务器</string>
-    <string name="listen_together_remove_server">移除服务器</string>
-    <string name="listen_together_switched_to_default">已切换到默认服务器</string>
-    <string name="listen_together_custom_server_saved">自定义服务器已保存</string>
-    <string name="listen_together_create">创建派对</string>
-    <string name="listen_together_create_subtitle">获取代码，分享给朋友</string>
-    <string name="listen_together_create_footer">你会得到一个六位代码。拿到代码的人都能加入，包括你自己最多 %1$d 台设备。</string>
-    <string name="listen_together_profile">你的派对资料</string>
-    <string name="listen_together_nickname_hint">此派对中的昵称</string>
-    <string name="listen_together_party_size">派对人数</string>
-    <string name="listen_together_party_size_subtitle">选择 2–10 位听众</string>
-    <string name="listen_together_host_controls">只有你可以更改人数上限或移除听众</string>
-    <string name="listen_together_remove">移除</string>
-    <string name="listen_together_activity">最近活动</string>
-    <string name="listen_together_activity_footer">仅本次会话 · 最新在前 · 最多 100 条</string>
-    <string name="listen_together_activity_played">开始播放</string>
-    <string name="listen_together_activity_paused">暂停播放</string>
-    <string name="listen_together_activity_seeked">调整了播放进度</string>
-    <string name="listen_together_activity_skipped">跳到下一首</string>
-    <string name="listen_together_activity_went_back">返回上一首</string>
-    <string name="listen_together_activity_added">添加到队列</string>
-    <string name="listen_together_activity_removed_track">从队列中移除了一首</string>
-    <string name="listen_together_activity_cleared">清空了待播曲目</string>
-    <string name="listen_together_activity_reordered">重新排列了队列</string>
-    <string name="listen_together_activity_removed_member">移除了一位听众</string>
-    <string name="listen_together_activity_changed_size">更改了派对人数</string>
-    <string name="listen_together_activity_updated">更新了派对</string>
-    <string name="listen_together_join">加入派对</string>
-    <string name="listen_together_join_action">加入</string>
-    <string name="listen_together_code_hint">六位字母或数字</string>
-    <string name="listen_together_code">派对代码</string>
-    <string name="listen_together_code_footer">读出来或发出去。字母 O 和 I 不会用到，所以“欧”永远是零。</string>
     <string name="copy_code">复制代码</string>
-    <string name="listen_together_share_text">在 BeatChord 上和我一起听 — 派对代码 %1$s</string>
-    <string name="listen_together_now_playing">正在播放</string>
-    <string name="listen_together_nothing_playing">还没有播放任何内容</string>
-    <string name="listen_together_listening">正在收听 · %1$d / %2$d</string>
-    <string name="listen_together_members_footer">一个派对可容纳 %1$d 台设备。其中任何人都可以控制音乐。</string>
-    <string name="listen_together_you">你</string>
-    <string name="listen_together_host">主持人</string>
-    <string name="listen_together_away">暂离 — 位置为其保留</string>
-    <string name="listen_together_landing_title">开始派对</string>
-    <string name="listen_together_landing_subtitle">因为一起听的音乐更动听。邀请朋友一起收听，并实时添加歌曲，无论他们身在何处。</string>
-    <string name="listen_together_create_action">创建派对</string>
-    <string name="listen_together_join_existing">加入现有派对</string>
-    <string name="listen_together_create_sheet_subtitle">选择你的显示方式，以及可加入的人数。</string>
-    <string name="listen_together_creating">正在创建…</string>
-    <string name="listen_together_joining">正在加入…</string>
-    <string name="listen_together_full">此派对已满</string>
-    <string name="listen_together_join_question">加入 %1$s 的派对？</string>
-    <string name="listen_together_join_question_unnamed">加入此派对？</string>
-    <string name="listen_together_not_now">以后再说</string>
-    <string name="listen_together_preview_footer">派对中的人会看到你的名字和头像。</string>
-    <string name="listen_together_invite_title">邀请朋友加入你的派对</string>
-    <string name="listen_together_share_link">分享链接</string>
-    <string name="listen_together_scan_qr">扫描二维码</string>
-    <string name="listen_together_scan_qr_subtitle">让朋友扫描此码即可加入。</string>
-    <string name="listen_together_invite">邀请</string>
-    <string name="listen_together_host_only">只有我能控制音乐</string>
-    <string name="listen_together_host_only_subtitle">其他人一起收听，并可在自己的设备上暂停</string>
-    <string name="listen_together_host_only_notice">只有主持人可以控制音乐</string>
-    <string name="listen_together_leave">离开派对</string>
-    <string name="listen_together_leave_subtitle">其他人继续收听</string>
-    <string name="listen_together_reconnecting">正在重新连接…</string>
-    <string name="listen_together_syncing_clock">正在校准时钟…</string>
-    <string name="listen_together_in_sync">已同步 · 往返 %1$d 毫秒</string>
-    <string name="listen_together_custom_server_dialog_title">加入自定义服务器上的派对？</string>
-    <string name="listen_together_custom_server_dialog_message">此派对托管在外部服务器上：\n\n%1$s\n\n要切换派对服务器并加入派对 %2$s 吗？</string>
-    <string name="listen_together_custom_server_switch_and_join">切换并加入</string>
-    <string name="listen_together_official_server_dialog_title">切换到官方服务器？</string>
-    <string name="listen_together_official_server_dialog_message">此派对托管在 BeatChord 官方服务器上。\n\n要切换回官方服务器并加入派对 %1$s 吗？</string>
-    <string name="listen_together_switch_failed_stayed_in_party">无法加入派对：%1$s。仍留在派对 %2$s 中。</string>
-    <string name="listen_together_switch_failed">无法加入派对：%1$s。</string>
-    <string name="listen_together_ping">%1$d ms</string>
-    <string name="listen_together_server_offline_dash">—</string>
-    <string name="listen_together_invalid_server_url">服务器 URL 无效。请输入有效地址（例如 https://your-server.com）</string>
-    <string name="listen_together_err_whitespace">服务器 URL 不能包含空格</string>
-    <string name="listen_together_err_invalid_path">服务器 URL 包含无效路径</string>
-    <string name="listen_together_err_no_path">服务器 URL 不能包含路径</string>
-    <string name="listen_together_err_no_query">服务器 URL 不能包含查询参数</string>
-    <string name="listen_together_err_no_fragment">服务器 URL 不能包含片段</string>
-    <string name="listen_together_err_invalid_port">服务器端口必须在 1 到 65535 之间</string>
-    <string name="listen_together_custom_server_connected">已连接到自定义服务器</string>
-    <string name="listen_together_custom_server_unreachable_fallback">无法连接自定义服务器。正在使用默认备用服务器。</string>
-    <string name="listen_together_status_custom_online">已连接到自定义服务器 · %1$d 毫秒</string>
-    <string name="listen_together_status_custom_fallback">无法连接自定义服务器 · 正在使用默认备用（%1$d 毫秒）</string>
-    <string name="listen_together_status_all_offline">自定义服务器和默认服务器均已离线</string>
-    <string name="listen_together_top_bar_fallback">备用 · %1$s</string>
 
     <string name="vietnamese">越南语</string>
 
@@ -881,7 +771,6 @@
 
     <string name="shelf_new_releases">最新发行</string>
 
-    <string name="shelf_party">聚会狂欢</string>
 
     <string name="shelf_quick_picks">快速选择</string>
 
@@ -1166,7 +1055,6 @@
     <plurals name="added_to_playlists_notice">
         <item quantity="other">已添加到 %1$d 个播放列表</item>
     </plurals>
-    <string name="party_queue_full">队列已满（派对最多 %d 首歌曲）</string>
 
     <string name="paxsenix_api_key">PaxSenix API key</string>
 
@@ -1199,36 +1087,13 @@
     <string name="song_cache_unlimited_subtitle">无上限。缓存的音频会一直增长，直到存储空间用完。</string>
     <string name="clear_song_cache_title">清除歌曲缓存？</string>
     <string name="clear_song_cache_warning">所有已缓存的歌曲都将被删除，已缓存歌曲文件夹也会被清空。下次播放时会重新在线播放。</string>
-    <string name="import_spotify">从 Spotify 导入</string>
-    <string name="import_spotify_subtitle">从播放列表链接</string>
     <string name="local_playlist_subtitle">%1$d 首歌曲 · 本设备上</string>
     <string name="lossless_output_permission_denied">附近设备权限未开启</string>
     <string name="lossless_output_permission_denied_detail">点按以打开设置并允许「附近设备」——没有它就无法读取你的蓝牙编解码器</string>
     <string name="recent_album">最近的专辑</string>
     <string name="recent_ep">最近的 EP</string>
     <string name="recent_single">最近的单曲</string>
-    <string name="spotify">Spotify</string>
-    <string name="spotify_connect_subtitle">登录以载入你的播放列表。播放使用 YouTube Music。</string>
-    <string name="spotify_disconnect">断开连接</string>
-    <string name="spotify_empty_playlists">此账号没有播放列表</string>
-    <string name="spotify_empty_tracks">此播放列表没有歌曲</string>
-    <string name="spotify_import_button">导入</string>
-    <string name="spotify_import_description">粘贴公开播放列表链接。歌曲将在 YouTube Music 上匹配。</string>
-    <string name="spotify_import_description_local">粘贴公开播放列表链接。歌曲将在 YouTube Music 上匹配并保存到本设备。</string>
-    <string name="spotify_import_done">已导入“%1$s”</string>
     <string name="spotify_import_empty_playlist">此播放列表中没有歌曲</string>
-    <string name="spotify_import_failed">无法导入播放列表：%1$s</string>
-    <string name="spotify_import_fetching">正在读取 Spotify 播放列表…</string>
-    <string name="spotify_import_hint">open.spotify.com/playlist/…</string>
-    <string name="spotify_import_invalid">这不是 Spotify 播放列表链接。</string>
-    <string name="spotify_import_local_fallback">无法在 YouTube Music 上创建，因此“%1$s”已保存到本设备。</string>
-    <string name="spotify_import_matching">正在匹配歌曲 %1$d / %2$d</string>
-    <string name="spotify_import_none">这些歌曲都未在 YouTube Music 上找到。</string>
-    <string name="spotify_import_title">导入 Spotify 播放列表</string>
-    <string name="spotify_import_unmatched">%1$d 首歌曲未在 YouTube Music 上找到</string>
-    <string name="spotify_library_subtitle">你的 Spotify 播放列表</string>
-    <string name="spotify_sign_in">使用 Spotify 登录</string>
-    <string name="spotify_track_unavailable">在 YouTube Music 上找不到该歌曲</string>
     <string name="shelf_recently_added">Recently Added</string>
     <string name="shelf_artists">Artists</string>
     <string name="shelf_albums">Albums</string>
