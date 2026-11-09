@@ -165,7 +165,12 @@ object ArtistFacts {
         // A miss is remembered too, or an artist neither service has heard of is
         // asked about on every play forever. It expires, because the reason for
         // a miss is as often a dropped connection as an unknown artist.
-        val wantsCard = browseId == null &&
+        // The card is the artist's YouTube Music portrait, and the switch that
+        // decides whether this object may talk to anyone at all is the same one:
+        // a user who turned Replay enrichment off must not get an Innertube
+        // search on every new artist.
+        val wantsCard = AppSettings.replayGenres.value &&
+            browseId == null &&
             System.currentTimeMillis() - cardAt > TimeUnit.DAYS.toMillis(RETRY_DAYS)
         val wantsGenres = genresAvailable && genres.isEmpty() &&
             System.currentTimeMillis() - genresAt > TimeUnit.DAYS.toMillis(RETRY_DAYS)
