@@ -2,7 +2,6 @@
 <resources>
     <string name="d_a_slim_bar_above_the_toolbar">ツールバーの上にある、ウィンドウ操作ボタンを備えた細いバー。 オフにすると、ウィンドウにタイトルバーはまったく表示されません。</string>
     <string name="d_about_artist">アーティストについて</string>
-    <string name="d_account">アカウント</string>
     <string name="d_addon_url">アドオンの URL</string>
     <string name="d_an_addon_server">アドオンサーバー。BeatChord は通常の HTTP で問い合わせるだけで、そのコードは実行しません。 互換のあるモジュールインデックスも使え、同じものとして保存されます。</string>
     <string name="d_animated_canvas">アニメーションキャンバス</string>
@@ -19,13 +18,11 @@
     <string name="d_closing_the_window_leaves_bitchord_in_the_tray_instead_o">ウィンドウを閉じても終了せず、BeatChord はトレイに残ります</string>
     <string name="d_continue_playing">続きを再生</string>
     <string name="d_custom_module">カスタムモジュール</string>
-    <string name="d_discord_rich_presence_last_fm_and_listenbrainz">Discord リッチプレゼンス、Last.fm、ListenBrainz</string>
     <string name="d_dont_repeat_songs_in_current_session">このセッションで曲を繰り返さない</string>
     <string name="d_downloaded_songs_will_appear_here">ダウンロードした曲がここに表示されます。</string>
     <string name="d_end_of_this_track">この曲の終わり</string>
     <string name="d_everything_you_save_and_play">保存したものと再生したもののすべて</string>
     <string name="d_find_anything_in_youtube_music">YouTube Music で何でも探せます</string>
-    <string name="d_found_on_your_listenbrainz_profile_under_settings">ListenBrainz のプロフィールの「設定」にあります。</string>
     <string name="d_google_signs_in_inside_a_browser">Google はブラウザ内でログインし、セッションを返します。ブラウザを選んでください すでにログイン済みのものを選ぶと、BeatChord はそのセッションを使います。</string>
     <string name="d_keep_playing_when_closed">閉じても再生を続ける</string>
     <string name="d_keep_the_music_going_with_similar_songs">似た曲で音楽を続けます</string>
@@ -44,7 +41,6 @@
     <string name="d_no_browser_profile_was_found_on_this_machine">このマシンにブラウザのプロファイルが見つかりませんでした。</string>
     <string name="d_no_downloads">ダウンロードなし</string>
     <string name="d_nobody_is_signed_in">誰もログインしていません。ライブラリ、プレイリスト、履歴には YouTube Music アカウントが必要です。</string>
-    <string name="d_open_listenbrainz">ListenBrainz を開く</string>
     <string name="d_open_spotify">Spotify を開く</string>
     <string name="d_output_precision">出力精度</string>
     <string name="d_paste_a_cookie_instead">代わりに Cookie を貼り付ける</string>
@@ -62,7 +58,6 @@
     <string name="d_shorten_long_gaps_rather_than_playing_them_out">長い無音をそのまま流さず短くします</string>
     <string name="d_show_bitchord_in_the_system_tray_with_playback_controls">BeatChord を再生コントロール付きでシステムトレイに表示します</string>
     <string name="d_show_motion_artwork_when_it_is_available">利用できる場合はモーションアートワークを表示します</string>
-    <string name="d_sign_in_to_last_fm">Last.fm にログイン</string>
     <string name="d_song">曲</string>
     <string name="d_sort_library">ライブラリを並べ替え</string>
     <string name="d_sources_are_tried_in_this_order">ソースはこの順に試されます。ドラッグで並べ替えられます。最初のソースは 歌詞が見つかった最初のソースが採用されます（音節歌詞を優先する場合を除く）。</string>
@@ -76,7 +71,6 @@
     <string name="d_turn_off">オフにする</string>
     <string name="d_use_the_older_blob_backdrop_behind_the_player">プレーヤーの背景に以前のブロブ背景を使用します</string>
     <string name="d_volume">音量</string>
-    <string name="d_what_follows_the_verb_on_the_profile">プロフィールで動詞のあとに続く言葉。 空欄にすると %1$s が使われます。</string>
     <string name="d_your_collection">あなたのコレクション</string>
     <string name="d_your_music_made_personal">あなただけの音楽</string>
     <string name="d_your_queue_is_empty">キューは空です。</string>

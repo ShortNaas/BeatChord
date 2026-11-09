@@ -2,7 +2,6 @@
 <resources>
     <string name="d_a_slim_bar_above_the_toolbar">פס דק מעל סרגל הכלים, עם הלחצנים של החלון עצמו. כשהאפשרות כבויה, לחלון אין שורת כותרת כלל.</string>
     <string name="d_about_artist">על האמן</string>
-    <string name="d_account">חשבון</string>
     <string name="d_addon_url">כתובת התוסף</string>
     <string name="d_an_addon_server">שרת תוספים — BeatChord פונה אליו ב-HTTP רגיל ואינו מריץ ממנו שום קוד. גם אינדקס מודולים תואם עובד ונשמר באותה צורה.</string>
     <string name="d_animated_canvas">קנבס מונפש</string>
@@ -19,13 +18,11 @@
     <string name="d_closing_the_window_leaves_bitchord_in_the_tray_instead_o">סגירת החלון משאירה את BeatChord במגש במקום לצאת</string>
     <string name="d_continue_playing">המשך להאזין</string>
     <string name="d_custom_module">מודול מותאם אישית</string>
-    <string name="d_discord_rich_presence_last_fm_and_listenbrainz">נוכחות עשירה ב-Discord, ‏Last.fm ו-ListenBrainz</string>
     <string name="d_dont_repeat_songs_in_current_session">אל תחזור על שירים בפעילות הזו</string>
     <string name="d_downloaded_songs_will_appear_here">שירים שהורדו יופיעו כאן.</string>
     <string name="d_end_of_this_track">סוף הרצועה</string>
     <string name="d_everything_you_save_and_play">כל מה שאתה שומר ומשמיע</string>
     <string name="d_find_anything_in_youtube_music">מצא הכול ב-YouTube Music</string>
-    <string name="d_found_on_your_listenbrainz_profile_under_settings">נמצא בפרופיל ListenBrainz שלך, תחת הגדרות.</string>
     <string name="d_google_signs_in_inside_a_browser">Google מתחברת בתוך דפדפן ומחזירה חיבור. בחר דפדפן שכבר מחובר בו, ו-BeatChord ישתמש בחיבור שלו.</string>
     <string name="d_keep_playing_when_closed">המשך להשמיע גם לאחר סגירה</string>
     <string name="d_keep_the_music_going_with_similar_songs">המשך את המוזיקה עם שירים דומים</string>
@@ -44,7 +41,6 @@
     <string name="d_no_browser_profile_was_found_on_this_machine">לא נמצא פרופיל דפדפן במחשב הזה.</string>
     <string name="d_no_downloads">אין הורדות</string>
     <string name="d_nobody_is_signed_in">אף אחד לא מחובר. הספרייה, הפלייליסטים וההיסטוריה שלך זקוקים ל חשבון YouTube Music.</string>
-    <string name="d_open_listenbrainz">פתח את ListenBrainz</string>
     <string name="d_open_spotify">פתח את Spotify</string>
     <string name="d_output_precision">דיוק הפלט</string>
     <string name="d_paste_a_cookie_instead">הדבק עוגייה במקום זאת</string>
@@ -62,7 +58,6 @@
     <string name="d_shorten_long_gaps_rather_than_playing_them_out">קצר שתיקות ארוכות במקום להשמיע אותן במלואן</string>
     <string name="d_show_bitchord_in_the_system_tray_with_playback_controls">הצג את BeatChord במגש המערכת, עם פקדי השמעה</string>
     <string name="d_show_motion_artwork_when_it_is_available">הצג עטיפה מונפשת כשהיא זמינה</string>
-    <string name="d_sign_in_to_last_fm">התחבר ל-Last.fm</string>
     <string name="d_song">שיר</string>
     <string name="d_sort_library">מיין את הספרייה</string>
     <string name="d_sources_are_tried_in_this_order">המקורות נבדקים בסדר הזה. גרור כדי לשנות אותו. המקור הראשון שיש לו מילים מנצח, אלא אם ניתנת עדיפות למילים לפי הברות.</string>
@@ -76,7 +71,6 @@
     <string name="d_turn_off">כבה</string>
     <string name="d_use_the_older_blob_backdrop_behind_the_player">השתמש ברקע הכתמים הישן מאחורי הנגן</string>
     <string name="d_volume">עוצמת קול</string>
-    <string name="d_what_follows_the_verb_on_the_profile">מה שבא אחרי הפועל בפרופיל. השאר ריק כדי להשתמש ב-%1$s.</string>
     <string name="d_your_collection">האוסף שלך</string>
     <string name="d_your_music_made_personal">המוזיקה שלך, מותאמת לך</string>
     <string name="d_your_queue_is_empty">התור שלך ריק.</string>

@@ -487,31 +487,6 @@ private enum class DesktopRepeatMode {
 fun BitChordDesktopApp() {
     val scope = rememberCoroutineScope()
     val persistence = remember { DesktopPersistence() }
-    var availableUpdate by remember { mutableStateOf<DesktopUpdateChecker.UpdateInfo?>(null) }
-    LaunchedEffect(Unit) { availableUpdate = DesktopUpdateChecker.check() }
-    availableUpdate?.let { update ->
-        AlertDialog(
-            onDismissRequest = { availableUpdate = null },
-            title = { Text(DesktopStrings["d_update_available", "Update available"]) },
-            text = {
-                Text(
-                    "BitChord ${update.version} is out — you have ${DesktopUpdateChecker.currentVersion}." +
-                        (update.notes?.takeIf { it.isNotBlank() }?.let { "\n\n${it.take(600)}" } ?: ""),
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    DesktopExternalLinks.open(update.downloadUrl ?: update.releaseUrl)
-                    availableUpdate = null
-                }) { Text(DesktopStrings["d_download", "Download"]) }
-            },
-            dismissButton = {
-                TextButton(onClick = { availableUpdate = null }) {
-                    Text(DesktopStrings["d_later", "Later"])
-                }
-            },
-        )
-    }
     var destination by remember { mutableStateOf(DesktopDestination.LISTEN_NOW) }
     var query by remember { mutableStateOf("") }
     var searchFilter by remember { mutableStateOf(SearchFilter.ALL) }
@@ -1564,11 +1539,6 @@ fun BitChordDesktopApp() {
         if (!overlays.nowPlaying) return@LaunchedEffect
         if (current.artistId != null && current.albumId != null) return@LaunchedEffect
         trackLinks = DesktopSearchClient.trackLinks(current.videoId).getOrNull()
-    }
-    // Keyed on the same things, plus the rate: Discord counts the bar down on
-    // its own clock, so only a change to what it was told is worth another push.
-    LaunchedEffect(playback.song?.videoId, playback.isPlaying, playback.durationMs, playbackSpeed) {
-        DesktopDiscordRpc.onPlaybackStateChanged(playback, playbackSpeed)
     }
     // The account's own history on YouTube Music, which is what the home feed is built out of.
     DisposableEffect(playback.song?.videoId) {
@@ -2648,10 +2618,8 @@ fun BitChordDesktopApp() {
                                 overlays.sidePanel = null
                                 true
                             }
-                            // A page of Settings steps back the way the back button does, unless
-                            // one of its prompts is up over it.
-                            overlays.settingsPage != null &&
-                                !overlays.lastfmLogin && !overlays.listenBrainzToken && !overlays.discordToken -> {
+                            // A page of Settings steps back the way the back button does.
+                            overlays.settingsPage != null -> {
                                 goBack()
                                 true
                             }
@@ -3050,9 +3018,6 @@ fun BitChordDesktopApp() {
                     if (overlays.downloadManager) {
                         DesktopDownloadManagerDialog(onDismiss = { overlays.downloadManager = false })
                     }
-                    if (overlays.discordToken) {
-                        DesktopDiscordTokenDialog(onDismiss = { overlays.discordToken = false })
-                    }
                     if (overlays.audioOutput) {
                         DesktopAudioOutputDialog(onDismiss = { overlays.audioOutput = false })
                     }
@@ -3297,7 +3262,6 @@ fun BitChordDesktopApp() {
                                             )
                                         }
                                     },
-                                    onOpenIntegrations = { overlays.settingsPage = DesktopSettingsPage.INTEGRATIONS },
                                     onOpenLicenses = { overlays.settingsPage = DesktopSettingsPage.LICENSES },
                                 )
                                 DesktopSettingsPage.EQUALIZER -> DesktopEqualizerDialog(onDismiss = ::goBack)
@@ -3329,13 +3293,6 @@ fun BitChordDesktopApp() {
                                     onDismiss = ::goBack,
                                 )
                                 DesktopSettingsPage.TRANSLATION_LANGUAGE -> DesktopTranslationLanguageDialog(onDismiss = ::goBack)
-                                DesktopSettingsPage.INTEGRATIONS -> DesktopIntegrationsDialog(
-                                    song = playback.song,
-                                    onOpenLastfm = { overlays.lastfmLogin = true },
-                                    onOpenListenBrainz = { overlays.listenBrainzToken = true },
-                                    onOpenDiscordToken = { overlays.discordToken = true },
-                                    onDismiss = ::goBack,
-                                )
                                 DesktopSettingsPage.LICENSES -> DesktopLicensesPage(onDismiss = ::goBack)
                             }
                             }
@@ -4994,7 +4951,6 @@ private fun DesktopLibraryGroupingContent(
 
 /** Mobile's section order, with desktop-only groups placed beside their closest mobile counterpart. */
 private enum class DesktopSettingsSection {
-    ACCOUNT,
     SOURCES,
     AUDIO_QUALITY,
     DOWNLOADS,
@@ -5086,7 +5042,6 @@ private fun DesktopSettingsScreen(
     onRemoveSource: (DesktopSourceConfig) -> Unit,
     onMoveSource: (DesktopSourceConfig, Int) -> Unit,
     onTestSource: (DesktopSourceConfig) -> Unit,
-    onOpenIntegrations: () -> Unit,
     onOpenLicenses: () -> Unit,
 ) {
     var editingSource by remember { mutableStateOf<DesktopSourceConfig?>(null) }
@@ -5662,19 +5617,6 @@ private fun DesktopSettingsScreen(
                             kind = DesktopSourceKind.ADDON,
                         )
                     }
-                }
-            }
-            if (section == DesktopSettingsSection.ACCOUNT) item {
-                // One row rather than the four groups this used to be. Every
-                // integration option Android has lives behind it; inline, the
-                // list was longer than the rest of Settings put together.
-                SettingsGroup(DesktopStrings["d_account", "Account"]) {
-                    SettingsRow(
-                        Icons.Rounded.Share,
-                        DesktopStrings["account_integrations", "Account & integrations"],
-                        DesktopStrings["d_discord_rich_presence_last_fm_and_listenbrainz", "Discord rich presence, Last.fm and ListenBrainz"],
-                        onOpenIntegrations,
-                    )
                 }
             }
             if (section == DesktopSettingsSection.ADVANCED) item {

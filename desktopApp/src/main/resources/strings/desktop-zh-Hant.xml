@@ -2,7 +2,6 @@
 <resources>
     <string name="d_a_slim_bar_above_the_toolbar">工具欄上方的一條窄欄，帶有視窗自己的按鈕。 關閉後，視窗將完全沒有標題欄。</string>
     <string name="d_about_artist">關於藝人</string>
-    <string name="d_account">賬戶</string>
     <string name="d_addon_url">外掛 URL</string>
     <string name="d_an_addon_server">一個外掛伺服器——BeatChord 透過普通 HTTP 向它請求，不執行它的任何程式碼。 相容的模組索引同樣可用，並會以相同方式儲存。</string>
     <string name="d_animated_canvas">動態畫布</string>
@@ -19,13 +18,11 @@
     <string name="d_closing_the_window_leaves_bitchord_in_the_tray_instead_o">關閉視窗後 BeatChord 會留在托盤中，而不是退出</string>
     <string name="d_continue_playing">繼續播放</string>
     <string name="d_custom_module">自定義模組</string>
-    <string name="d_discord_rich_presence_last_fm_and_listenbrainz">Discord 豐富狀態、Last.fm 和 ListenBrainz</string>
     <string name="d_dont_repeat_songs_in_current_session">本次會話不重複歌曲</string>
     <string name="d_downloaded_songs_will_appear_here">下載的歌曲會顯示在這裡。</string>
     <string name="d_end_of_this_track">本曲結束</string>
     <string name="d_everything_you_save_and_play">你儲存和播放的一切</string>
     <string name="d_find_anything_in_youtube_music">在 YouTube Music 中搜尋任何內容</string>
-    <string name="d_found_on_your_listenbrainz_profile_under_settings">在你的 ListenBrainz 個人資料的「設定」中。</string>
     <string name="d_google_signs_in_inside_a_browser">Google 在瀏覽器中完成登入並返回一個會話。請選擇一個瀏覽器 ，選一個已經登入的，BeatChord 會使用它的會話。</string>
     <string name="d_keep_playing_when_closed">關閉後繼續播放</string>
     <string name="d_keep_the_music_going_with_similar_songs">用相似的歌曲讓音樂繼續</string>
@@ -44,7 +41,6 @@
     <string name="d_no_browser_profile_was_found_on_this_machine">在這臺機器上未找到瀏覽器配置檔案。</string>
     <string name="d_no_downloads">沒有下載</string>
     <string name="d_nobody_is_signed_in">當前沒有登入賬戶。你的音樂庫、播放列表和歷史記錄需要一個 YouTube Music 賬戶。</string>
-    <string name="d_open_listenbrainz">開啟 ListenBrainz</string>
     <string name="d_open_spotify">開啟 Spotify</string>
     <string name="d_output_precision">輸出精度</string>
     <string name="d_paste_a_cookie_instead">改為貼上 Cookie</string>
@@ -62,7 +58,6 @@
     <string name="d_shorten_long_gaps_rather_than_playing_them_out">縮短長間隙，而不是完整播放</string>
     <string name="d_show_bitchord_in_the_system_tray_with_playback_controls">在系統托盤中顯示 BeatChord，並附帶播放控制元件</string>
     <string name="d_show_motion_artwork_when_it_is_available">在有動態封面時顯示它</string>
-    <string name="d_sign_in_to_last_fm">登入 Last.fm</string>
     <string name="d_song">歌曲</string>
     <string name="d_sort_library">排序音樂庫</string>
     <string name="d_sources_are_tried_in_this_order">將按此順序嘗試各來源。拖動可重新排序。第一個來源 只要有歌詞就會被採用，除非優先使用逐字歌詞。</string>
@@ -76,7 +71,6 @@
     <string name="d_turn_off">關閉</string>
     <string name="d_use_the_older_blob_backdrop_behind_the_player">在播放器背後使用舊版色塊背景</string>
     <string name="d_volume">音量</string>
-    <string name="d_what_follows_the_verb_on_the_profile">個人資料中動詞之後的內容。 留空則使用 %1$s。</string>
     <string name="d_your_collection">你的收藏</string>
     <string name="d_your_music_made_personal">屬於你的音樂</string>
     <string name="d_your_queue_is_empty">你的佇列是空的。</string>

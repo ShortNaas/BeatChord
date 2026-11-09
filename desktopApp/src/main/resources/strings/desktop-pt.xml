@@ -2,7 +2,6 @@
 <resources>
     <string name="d_a_slim_bar_above_the_toolbar">Uma barra fina acima da barra de ferramentas, com os botões da janela. Desativada, a janela não tem barra de título nenhuma.</string>
     <string name="d_about_artist">Sobre o artista</string>
-    <string name="d_account">Conta</string>
     <string name="d_addon_url">URL do addon</string>
     <string name="d_an_addon_server">Um servidor de addons — o BeatChord consulta-o por HTTP simples e não executa código dele. Um índice de módulos compatível também serve e é guardado como tal.</string>
     <string name="d_animated_canvas">Canvas animado</string>
@@ -19,13 +18,11 @@
     <string name="d_closing_the_window_leaves_bitchord_in_the_tray_instead_o">Fechar a janela deixa o BeatChord na bandeja em vez de sair</string>
     <string name="d_continue_playing">Continuar a ouvir</string>
     <string name="d_custom_module">Módulo personalizado</string>
-    <string name="d_discord_rich_presence_last_fm_and_listenbrainz">Rich Presence do Discord, Last.fm e ListenBrainz</string>
     <string name="d_dont_repeat_songs_in_current_session">Não repetir músicas nesta sessão</string>
     <string name="d_downloaded_songs_will_appear_here">As músicas transferidas aparecerão aqui.</string>
     <string name="d_end_of_this_track">Fim desta faixa</string>
     <string name="d_everything_you_save_and_play">Tudo o que guardas e ouves</string>
     <string name="d_find_anything_in_youtube_music">Encontra tudo no YouTube Music</string>
-    <string name="d_found_on_your_listenbrainz_profile_under_settings">Está no teu perfil do ListenBrainz, em Definições.</string>
     <string name="d_google_signs_in_inside_a_browser">A Google inicia sessão dentro de um navegador e devolve uma sessão. Escolhe um navegador onde já tenhas sessão iniciada e o BeatChord usará essa sessão.</string>
     <string name="d_keep_playing_when_closed">Continuar a tocar ao fechar</string>
     <string name="d_keep_the_music_going_with_similar_songs">Mantém a música a tocar com faixas parecidas</string>
@@ -44,7 +41,6 @@
     <string name="d_no_browser_profile_was_found_on_this_machine">Não foi encontrado nenhum perfil de navegador nesta máquina.</string>
     <string name="d_no_downloads">Sem transferências</string>
     <string name="d_nobody_is_signed_in">Ninguém tem sessão iniciada. A tua biblioteca, playlists e histórico precisam de uma conta do YouTube Music.</string>
-    <string name="d_open_listenbrainz">Abrir o ListenBrainz</string>
     <string name="d_open_spotify">Abrir o Spotify</string>
     <string name="d_output_precision">Precisão de saída</string>
     <string name="d_paste_a_cookie_instead">Colar um cookie em vez disso</string>
@@ -62,7 +58,6 @@
     <string name="d_shorten_long_gaps_rather_than_playing_them_out">Encurtar as pausas longas em vez de as tocar por inteiro</string>
     <string name="d_show_bitchord_in_the_system_tray_with_playback_controls">Mostrar o BeatChord na bandeja do sistema, com controlos de reprodução</string>
     <string name="d_show_motion_artwork_when_it_is_available">Mostrar a capa animada quando estiver disponível</string>
-    <string name="d_sign_in_to_last_fm">Iniciar sessão no Last.fm</string>
     <string name="d_song">MÚSICA</string>
     <string name="d_sort_library">Ordenar a biblioteca</string>
     <string name="d_sources_are_tried_in_this_order">As fontes são tentadas por esta ordem. Arrasta para as reordenares. A primeira fonte com letra ganha, a não ser que as letras por sílabas tenham prioridade.</string>
@@ -76,7 +71,6 @@
     <string name="d_turn_off">Desativar</string>
     <string name="d_use_the_older_blob_backdrop_behind_the_player">Usar o fundo de manchas antigo por trás do reprodutor</string>
     <string name="d_volume">Volume</string>
-    <string name="d_what_follows_the_verb_on_the_profile">O que vem depois do verbo no perfil. Deixa vazio para usar %1$s.</string>
     <string name="d_your_collection">A TUA COLEÇÃO</string>
     <string name="d_your_music_made_personal">A tua música, à tua medida</string>
     <string name="d_your_queue_is_empty">A tua fila está vazia.</string>

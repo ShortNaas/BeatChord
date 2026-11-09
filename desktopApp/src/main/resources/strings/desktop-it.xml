@@ -2,7 +2,6 @@
 <resources>
     <string name="d_a_slim_bar_above_the_toolbar">Una barra sottile sopra la barra degli strumenti, con i pulsanti della finestra. Disattivata, la finestra non ha alcuna barra del titolo.</string>
     <string name="d_about_artist">Informazioni sull\'artista</string>
-    <string name="d_account">Account</string>
     <string name="d_addon_url">URL dell\'addon</string>
     <string name="d_an_addon_server">Un server di addon: BeatChord lo interroga via HTTP semplice e non esegue codice suo. Va bene anche un indice di moduli compatibile, che viene salvato come tale.</string>
     <string name="d_animated_canvas">Canvas animato</string>
@@ -19,13 +18,11 @@
     <string name="d_closing_the_window_leaves_bitchord_in_the_tray_instead_o">Chiudendo la finestra BeatChord resta nell\'area di notifica invece di uscire</string>
     <string name="d_continue_playing">Continua ad ascoltare</string>
     <string name="d_custom_module">Modulo personalizzato</string>
-    <string name="d_discord_rich_presence_last_fm_and_listenbrainz">Rich Presence di Discord, Last.fm e ListenBrainz</string>
     <string name="d_dont_repeat_songs_in_current_session">Non ripetere i brani in questa sessione</string>
     <string name="d_downloaded_songs_will_appear_here">I brani scaricati appariranno qui.</string>
     <string name="d_end_of_this_track">Fine di questo brano</string>
     <string name="d_everything_you_save_and_play">Tutto ciò che salvi e ascolti</string>
     <string name="d_find_anything_in_youtube_music">Trova qualsiasi cosa in YouTube Music</string>
-    <string name="d_found_on_your_listenbrainz_profile_under_settings">Lo trovi nel tuo profilo ListenBrainz, in Impostazioni.</string>
     <string name="d_google_signs_in_inside_a_browser">Google accede dentro un browser e restituisce una sessione. Scegli un browser in cui hai già effettuato l'accesso e BeatChord userà quella sessione.</string>
     <string name="d_keep_playing_when_closed">Continua a riprodurre alla chiusura</string>
     <string name="d_keep_the_music_going_with_similar_songs">Continua la musica con brani simili</string>
@@ -44,7 +41,6 @@
     <string name="d_no_browser_profile_was_found_on_this_machine">Nessun profilo browser trovato su questo computer.</string>
     <string name="d_no_downloads">Nessun download</string>
     <string name="d_nobody_is_signed_in">Nessuno ha effettuato l\'accesso. La tua libreria, le playlist e la cronologia richiedono una account YouTube Music.</string>
-    <string name="d_open_listenbrainz">Apri ListenBrainz</string>
     <string name="d_open_spotify">Apri Spotify</string>
     <string name="d_output_precision">Precisione di uscita</string>
     <string name="d_paste_a_cookie_instead">Incolla invece un cookie</string>
@@ -62,7 +58,6 @@
     <string name="d_shorten_long_gaps_rather_than_playing_them_out">Accorcia le pause lunghe invece di riprodurle per intero</string>
     <string name="d_show_bitchord_in_the_system_tray_with_playback_controls">Mostra BeatChord nell\'area di notifica, con i comandi di riproduzione</string>
     <string name="d_show_motion_artwork_when_it_is_available">Mostra la copertina animata quando è disponibile</string>
-    <string name="d_sign_in_to_last_fm">Accedi a Last.fm</string>
     <string name="d_song">BRANO</string>
     <string name="d_sort_library">Ordina la libreria</string>
     <string name="d_sources_are_tried_in_this_order">Le sorgenti vengono provate in questo ordine. Trascina per riordinarle. La prima sorgente con il testo vince, a meno che non si diano priorità ai testi per sillabe.</string>
@@ -76,7 +71,6 @@
     <string name="d_turn_off">Disattiva</string>
     <string name="d_use_the_older_blob_backdrop_behind_the_player">Usa il vecchio sfondo a macchie dietro il player</string>
     <string name="d_volume">Volume</string>
-    <string name="d_what_follows_the_verb_on_the_profile">Ciò che segue il verbo sul profilo. Lascialo vuoto per usare %1$s.</string>
     <string name="d_your_collection">LA TUA RACCOLTA</string>
     <string name="d_your_music_made_personal">La tua musica, su misura</string>
     <string name="d_your_queue_is_empty">La tua coda è vuota.</string>

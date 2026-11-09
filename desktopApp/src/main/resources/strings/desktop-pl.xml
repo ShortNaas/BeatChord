@@ -2,7 +2,6 @@
 <resources>
     <string name="d_a_slim_bar_above_the_toolbar">Wąski pasek nad paskiem narzędzi z własnymi przyciskami okna. Wyłączony — okno nie ma paska tytułu w ogóle.</string>
     <string name="d_about_artist">O wykonawcy</string>
-    <string name="d_account">Konto</string>
     <string name="d_addon_url">Adres URL dodatku</string>
     <string name="d_an_addon_server">Serwer dodatków — BeatChord pyta go zwykłym HTTP i nie uruchamia żadnego jego kodu. Zgodny indeks modułów też zadziała i jest zapisywany tak samo.</string>
     <string name="d_animated_canvas">Animowane tło</string>
@@ -19,13 +18,11 @@
     <string name="d_closing_the_window_leaves_bitchord_in_the_tray_instead_o">Zamknięcie okna zostawia BeatChord w zasobniku zamiast go zamykać</string>
     <string name="d_continue_playing">Słuchaj dalej</string>
     <string name="d_custom_module">Własny moduł</string>
-    <string name="d_discord_rich_presence_last_fm_and_listenbrainz">Rich Presence Discorda, Last.fm i ListenBrainz</string>
     <string name="d_dont_repeat_songs_in_current_session">Nie powtarzaj utworów w tej sesji</string>
     <string name="d_downloaded_songs_will_appear_here">Pobrane utwory pojawią się tutaj.</string>
     <string name="d_end_of_this_track">Koniec tego utworu</string>
     <string name="d_everything_you_save_and_play">Wszystko, co zapisujesz i odtwarzasz</string>
     <string name="d_find_anything_in_youtube_music">Znajdź cokolwiek w YouTube Music</string>
-    <string name="d_found_on_your_listenbrainz_profile_under_settings">Znajdziesz go w profilu ListenBrainz, w Ustawieniach.</string>
     <string name="d_google_signs_in_inside_a_browser">Google loguje się wewnątrz przeglądarki i zwraca sesję. Wybierz przeglądarkę , w której masz już zalogowane konto — BeatChord użyje tej sesji.</string>
     <string name="d_keep_playing_when_closed">Odtwarzaj po zamknięciu</string>
     <string name="d_keep_the_music_going_with_similar_songs">Kontynuuj muzykę podobnymi utworami</string>
@@ -44,7 +41,6 @@
     <string name="d_no_browser_profile_was_found_on_this_machine">Nie znaleziono profilu przeglądarki na tym komputerze.</string>
     <string name="d_no_downloads">Brak pobranych</string>
     <string name="d_nobody_is_signed_in">Nikt nie jest zalogowany. Twoja biblioteka, playlisty i historia wymagają konta YouTube Music.</string>
-    <string name="d_open_listenbrainz">Otwórz ListenBrainz</string>
     <string name="d_open_spotify">Otwórz Spotify</string>
     <string name="d_output_precision">Precyzja wyjścia</string>
     <string name="d_paste_a_cookie_instead">Wklej zamiast tego ciasteczko</string>
@@ -62,7 +58,6 @@
     <string name="d_shorten_long_gaps_rather_than_playing_them_out">Skracaj długie przerwy zamiast odtwarzać je w całości</string>
     <string name="d_show_bitchord_in_the_system_tray_with_playback_controls">Pokaż BeatChord w zasobniku systemowym, ze sterowaniem odtwarzaniem</string>
     <string name="d_show_motion_artwork_when_it_is_available">Pokazuj ruchomą okładkę, gdy jest dostępna</string>
-    <string name="d_sign_in_to_last_fm">Zaloguj się do Last.fm</string>
     <string name="d_song">UTWÓR</string>
     <string name="d_sort_library">Sortuj bibliotekę</string>
     <string name="d_sources_are_tried_in_this_order">Źródła są sprawdzane w tej kolejności. Przeciągnij, aby ją zmienić. Pierwsze źródło z tekstem wygrywa, chyba że priorytet mają teksty sylabowe.</string>
@@ -76,7 +71,6 @@
     <string name="d_turn_off">Wyłącz</string>
     <string name="d_use_the_older_blob_backdrop_behind_the_player">Użyj starszego tła z plamami za odtwarzaczem</string>
     <string name="d_volume">Głośność</string>
-    <string name="d_what_follows_the_verb_on_the_profile">To, co następuje po czasowniku w profilu. Zostaw puste, aby użyć %1$s.</string>
     <string name="d_your_collection">TWOJA KOLEKCJA</string>
     <string name="d_your_music_made_personal">Twoja muzyka, skrojona na miarę</string>
     <string name="d_your_queue_is_empty">Twoja kolejka jest pusta.</string>

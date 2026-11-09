@@ -35,9 +35,6 @@ internal class DesktopOverlays {
      * wherever it was opened from.
      */
     var settingsPage by mutableStateOf<DesktopSettingsPage?>(null)
-    var lastfmLogin by mutableStateOf(false)
-    var listenBrainzToken by mutableStateOf(false)
-    var discordToken by mutableStateOf(false)
     var accounts by mutableStateOf(false)
     var signIn by mutableStateOf(false)
 
@@ -60,6 +57,5 @@ internal enum class DesktopSettingsPage {
     AUDIO_OUTPUT,
     LYRICS_SOURCES,
     TRANSLATION_LANGUAGE,
-    INTEGRATIONS,
     LICENSES,
 }
