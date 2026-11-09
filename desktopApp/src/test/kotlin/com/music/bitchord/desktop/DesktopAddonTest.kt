@@ -180,14 +180,13 @@ class DesktopAddonTest {
     fun sourcesAreWalkedByRankAndThenByTheOrderTheyAreStoredIn() {
         val configs = listOf(
             DesktopSourceConfig("youtube", DesktopSourceKind.YOUTUBE),
-            DesktopSourceConfig("jio", DesktopSourceKind.JIOSAAVN),
             DesktopSourceConfig("addon-2", DesktopSourceKind.ADDON, baseUrl = "https://b.example"),
             DesktopSourceConfig("legacy", DesktopSourceKind.MODULE, baseUrl = "https://m.example"),
             DesktopSourceConfig("addon-1", DesktopSourceKind.ADDON, baseUrl = "https://a.example"),
         )
 
         assertEquals(
-            listOf("addon-2", "addon-1", "legacy", "jio", "youtube"),
+            listOf("addon-2", "addon-1", "legacy", "youtube"),
             configs.inSourceOrder().map { it.id },
         )
     }
@@ -196,7 +195,6 @@ class DesktopAddonTest {
     fun onlyTheSourcesSomebodyAddedCanBeRemoved() {
         assertTrue(DesktopSourceConfig("a", DesktopSourceKind.ADDON).isUserAdded)
         assertTrue(DesktopSourceConfig("c", DesktopSourceKind.CUSTOM_MODULE).isUserAdded)
-        assertFalse(DesktopSourceConfig("j", DesktopSourceKind.JIOSAAVN).isUserAdded)
         assertFalse(DesktopSourceConfig("y", DesktopSourceKind.YOUTUBE).isUserAdded)
     }
 
@@ -215,12 +213,11 @@ class DesktopAddonTest {
         val sources = listOf(
             DesktopSourceConfig("youtube", DesktopSourceKind.YOUTUBE),
             DesktopSourceConfig("a", DesktopSourceKind.ADDON, baseUrl = "https://a.example"),
-            DesktopSourceConfig("jio", DesktopSourceKind.JIOSAAVN),
             DesktopSourceConfig("b", DesktopSourceKind.ADDON, baseUrl = "https://b.example"),
         )
 
         assertEquals(
-            listOf("b", "a", "jio", "youtube"),
+            listOf("b", "a", "youtube"),
             moveUserSource(sources, "b", -1).map { it.id },
         )
     }

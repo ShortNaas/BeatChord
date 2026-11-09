@@ -35,7 +35,7 @@ class DesktopParityTest {
             durationText = "6:05",
         )
         val sourceCopy = Song(
-            videoId = "jiosaavn:track-id",
+            videoId = "catalogue:track-id",
             title = "Tera Mera Rishta - New Version",
             artist = "Mithoon, Pritam, Sayeed Quadri, Saaj Bhatt, Subodhh Sharma",
             thumbnailUrl = null,
@@ -48,7 +48,7 @@ class DesktopParityTest {
     @Test
     fun sourceMatcherRejectsAConflictingArtist() {
         val target = Song("youtube-id", "Tera Mera Rishta", "Mithoon", null, durationText = "6:05")
-        val cover = Song("jiosaavn:cover", "Tera Mera Rishta", "Different Artist", null, durationText = "6:05")
+        val cover = Song("catalogue:cover", "Tera Mera Rishta", "Different Artist", null, durationText = "6:05")
 
         assertEquals(null, DesktopTrackMatcher.best(listOf(cover), target))
     }

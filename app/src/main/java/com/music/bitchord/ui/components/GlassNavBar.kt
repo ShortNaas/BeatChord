@@ -356,7 +356,7 @@ private fun GlassNowPlaying(
             AsyncImage(
                 error = painterResource(R.drawable.ic_logo),
                 fallback = painterResource(R.drawable.ic_logo),
-                model = rememberRemoteArtworkUrl(song)?.artworkAt(ROW_ART_PX),
+                model = song.thumbnailUrl?.artworkAt(ROW_ART_PX),
                 contentDescription = null,
                 modifier = Modifier
                     .size(artSize)

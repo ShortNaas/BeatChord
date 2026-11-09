@@ -81,20 +81,6 @@ internal object DesktopSourceRegistry {
         override suspend fun matches(song: Song): List<Song> = DesktopModuleSource.matches(config, song)
     }
 
-    private class JioAdapter(
-        override val config: DesktopSourceConfig,
-    ) : SourceAdapter {
-        override val descriptor: DesktopSourceDescriptor
-            get() = config.descriptor()
-
-        override fun owns(song: Song): Boolean = song.videoId.startsWith("jiosaavn:")
-
-        override suspend fun resolve(song: Song, quality: String?): Result<DesktopStream?> =
-            DesktopJioSaavn.stream(song.videoId)
-
-        override suspend fun matches(song: Song): List<Song> = DesktopJioSaavn.matches(song)
-    }
-
     private class YouTubeAdapter(
         override val config: DesktopSourceConfig,
     ) : SourceAdapter {
@@ -104,7 +90,7 @@ internal object DesktopSourceRegistry {
         override suspend fun resolve(song: Song, quality: String?): Result<DesktopStream?> =
             DesktopStreamClient.resolve(song, youtubeCeiling(quality)).map { it.copy(sourceId = config.id) }
 
-        /** Allows an unavailable module/Jio stream to fall back by identity. */
+        /** Allows an unavailable module stream to fall back by identity. */
         override suspend fun matches(song: Song): List<Song> = youTubeMatches(song)
     }
 
@@ -122,7 +108,7 @@ internal object DesktopSourceRegistry {
 
     /**
      * The YouTube upload Automix measures [song] on: the row itself when it is one, else the best
-     * YouTube Music match for an addon, module or JioSaavn row. Android's
+     * YouTube Music match for an addon or module row. Android's
      * `TrackAnalyzer.analysisUriFor` does the same.
      */
     suspend fun youTubeIdentity(song: Song): Song? =
@@ -180,7 +166,6 @@ internal object DesktopSourceRegistry {
                     DesktopSourceKind.CUSTOM_MODULE,
                     DesktopSourceKind.MODULE,
                     -> ModuleAdapter(config)
-                    DesktopSourceKind.JIOSAAVN -> JioAdapter(config)
                     DesktopSourceKind.YOUTUBE -> YouTubeAdapter(config)
                 }
             }
@@ -211,7 +196,6 @@ internal object DesktopSourceRegistry {
             moduleReference != null -> available.firstOrNull {
                 it.config.kind == DesktopSourceKind.CUSTOM_MODULE || it.config.kind == DesktopSourceKind.MODULE
             }
-            song.videoId.startsWith("jiosaavn:") -> available.firstOrNull { it.config.kind == DesktopSourceKind.JIOSAAVN }
             else -> null
         }
 
@@ -220,7 +204,7 @@ internal object DesktopSourceRegistry {
         // than refused the way a disabled source's row is.
         val heldBack = addonReference != null && owned == null &&
             configs().any { it.id == addonReference.sourceId && it.enabled && it.isComplete }
-        if (!heldBack && (addonReference != null || moduleReference != null || song.videoId.startsWith("jiosaavn:"))) {
+        if (!heldBack && (addonReference != null || moduleReference != null)) {
             if (owned == null) error("The source for this track is disabled or no longer configured")
             // This path has nothing to race.
             DesktopTrackLog.log(
@@ -257,7 +241,7 @@ internal object DesktopSourceRegistry {
         }
 
         // A normal YouTube row is offered to every higher-priority source first so a configured
-        // FLAC/module or JioSaavn copy is used when available.
+        // FLAC/module copy is used when available.
         for (source in available.filter {
             it.config.kind != DesktopSourceKind.YOUTUBE &&
                 it.config.id != excludedSourceId &&
@@ -298,8 +282,7 @@ internal object DesktopSourceRegistry {
     ): Result<DesktopLiveResolution> = runCatching {
         val available = playbackAdapters(quality)
         val owned = available.any { it.owns(song) } ||
-            DesktopModuleSource.parseTrack(song.videoId) != null ||
-            song.videoId.startsWith("jiosaavn:")
+            DesktopModuleSource.parseTrack(song.videoId) != null
         if (owned) {
             return@runCatching DesktopLiveResolution(resolve(song, quality, excludedSourceId).getOrThrow())
         }
@@ -536,7 +519,6 @@ internal object DesktopSourceRegistry {
     fun hasYouTubeOriginal(song: Song): Boolean =
         DesktopAddonSource.parseTrack(song.videoId) == null &&
             DesktopModuleSource.parseTrack(song.videoId) == null &&
-            !song.videoId.startsWith("jiosaavn:") &&
             song.videoId.isNotBlank()
 
     /** The configured source a stream came from, for a log line. */

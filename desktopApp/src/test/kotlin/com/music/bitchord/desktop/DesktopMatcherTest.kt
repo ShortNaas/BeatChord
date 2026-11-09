@@ -26,10 +26,10 @@ class DesktopMatcherTest {
 
     @Test
     fun theCatalogueListingOfTheSameTakeMatchesADecoratedYouTubeTitle() {
-        // What JioSaavn actually files this under, film and extra credits and upload decoration all
-        // absent.
+        // What a catalogue actually files this under, film and extra credits and upload
+        // decoration all absent.
         val catalogueRow = Song(
-            videoId = "jiosaavn:wfTj8NYC",
+            videoId = "catalogue:wfTj8NYC",
             title = "Tera Mera Rishta - New Version",
             artist = "Mithoon",
             thumbnailUrl = null,
@@ -43,7 +43,7 @@ class DesktopMatcherTest {
     fun aDifferentTakeOfTheSameSongIsStillRefused() {
         // "New Version" is a take, so the plain listing is a different recording and must not stand
         // in for it.
-        val plainListing = Song("jiosaavn:other", "Tera Mera Rishta", "Mithoon", null)
+        val plainListing = Song("catalogue:other", "Tera Mera Rishta", "Mithoon", null)
 
         assertNull(DesktopTrackMatcher.best(listOf(plainListing), youtubeRow))
     }

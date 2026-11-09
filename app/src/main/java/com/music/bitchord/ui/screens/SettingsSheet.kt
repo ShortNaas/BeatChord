@@ -173,7 +173,6 @@ fun SettingsScreen(
     onOpenReplay: () -> Unit,
     onLyricsSources: () -> Unit,
     onTranslationLanguage: () -> Unit,
-    onSources: () -> Unit,
     onListenTogether: () -> Unit,
     onAppLanguage: () -> Unit,
     contentPadding: PaddingValues,
@@ -1173,11 +1172,11 @@ fun SettingsScreen(
                 },
                 // Writes the one ceiling that was being edited and nothing
                 // else. There used to be a `SourceRegistry.applyQualityPreset`
-                // call here that flipped the module and JioSaavn switches to
-                // match — which meant budgeting *mobile data* switched those
-                // sources off while sitting on Wi-Fi, and coming back to Wi-Fi
-                // never switched them on again. Which sources a rung consults
-                // is now read per stream off the connection in force; see
+                // call here that flipped the module switch to match — which
+                // meant budgeting *mobile data* switched that source off while
+                // sitting on Wi-Fi, and coming back to Wi-Fi never switched it
+                // on again. Which sources a rung consults is now read per
+                // stream off the connection in force; see
                 // [AudioQuality.permits].
                 onSelect = { quality ->
                     when (target) {

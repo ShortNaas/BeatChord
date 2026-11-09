@@ -1492,13 +1492,10 @@ class PlaybackService : MediaLibraryService() {
                 AudioCache.recordServed(dataSpec, resolved.uri.toString())
             }
         }
-        // Read-ahead resolves streams through the same chain the player does.
-        // smb:// tracks read straight off the share below the cache (so they
-        // cache and seek like HTTP); everything else flows as before, and the
-        // YouTube resolver never sees a scheme it cannot answer.
-        val defaultDataSourceFactory = SmbDataSource.RoutingFactory(
-            DefaultDataSource.Factory(this, resolvingFactory),
-        )
+        // Read-ahead resolves streams through the same chain the player does,
+        // and everything flows through the cache like HTTP; the YouTube
+        // resolver never sees a scheme it cannot answer.
+        val defaultDataSourceFactory = DefaultDataSource.Factory(this, resolvingFactory)
         AudioCache.setUpstream(defaultDataSourceFactory)
         // DsdExtractorsFactory: the stock extractors plus DSF/DFF, which Media3
         // cannot open at all. A DSD file leaves the extractor as float PCM.

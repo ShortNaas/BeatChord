@@ -94,8 +94,8 @@ internal class DesktopTrackAnalyzer(
      * Asks for [song] to be analysed, if it has not been already.
      *
      * [stream] is only read when it is a file on this machine. Anything streamed is measured on
-     * the track's YouTube Opus instead — never on the addon, JioSaavn or lossless copy playback
-     * may be using — exactly as Android's analyser reads its own pinned Opus rendition (see
+     * the track's YouTube Opus instead — never on the addon or lossless copy playback may be
+     * using — exactly as Android's analyser reads its own pinned Opus rendition (see
      * `AutomixAnalysisSource`). That keeps an addon from being asked for a track nobody is
      * playing yet, and one recording's measurements from being stored under another's id.
      */

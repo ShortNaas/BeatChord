@@ -89,8 +89,7 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
     override fun CanvasVideo(spec: CanvasVideoSpec, modifier: Modifier) = AndroidCanvasVideo(spec, modifier)
 
     @Composable
-    override fun rememberRemoteArtworkUrl(song: Song?): String? =
-        com.music.bitchord.ui.components.rememberRemoteArtworkUrl(song)
+    override fun rememberRemoteArtworkUrl(song: Song?): String? = song?.thumbnailUrl
 
     // Lazy, all three: the player is not the first thing the process does, and
     // none of these objects should be woken for a launch that never opens it.

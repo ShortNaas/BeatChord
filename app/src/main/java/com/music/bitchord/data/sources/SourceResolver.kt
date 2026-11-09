@@ -145,7 +145,7 @@ object SourceResolver {
         val active = SourceRegistry.activeForPlayback()
         // A pin identifies where the row originally came from; it does not
         // override the source switch. Looking the instance up directly used to
-        // reopen disabled JioSaavn/addon tracks already sitting in the queue.
+        // reopen disabled addon tracks already sitting in the queue.
         // Resolve the pin only from the enabled list so Off means off for both
         // newly matched tracks and source-backed rows queued earlier.
         val pinned = active.firstOrNull { it.configId == configId }
@@ -236,7 +236,7 @@ object SourceResolver {
      * The reliable last rung for a source-backed queue item whose chosen stream
      * failed in the player.
      *
-     * Unlike [resolve], this asks only YouTube. The failed addon/JioSaavn source
+     * Unlike [resolve], this asks only YouTube. The failed addon source
      * must not get another chance to return the identical URL, and unlike
      * [substituteForYouTube] this starts with metadata rather than an existing
      * YouTube video id, so it first finds the matching YouTube Music row.
@@ -860,30 +860,6 @@ object SourceResolver {
             var matches = TrackMatcher.ranked(candidates, target)
             if (requireSharedArtist) {
                 matches = matches.filter { TrackMatcher.sharesArtist(target.artist, it.artist) }
-            }
-            // JioSaavn can return different audio under the same title and
-            // artist on different releases. With no album on the requested
-            // track there is no honest way to choose between those rows;
-            // duration is not enough when the wrong recording is only a
-            // second away. Treat it as this source missing and retain the
-            // known-correct fallback.
-            if (source.kind == SourceKind.JIOSAAVN &&
-                TrackMatcher.hasConflictingAlbums(matches, target)
-            ) {
-                val canonical = TrackMatcher.uniquelyMostCreditedCloseMatch(matches, target)
-                if (canonical == null) {
-                    TrackLog.w(
-                        TAG,
-                        "${source.displayName} returned conflicting albums for '${target.title}'; refusing to guess",
-                    )
-                    continue
-                }
-                TrackLog.d(
-                    TAG,
-                    "${source.displayName} resolved conflicting albums for '${target.title}' " +
-                        "using the uniquely fullest credit: '${canonical.artist}'",
-                )
-                matches = listOf(canonical)
             }
             // The extra bar for standing in for one specific recording: the
             // replacement has to be the same *length*, to the second or so. A

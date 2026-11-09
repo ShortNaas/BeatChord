@@ -41,10 +41,7 @@ interface PlayerHost {
     @Composable
     fun CanvasVideo(spec: CanvasVideoSpec, modifier: Modifier)
 
-    /**
-     * Artwork for [song], resolving covers that live inside a remote file
-     * (WebDAV, SMB) where the platform can. Returns [Song.thumbnailUrl] otherwise.
-     */
+    /** Artwork for [song] — its own [Song.thumbnailUrl]. */
     @Composable
     fun rememberRemoteArtworkUrl(song: Song?): String?
 

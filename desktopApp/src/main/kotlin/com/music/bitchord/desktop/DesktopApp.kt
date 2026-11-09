@@ -6345,7 +6345,6 @@ private fun DesktopSourceSettingsRow(
             when (config.kind) {
                 DesktopSourceKind.ADDON -> Icons.Rounded.Extension
                 DesktopSourceKind.CUSTOM_MODULE, DesktopSourceKind.MODULE -> Icons.Rounded.Extension
-                DesktopSourceKind.JIOSAAVN -> Icons.Rounded.GraphicEq
                 DesktopSourceKind.YOUTUBE -> Icons.Rounded.PlayCircle
             },
             contentDescription = null,

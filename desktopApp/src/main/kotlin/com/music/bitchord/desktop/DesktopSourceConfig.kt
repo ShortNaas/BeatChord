@@ -43,14 +43,6 @@ internal enum class DesktopSourceKind(
         supportsLossless = true,
         rank = 1,
     ),
-    JIOSAAVN(
-        label = "JioSaavn",
-        detail = "High Quality · 320kbps",
-        labels = listOf("High Quality", "320kbps"),
-        needsServer = false,
-        supportsLossless = false,
-        rank = 2,
-    ),
     YOUTUBE(
         label = "YouTube Music",
         detail = "Lossy · Full catalogue · Radio",
@@ -70,8 +62,8 @@ internal enum class DesktopAudioQuality(
 ) {
     LOW(64, "Low", "~64 kbps · smallest download"),
     MEDIUM(Int.MAX_VALUE, "Medium", "Best available · ~171 kbps Opus"),
-    HIGH(Int.MAX_VALUE, "High", "JioSaavn up to 320kbps, YouTube fallback"),
-    LOSSLESS(Int.MAX_VALUE, "Lossless", "Your addons + JioSaavn, bit-exact where available"),
+    HIGH(Int.MAX_VALUE, "High", "YouTube up to 320kbps, addons skipped"),
+    LOSSLESS(Int.MAX_VALUE, "Lossless", "Your addons + YouTube, bit-exact where available"),
     ;
 
     /** Whether a stream started under this ceiling may be served by [kind]. */

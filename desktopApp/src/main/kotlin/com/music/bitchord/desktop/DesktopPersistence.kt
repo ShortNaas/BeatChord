@@ -121,7 +121,6 @@ class DesktopPersistence {
         if ((raw != null || protected != null) && stored == null) {
             DesktopTrackLog.log("stored sources could not be read; leaving them untouched")
             return listOf(
-                DesktopSourceConfig("jiosaavn", DesktopSourceKind.JIOSAAVN, enabled = sourceEnabled("jiosaavn")),
                 DesktopSourceConfig("youtube", DesktopSourceKind.YOUTUBE),
             )
         }
@@ -130,15 +129,6 @@ class DesktopPersistence {
         val initial = (stored ?: migrateLegacySources())
             .filterNot { it.kind == DesktopSourceKind.MODULE }
         val withBuiltIns = initial.toMutableList().apply {
-            if (none { it.kind == DesktopSourceKind.JIOSAAVN }) {
-                add(
-                    DesktopSourceConfig(
-                        "jiosaavn",
-                        DesktopSourceKind.JIOSAAVN,
-                        enabled = sourceEnabled("jiosaavn"),
-                    ),
-                )
-            }
             if (none { it.kind == DesktopSourceKind.YOUTUBE }) {
                 add(DesktopSourceConfig("youtube", DesktopSourceKind.YOUTUBE))
             }

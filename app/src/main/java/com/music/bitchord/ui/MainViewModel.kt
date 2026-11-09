@@ -1442,23 +1442,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 }
             }
         }
-        viewModelScope.launch {
-            AppSettings.webdavUrl.drop(1).collect {
-                reloadRemoteDetail(com.music.bitchord.data.webdav.WebDavConfig.BROWSE_ID)
-            }
-        }
-        viewModelScope.launch {
-            combine(
-                AppSettings.smbHost,
-                AppSettings.smbShare,
-                AppSettings.smbBasePath,
-                AppSettings.smbUsername,
-                AppSettings.smbPassword,
-            ) { fields -> fields.toList() }
-                .drop(1)
-                .debounce(300)
-                .collect { reloadRemoteDetail(com.music.bitchord.data.smb.SmbConfig.BROWSE_ID) }
-        }
     }
 
     /**
@@ -2430,7 +2413,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 // and never takes the YouTube path — warming either half of
                 // this for one would be work nothing asks for.
                 if (SourceRegistry.parseTrackKey(audio.videoId) != null) return@runCatching
-                // JioSaavn first, on the same reasoning as the queue's
+                // A quick source first, on the same reasoning as the queue's
                 // read-ahead: it is the copy that will actually be played if it
                 // has the track, so warming YouTube's URL instead warms the one
                 // that loses. Pinned through [StreamChoice] so playback opens
@@ -2531,44 +2514,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /**
-     * A remote file library behind a `local:` page: how to list it and what
-     * an empty listing says. One entry per library keeps the detail loader,
-     * the refresher and the queue collector from each repeating the switch —
-     * a third library adds one line here and nothing anywhere else.
-     */
-    private data class RemoteLibrary(
-        val emptyRes: Int,
-        val songs: suspend () -> List<Song>,
-    )
-
-    private fun remoteLibrary(browseId: String): RemoteLibrary? = when (browseId) {
-        com.music.bitchord.data.webdav.WebDavConfig.BROWSE_ID ->
-            RemoteLibrary(
-                R.string.webdav_empty,
-                com.music.bitchord.data.webdav.WebDavRepository::getSongs,
-            )
-        com.music.bitchord.data.smb.SmbConfig.BROWSE_ID ->
-            RemoteLibrary(
-                R.string.smb_empty,
-                com.music.bitchord.data.smb.SmbRepository::getSongs,
-            )
-        else -> null
-    }
-
-    private suspend fun remoteSongsState(remote: RemoteLibrary): UiState<List<Song>> =
-        com.music.bitchord.data.remote.RemoteListing.state(runCatching { remote.songs() }, text(remote.emptyRes))
-
-    /**
-     * Re-reads an open remote-library page after its server settings change.
-     * A no-op when the page isn't open — the next visit lists fresh anyway.
-     */
-    private fun reloadRemoteDetail(browseId: String) {
-        if (_detailStack.value.any { page -> page.browseId == browseId }) {
-            reloadLocalDetail(browseId)
-        }
-    }
-
     fun openDetail(
         browseId: String,
         title: String,
@@ -2628,13 +2573,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             /** Whether this artist is subscribed to — see [DetailPage.subscription]. */
             var subscription: SubscriptionState? = null
             val localPlaylist = com.music.bitchord.data.spotify.LocalPlaylistStore.getPlaylist(browseId)
-            val remote = remoteLibrary(browseId)
             // A release downloaded whole and opened by its YouTube id — the
             // Playlists shelf, a search hit — used to wait on the network for
             // tracks already on the device, and showed an error with no
             // connection at all. Its downloaded copy goes up first; the
             // online listing replaces it if and when that arrives.
-            val onDevice = if (localPlaylist == null && remote == null && !browseId.startsWith("local:")) {
+            val onDevice = if (localPlaylist == null && !browseId.startsWith("local:")) {
                 downloadedCopyOf(browseId)
             } else {
                 emptyList()
@@ -2651,12 +2595,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     artwork = localPlaylist.songs.firstOrNull { !it.thumbnailUrl.isNullOrBlank() }?.thumbnailUrl
                     if (localPlaylist.songs.isEmpty()) UiState.Error(text(R.string.spotify_import_empty_playlist))
                     else UiState.Success(localPlaylist.songs)
-                }
-                remote != null -> remoteSongsState(remote)
-                Downloads.recordIdOf(browseId) != null -> {
-                    val songs = downloadedPlaylist(browseId)
-                    if (songs.isEmpty()) UiState.Error(text(R.string.downloaded_playlist_empty))
-                    else UiState.Success(songs)
                 }
                 browseId == "local:downloads" -> {
                     val context = getApplication<Application>()
@@ -2890,13 +2828,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val context = getApplication<Application>()
             val localPlaylist = com.music.bitchord.data.spotify.LocalPlaylistStore.getPlaylist(browseId)
-            val remote = remoteLibrary(browseId)
             val state: UiState<List<Song>> = when {
                 localPlaylist != null -> {
                     if (localPlaylist.songs.isEmpty()) UiState.Error(text(R.string.spotify_import_empty_playlist))
                     else UiState.Success(localPlaylist.songs)
                 }
-                remote != null -> remoteSongsState(remote)
                 Downloads.recordIdOf(browseId) != null -> {
                     val songs = downloadedPlaylist(browseId)
                     if (songs.isEmpty()) UiState.Error(text(R.string.downloaded_playlist_empty))
@@ -2957,8 +2893,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /**
-     * The Cached songs folder: the YouTube and JioSaavn tracks the song cache
-     * is holding, most recently played first. See [AudioCache.cachedSongs].
+     * The Cached songs folder: the YouTube tracks the song cache is holding,
+     * most recently played first. See [AudioCache.cachedSongs].
      */
     private suspend fun cachedSongsState(): UiState<List<Song>> {
         val songs = AudioCache.cachedSongs().map { it.song }
@@ -3063,11 +2999,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     ) {
         viewModelScope.launch {
             val context = getApplication<Application>()
-            val remote = remoteLibrary(browseId)
             val result = when {
-                remote != null -> runCatching {
-                    remote.songs().ifEmpty { error(text(remote.emptyRes)) }
-                }
                 Downloads.recordIdOf(browseId) != null -> runCatching {
                     downloadedPlaylist(browseId).ifEmpty {
                         error(text(R.string.downloaded_playlist_empty))

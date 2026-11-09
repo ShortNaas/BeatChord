@@ -17,11 +17,9 @@ class DesktopQualityTest {
         // list.
         assertFalse(DesktopAudioQuality.HIGH.permits(DesktopSourceKind.ADDON))
         assertFalse(DesktopAudioQuality.HIGH.permits(DesktopSourceKind.CUSTOM_MODULE))
-        assertTrue(DesktopAudioQuality.HIGH.permits(DesktopSourceKind.JIOSAAVN))
         // The lower rungs are YouTube's own ladder and nothing else.
         listOf(DesktopAudioQuality.MEDIUM, DesktopAudioQuality.LOW).forEach { rung ->
             assertFalse(rung.permits(DesktopSourceKind.ADDON), rung.name)
-            assertFalse(rung.permits(DesktopSourceKind.JIOSAAVN), rung.name)
         }
     }
 

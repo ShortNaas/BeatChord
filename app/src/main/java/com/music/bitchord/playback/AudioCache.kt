@@ -437,22 +437,21 @@ object AudioCache {
      * Which kind of server a cache entry's bytes came from, as recorded by
      * [recordServed].
      *
-     * Only [YOUTUBE] and [JIOSAAVN] are kept on disk once a track stops
-     * playing — they are what the player reaches first, before any addon
-     * has answered, so they are the copies worth having instantly next time.
-     * Everything else — an addon's or a module's stream, a lossless upgrade
-     * from one of them — is [OTHER]: cached while it plays, so seeking and
-     * Automix's analysis work exactly as before, then dropped by
-     * [dropForeignEntries].
+     * Only [YOUTUBE] is kept on disk once a track stops playing — it is what
+     * the player reaches first, before any addon has answered, so it is the
+     * copy worth having instantly next time. Everything else — an addon's or
+     * a module's stream, a lossless upgrade from one of them — is [OTHER]:
+     * cached while it plays, so seeking and Automix's analysis work exactly as
+     * before, then dropped by [dropForeignEntries].
      *
      * The origin alone is not what the Cached songs folder shows. An entry is
      * listed only once the player has actually played the track from it
      * ([META_PLAYED]) — not for Automix's own YouTube Opus copy
      * ([META_ANALYSIS]), which is a separate download made for analysis even
-     * while the track plays from JioSaavn or an addon, and not for read-ahead
-     * of a track the queue never reached.
+     * while the track plays from an addon, and not for read-ahead of a track
+     * the queue never reached.
      */
-    enum class Origin { YOUTUBE, JIOSAAVN, OTHER }
+    enum class Origin { YOUTUBE, OTHER }
 
     /** One track in the Cached songs folder. */
     data class CachedSong(
@@ -569,7 +568,7 @@ object AudioCache {
         if (spec.uri.scheme != "bitchord") return
         val mediaId = mediaIdIn(spec.uri) ?: return
         val key = spec.key ?: keyFactory.buildCacheKey(spec)
-        val origin = originOf(spec.uri, mediaId, servedUrl)
+        val origin = originOf(servedUrl)
         val song = notedSongs[mediaId]
         // Automix's analysis-only read: its own YouTube Opus download, made
         // whatever the track is actually playing from. Never playback.
@@ -607,25 +606,13 @@ object AudioCache {
     /**
      * Whose file [servedUrl] is.
      *
-     * The host settles it for the two kinds that are kept: YouTube only ever
-     * hands out googlevideo URLs and JioSaavn its own CDN. The source that was
-     * chosen is the fallback, for a JioSaavn URL on a host this doesn't know
-     * — read in the same order the resolver answers in: an upgrade's stream,
-     * then a source-backed track's own source, then the choice already
-     * serving the track. Anything not positively one of the two is [Origin.OTHER].
+     * The host settles it for the kind that is kept: YouTube only ever hands
+     * out googlevideo URLs. Anything not positively YouTube's is [Origin.OTHER].
      */
-    private fun originOf(uri: Uri, mediaId: String, servedUrl: String): Origin {
+    private fun originOf(servedUrl: String): Origin {
         val host = runCatching { Uri.parse(servedUrl).host }.getOrNull()?.lowercase(Locale.ROOT).orEmpty()
         if (host.endsWith("googlevideo.com") || host.endsWith("youtube.com")) return Origin.YOUTUBE
-        if (host.endsWith("saavncdn.com") || host.endsWith("jiosaavn.com")) return Origin.JIOSAAVN
-        val upgrade = QualityUpgrade.forcedStream(uri)
-        val configId = when {
-            upgrade != null -> upgrade.sourceConfigId
-            uri.getQueryParameter("s") != null -> uri.getQueryParameter("s")
-            else -> StreamChoice.of(mediaId)?.sourceConfigId
-        }
-        val kind = configId?.let { SourceRegistry.config(it)?.kind }
-        return if (kind == SourceKind.JIOSAAVN) Origin.JIOSAAVN else Origin.OTHER
+        return Origin.OTHER
     }
 
     /** Writes what the folder shows about a track into [mutations]. */
@@ -643,8 +630,8 @@ object AudioCache {
     }
 
     /**
-     * Every track the player has played from YouTube or JioSaavn audio that is
-     * still on disk, most recently used first — what the Cached songs folder
+     * Every track the player has played from YouTube audio that is still on
+     * disk, most recently used first — what the Cached songs folder
      * lists. Only the entries playback read from count; see [Origin].
      *
      * A track owns up to several entries (see [keyFactory]); they are folded
@@ -706,7 +693,7 @@ object AudioCache {
      * except the ones belonging to [keep] — the tracks around the playhead,
      * whose bytes are still being read, seeked through and analysed.
      *
-     * This is what "only the YouTube and JioSaavn audio that played is cached"
+     * This is what "only the YouTube audio that played is cached"
      * means in practice: the bytes an addon serves pass through the cache so
      * playback behaves the same as ever, and leave it once the track does.
      * Analysis results are kept in their own store, so the analysis-only
@@ -747,7 +734,6 @@ object AudioCache {
     private val Origin.label: String
         get() = when (this) {
             Origin.YOUTUBE -> SourceKind.YOUTUBE.label
-            Origin.JIOSAAVN -> SourceKind.JIOSAAVN.label
             Origin.OTHER -> "Addon"
         }
 
@@ -1348,7 +1334,7 @@ object AudioCache {
                 }
                 fetch(
                     cacheKey = videoId,
-                    // Do not inherit a JioSaavn/lossless StreamChoice from
+                    // Do not inherit a source/lossless StreamChoice from
                     // playback. The base key is reserved for the lightweight
                     // YouTube Opus copy used by Automix analysis.
                     uri = Uri.parse(AutomixAnalysisSource.opusUri(videoId)),
