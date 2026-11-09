@@ -499,7 +499,7 @@ object AppSettings {
      * since it sends a name and nothing else and the answer is what makes a
      * quarter of the page exist; off, the genre chart simply isn't drawn.
      */
-    val replayGenres = MutableStateFlow(true)
+    val replayGenres = MutableStateFlow(false)
 
     // ── Library ─────────────────────────────────────────────────────────────
 
@@ -804,7 +804,7 @@ object AppSettings {
         listenBrainzEnabled.value = prefs.getBoolean(KEY_LISTENBRAINZ_ENABLED, false)
         listenBrainzToken.value = prefs.getString(KEY_LISTENBRAINZ_TOKEN, "").orEmpty()
         listenBrainzPrimaryArtistOnly.value = prefs.getBoolean(KEY_LISTENBRAINZ_PRIMARY_ARTIST_ONLY, false)
-        replayGenres.value = prefs.getBoolean(KEY_REPLAY_GENRES, true)
+        replayGenres.value = prefs.getBoolean(KEY_REPLAY_GENRES, false)
         filterNonMusicAudio.value = prefs.getBoolean(KEY_FILTER_NON_MUSIC_AUDIO, true)
         localMusicSort.value = readLocalMusicSort(KEY_LOCAL_MUSIC_SORT)
         downloadedMusicSort.value = readLocalMusicSort(KEY_DOWNLOADED_MUSIC_SORT)
