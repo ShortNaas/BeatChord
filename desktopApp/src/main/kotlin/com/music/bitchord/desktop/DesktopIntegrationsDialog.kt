@@ -75,7 +75,6 @@ internal fun DesktopIntegrationsDialog(
             )
             SpotifySection(spotify)
             DiscordSection(song, onOpenDiscordToken, onChoose = { choosing = it }, onEdit = { editing = it })
-            ScrobblingSection(onOpenLastfm, onOpenListenBrainz)
         }
         DesktopCardRule()
         Row(
@@ -346,117 +345,6 @@ private fun DiscordSection(
                 destructive = token.isNotBlank(),
                 onClick = { if (token.isBlank()) onOpenDiscordToken() else DesktopDiscordRpc.signOut() },
             )
-        }
-    }
-}
-
-@Composable
-private fun ScrobblingSection(onOpenLastfm: () -> Unit, onOpenListenBrainz: () -> Unit) {
-    val lastfmEnabled by DesktopScrobbleSettings.lastfmEnabled.collectAsState()
-    val lastfmUser by DesktopScrobbleSettings.lastfmUsername.collectAsState()
-    val lastfmSession by DesktopScrobbleSettings.lastfmSessionKey.collectAsState()
-    val lbEnabled by DesktopScrobbleSettings.listenBrainzEnabled.collectAsState()
-    val lbToken by DesktopScrobbleSettings.listenBrainzToken.collectAsState()
-    val signedIn = lastfmSession.isNotBlank()
-
-    PanelGroup(
-        header = "Scrobbling",
-        footer = "Scrobble your listens to Last.fm and ListenBrainz.",
-    ) {
-        PanelSwitchRow(
-            title = "ListenBrainz",
-            subtitle = if (lbEnabled && lbToken.isNotBlank()) "Connected" else "Enter a token to enable",
-            checked = lbEnabled,
-            onCheckedChange = { checked ->
-                if (checked && lbToken.isBlank()) onOpenListenBrainz()
-                else DesktopScrobbleSettings.setListenBrainzEnabled(checked)
-            },
-            onClick = onOpenListenBrainz,
-        )
-        if (lbEnabled && lbToken.isNotBlank()) {
-            DesktopCardRule()
-            val primaryOnly by DesktopScrobbleSettings.listenBrainzPrimaryArtistOnly.collectAsState()
-            PanelSwitchRow(
-                title = DesktopStrings["scrobble_primary_artist_only", "Only scrobble primary artist"],
-                subtitle = DesktopStrings["scrobble_primary_artist_only_subtitle", "Use the first artist when a track credits multiple artists"],
-                checked = primaryOnly,
-                onCheckedChange = DesktopScrobbleSettings::setListenBrainzPrimaryArtistOnly,
-            )
-        }
-        DesktopCardRule()
-        PanelSwitchRow(
-            title = "Last.fm",
-            subtitle = when {
-                !DesktopScrobbling.canSignInToLastFm -> "This build has no Last.fm API key"
-                signedIn -> "Signed in as $lastfmUser"
-                else -> "Tap to sign in"
-            },
-            checked = lastfmEnabled,
-            enabled = DesktopScrobbling.canSignInToLastFm,
-            onCheckedChange = { checked ->
-                if (checked && !signedIn) onOpenLastfm() else DesktopScrobbleSettings.setLastfmEnabled(checked)
-            },
-            onClick = { if (signedIn) DesktopScrobbleSettings.signOutOfLastfm() else onOpenLastfm() },
-        )
-        if (lastfmEnabled && signedIn) {
-            val scrobble by DesktopScrobbleSettings.lastfmScrobble.collectAsState()
-            val nowPlaying by DesktopScrobbleSettings.lastfmNowPlaying.collectAsState()
-            val primaryOnly by DesktopScrobbleSettings.lastfmPrimaryArtistOnly.collectAsState()
-            DesktopCardRule()
-            PanelSwitchRow(
-                title = DesktopStrings["scrobble_tracks", "Scrobble tracks"],
-                subtitle = DesktopStrings["scrobble_tracks_subtitle", "Log plays to your Last.fm timeline"],
-                checked = scrobble,
-                onCheckedChange = DesktopScrobbleSettings::setLastfmScrobble,
-            )
-            DesktopCardRule()
-            PanelSwitchRow(
-                title = DesktopStrings["scrobble_primary_artist_only", "Only scrobble primary artist"],
-                subtitle = DesktopStrings["scrobble_primary_artist_only_subtitle", "Use the first artist when a track credits multiple artists"],
-                checked = primaryOnly,
-                onCheckedChange = DesktopScrobbleSettings::setLastfmPrimaryArtistOnly,
-            )
-            DesktopCardRule()
-            PanelSwitchRow(
-                title = DesktopStrings["now_playing", "Now playing"],
-                subtitle = DesktopStrings["lastfm_now_playing_subtitle", "Update Last.fm with what you are listening to"],
-                checked = nowPlaying,
-                onCheckedChange = DesktopScrobbleSettings::setLastfmNowPlaying,
-            )
-        }
-    }
-
-    if (lastfmEnabled && signedIn) {
-        val minDuration by DesktopScrobbleSettings.minDuration.collectAsState()
-        val delayPercent by DesktopScrobbleSettings.delayPercent.collectAsState()
-        val delaySeconds by DesktopScrobbleSettings.delaySeconds.collectAsState()
-        PanelGroup(header = "Scrobble timing") {
-            PanelSliderRow(
-                "Minimum song duration",
-                "Shorter songs will not scrobble",
-                "${minDuration}s",
-                minDuration.toFloat(),
-                15f..120f,
-                20,
-            ) { DesktopScrobbleSettings.setMinDuration(it.roundToInt()) }
-            DesktopCardRule()
-            PanelSliderRow(
-                "Scrobble delay",
-                "How far into a song to scrobble it",
-                "${(delayPercent * 100).roundToInt()}%",
-                delayPercent,
-                0.1f..1.0f,
-                8,
-            ) { DesktopScrobbleSettings.setDelayPercent(it) }
-            DesktopCardRule()
-            PanelSliderRow(
-                "Maximum delay",
-                "Maximum scrobble delay in seconds",
-                "${delaySeconds}s",
-                delaySeconds.toFloat(),
-                30f..300f,
-                26,
-            ) { DesktopScrobbleSettings.setDelaySeconds(it.roundToInt()) }
         }
     }
 }

@@ -827,7 +827,6 @@ fun BitChordDesktopApp() {
         persistence.saveHistory(history)
         playbackEngine.load(song, startPlaying)
         partySyncHolder[0]?.onLocalIntent(song.videoId)
-        scope.launch { DesktopScrobbling.updateNowPlaying(song) }
     }
 
     fun partyTrackChangeBlocked(): Boolean {
@@ -1545,7 +1544,6 @@ fun BitChordDesktopApp() {
     playbackEngine = remember {
         DesktopPlaybackEngine(
             onEnded = {
-                selectedSong?.let(DesktopScrobbling::onPlaybackEnded)
                 if (DesktopSleepTimer.afterTrack.value) {
                     DesktopSleepTimer.cancel()
                 } else if (repeatMode == DesktopRepeatMode.ONE) {
@@ -1571,7 +1569,6 @@ fun BitChordDesktopApp() {
                     selectedSong = song
                     history = (listOf(song) + history.filterNot { it.videoId == song.videoId }).take(50)
                     persistence.saveHistory(history)
-                    DesktopScrobbling.updateNowPlaying(song)
                     partySyncHolder[0]?.onLocalIntent()
                 }
             },
@@ -1907,7 +1904,6 @@ fun BitChordDesktopApp() {
         )
     }
     LaunchedEffect(playback.song?.videoId, playback.isPlaying, playback.durationMs) {
-        DesktopScrobbling.onPlaybackStateChanged(playback)
         DesktopWindowsMedia.publish(playback)
     }
     // Refetched on opening the page rather than cached for the session: the
@@ -3479,12 +3475,6 @@ fun BitChordDesktopApp() {
                     }
                     if (overlays.downloadManager) {
                         DesktopDownloadManagerDialog(onDismiss = { overlays.downloadManager = false })
-                    }
-                    if (overlays.lastfmLogin) {
-                        DesktopLastfmLoginDialog(onDismiss = { overlays.lastfmLogin = false })
-                    }
-                    if (overlays.listenBrainzToken) {
-                        DesktopListenBrainzTokenDialog(onDismiss = { overlays.listenBrainzToken = false })
                     }
                     if (overlays.discordToken) {
                         DesktopDiscordTokenDialog(onDismiss = { overlays.discordToken = false })

@@ -53,69 +53,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 /**
- * Signing in to Last.fm with a username and password.
- *
- * Android's `LastfmLoginAlert`: two fields, and the error takes the
- * description's place rather than appearing beside it, because a wrong password
- * is the only thing anybody needs told at that moment. The password is sent to
- * `auth.getMobileSession` and never stored — only the session key it returns.
- */
-@Composable
-internal fun DesktopLastfmLoginDialog(onDismiss: () -> Unit) {
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf<String?>(null) }
-    var busy by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
-    val focus = remember { FocusRequester() }
-    LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
-
-    fun submit() {
-        if (busy || username.isBlank() || password.isBlank()) return
-        busy = true
-        error = null
-        scope.launch {
-            DesktopScrobbling.signInToLastFm(username.trim(), password)
-                .onSuccess { onDismiss() }
-                .onFailure { error = it.message ?: "Last.fm would not sign you in" }
-            busy = false
-        }
-    }
-
-    DesktopDialogPanel(onDismiss = onDismiss, maxWidth = 380) {
-        DialogHeading(
-            title = DesktopStrings["d_sign_in_to_last_fm", "Sign in to Last.fm"],
-            message = error ?: "Your password is sent to Last.fm once and never stored.",
-            isError = error != null,
-        )
-        DialogField(
-            value = username,
-            onValueChange = { username = it },
-            placeholder = DesktopStrings["username", "Username"],
-            enabled = !busy,
-            imeAction = ImeAction.Next,
-            modifier = Modifier.focusRequester(focus),
-        )
-        Spacer(Modifier.height(8.dp))
-        DialogField(
-            value = password,
-            onValueChange = { password = it },
-            placeholder = DesktopStrings["password", "Password"],
-            enabled = !busy,
-            isPassword = true,
-            onSubmit = ::submit,
-        )
-        DialogActions(
-            confirm = if (busy) "Signing in…" else "Sign in",
-            confirmEnabled = !busy && username.isNotBlank() && password.isNotBlank(),
-            busy = busy,
-            onConfirm = ::submit,
-            onDismiss = onDismiss,
-        )
-    }
-}
-
-/**
  * The `sp_dc` cookie Spotify Canvas needs.
  *
  * Android's `SpotifyCanvasAuthScreen`, with its four steps unchanged — they name a browser's
@@ -183,49 +120,6 @@ internal fun DesktopSpotifyCanvasDialog(onDismiss: () -> Unit, onSaved: (String)
  * One field and no verification, as on Android: ListenBrainz has no endpoint
  * that says whether a token is good, so the first listen is the test.
  */
-@Composable
-internal fun DesktopListenBrainzTokenDialog(onDismiss: () -> Unit) {
-    var token by remember { mutableStateOf(DesktopScrobbleSettings.listenBrainzToken.value) }
-    val focus = remember { FocusRequester() }
-    LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
-
-    fun save() {
-        DesktopScrobbleSettings.setListenBrainzToken(token.trim())
-        DesktopScrobbleSettings.setListenBrainzEnabled(token.isNotBlank())
-        onDismiss()
-    }
-
-    DesktopDialogPanel(onDismiss = onDismiss, maxWidth = 380) {
-        DialogHeading(
-            title = DesktopStrings["listenbrainz_token", "ListenBrainz token"],
-            message = DesktopStrings["d_found_on_your_listenbrainz_profile_under_settings", "Found on your ListenBrainz profile, under Settings."],
-        )
-        DialogField(
-            value = token,
-            onValueChange = { token = it },
-            placeholder = DesktopStrings["api_token", "API token"],
-            isPassword = true,
-            onSubmit = ::save,
-            modifier = Modifier.focusRequester(focus),
-        )
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = panelInset(22.dp)),
-            horizontalArrangement = Arrangement.Start,
-        ) {
-            TextButton(onClick = { DesktopExternalLinks.open("https://listenbrainz.org/settings/") }) {
-                Text(DesktopStrings["d_open_listenbrainz", "Open ListenBrainz"], color = DesktopSecondary, style = MaterialTheme.typography.bodySmall)
-            }
-        }
-        DialogActions(
-            confirm = DesktopStrings["save", "Save"],
-            confirmEnabled = true,
-            busy = false,
-            onConfirm = ::save,
-            onDismiss = onDismiss,
-        )
-    }
-}
-
 @Composable
 private fun DialogHeading(title: String, message: String, isError: Boolean = false) {
     Column(

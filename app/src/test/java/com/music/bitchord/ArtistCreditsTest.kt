@@ -5,7 +5,6 @@ import com.music.bitchord.data.model.ArtistNameIndex
 import com.music.bitchord.data.model.ArtistRef
 import com.music.bitchord.data.model.completeArtistCredits
 import com.music.bitchord.data.model.creditSegments
-import com.music.bitchord.data.scrobbling.primaryArtist
 import com.music.bitchord.ui.player.artistCredits
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -81,29 +80,6 @@ class ArtistCreditsTest {
         )
         assertEquals(listOf("BedeoSa", "2115"), credits.map { it.name })
         assertEquals(listOf("UC_a", "UC_b"), credits.map { it.browseId })
-    }
-
-    @Test
-    fun `the lead credit of a split is the same name primaryArtist picks`() {
-        for (line in listOf(
-            "Anitta & Shakira",
-            "Anitta, Shakira",
-            "Drake ＆ 21 Savage",
-            "Beyoncé, Jay-Z & Kanye West",
-            "AC/DC",
-            "Florence and the Machine",
-            "Simon & Garfunkel",
-            "Tyler, The Creator",
-            "  spaced  &  out  ",
-        )) {
-            val credits = split(line)
-            assertTrue("no credits parsed from: $line", credits.isNotEmpty())
-            assertEquals(
-                "lead credit disagrees with primaryArtist for: $line",
-                line.primaryArtist(),
-                credits.first().name,
-            )
-        }
     }
 
     @Test
