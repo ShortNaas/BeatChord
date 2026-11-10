@@ -8,7 +8,9 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import com.music.bitchord.data.DebugLog as Log
 import com.music.bitchord.data.model.Song
+import com.music.bitchord.download.FileTagEditor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -16,6 +18,8 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 
 object LocalFileManager {
+
+    private const val TAG = "BitChord"
 
     suspend fun deleteSong(context: Context, song: Song): Boolean = withContext(Dispatchers.IO) {
         var deleted = false
@@ -125,7 +129,21 @@ object LocalFileManager {
     ): Boolean = withContext(Dispatchers.IO) {
         var updated = false
 
-        // Update MediaStore content resolver
+        // 1. The audio file's own tags first. A MediaStore row is a cache that
+        //    any provider rebuild discards and no other player ever reads, so an
+        //    edit that stops there is lost the next time the library is rescanned
+        //    — and never visible outside this app. Best effort: a file this app
+        //    cannot write, a container with no safe rewrite, or a device whose
+        //    storage provider refuses the write all leave the row below as the
+        //    only record, which is what this did before.
+        if (runCatching { rewriteFileTags(context, song, newTitle, newArtist, newAlbum) }
+                .onFailure { Log.w(TAG, "could not rewrite tags for ${song.localUri}: ${it.message}") }
+                .getOrDefault(false)
+        ) {
+            updated = true
+        }
+
+        // 2. Update MediaStore content resolver
         song.localUri?.let { uriStr ->
             if (uriStr.startsWith("content://")) {
                 runCatching {
@@ -141,7 +159,7 @@ object LocalFileManager {
             }
         }
 
-        // Rescan path
+        // 3. Rescan path
         song.localPath?.let { path ->
             MediaScannerConnection.scanFile(context, arrayOf(path), null, null)
             updated = true
@@ -149,6 +167,100 @@ object LocalFileManager {
 
         updated
     }
+
+    /**
+     * Rewrites the tags inside the song's own audio file, reading and writing
+     * through the uri the row came from.
+     *
+     * False means "nothing was written", for any reason at all: a remote or
+     * missing uri, an extension the tag editor does not handle, a read or a
+     * write the provider refused, or a container the tagger did not recognise.
+     * The caller falls back to the MediaStore row in every one of those cases,
+     * so nothing here throws and nothing here is fatal.
+     *
+     * The artwork is *not* pulled out and passed back in. The taggers keep the
+     * cover blocks they find when no new one is supplied, which preserves every
+     * picture in the file — including the ones a single extracted cover would
+     * lose — and keeps this path free of the one thing in [MediaTagger] that
+     * fetches from the network.
+     */
+    private fun rewriteFileTags(
+        context: Context,
+        song: Song,
+        newTitle: String,
+        newArtist: String,
+        newAlbum: String,
+    ): Boolean {
+        val uri = song.localUri?.let { runCatching { Uri.parse(it) }.getOrNull() }
+            ?: song.localPath?.let { Uri.fromFile(File(it)) }
+            ?: return false
+        val extension = fileExtension(context, song, uri) ?: return false
+        if (!FileTagEditor.handles(extension)) return false
+
+        val bytes = readBytes(context, uri) ?: return false
+        val tagged = FileTagEditor.retag(bytes, extension, newTitle, newArtist, newAlbum) ?: return false
+        return writeBytes(context, uri, tagged)
+    }
+
+    /** The container extension of the file behind [uri], from whichever source still names it. */
+    private fun fileExtension(context: Context, song: Song, uri: Uri): String? {
+        song.localPath?.extensionOf()?.let { return it }
+        uri.path?.extensionOf()?.let { return it }
+        // A MediaStore uri carries an id rather than a file name; its
+        // DISPLAY_NAME column is what still says what the file is called.
+        displayName(context, uri)?.extensionOf()?.let { return it }
+        return when (context.contentResolver.getType(uri)?.lowercase()?.substringBefore(';')?.trim()) {
+            "audio/flac", "audio/x-flac" -> "flac"
+            "audio/mp4", "audio/m4a", "audio/x-m4a" -> "m4a"
+            else -> null
+        }
+    }
+
+    private fun String.extensionOf(): String? =
+        substringAfterLast('/')
+            .substringAfterLast('.', "")
+            .lowercase()
+            .takeIf { it.isNotEmpty() && it.length <= 5 && it.all(Char::isLetterOrDigit) }
+
+    private fun displayName(context: Context, uri: Uri): String? = runCatching {
+        if (uri.scheme != "content") {
+            null
+        } else {
+            context.contentResolver
+                .query(uri, arrayOf(MediaStore.MediaColumns.DISPLAY_NAME), null, null, null)
+                ?.use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else null }
+        }
+    }.getOrNull()
+
+    /**
+     * The file [uri] names when it names one directly, rather than through a
+     * storage provider. A bare path is in here too: rows restored from the
+     * listening log carry one, and it is still the same audio file.
+     */
+    private fun Uri.directFile(): File? = when (scheme) {
+        "file", null -> path?.takeIf { it.isNotBlank() }?.let(::File)
+        else -> null
+    }
+
+    private fun readBytes(context: Context, uri: Uri): ByteArray? = runCatching {
+        val file = uri.directFile()
+        if (file != null) {
+            file.takeIf { it.isFile }?.readBytes()
+        } else {
+            context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+        }
+    }.onFailure { Log.w(TAG, "could not read $uri for a tag edit: ${it.message}") }.getOrNull()
+
+    private fun writeBytes(context: Context, uri: Uri, bytes: ByteArray): Boolean = runCatching {
+        val file = uri.directFile()
+        if (file != null) {
+            file.outputStream().use { it.write(bytes) }
+        } else {
+            context.contentResolver.openOutputStream(uri, "wt")?.use { it.write(bytes) }
+                ?: error("could not open $uri for writing")
+        }
+        true
+    }.onFailure { Log.w(TAG, "could not write tags to $uri: ${it.message}") }.getOrDefault(false)
 
     fun getCommonMusicFolders(context: Context): List<File> {
         val list = mutableListOf<File>()

@@ -2,6 +2,8 @@ package com.music.bitchord.download
 
 import com.music.bitchord.data.lyrics.WORD_LYRICS_FIELD
 
+import java.io.ByteArrayOutputStream
+
 /**
  * Writes iTunes-style metadata atoms — title, artist, album, lyrics, cover —
  * into an already-downloaded M4A/MP4 file, in place.
@@ -21,6 +23,16 @@ import com.music.bitchord.data.lyrics.WORD_LYRICS_FIELD
  * inserted length. Nothing else in the file addresses itself by absolute
  * offset, so that one adjustment is sufficient regardless of whether `mdat`
  * sits before or after `moov`.
+ *
+ * That is right for a download, which lands on a file with no iTunes metadata
+ * at all. [retag] runs on files that already have some — a track saved by
+ * another tool, or this app's own earlier download — and appending a second
+ * `udta` there would leave two sets of tags in one file, with the answer
+ * depending on which one a given player reads. So [retag] rewrites the `udta`
+ * the file already has instead, carrying across every `ilst` child it does not
+ * set and — when no new cover is supplied — the existing `covr` with them. The
+ * offset adjustment is the same, measured from the start of the replaced
+ * `moov` rather than from its end.
  *
  * Any layout this doesn't recognise — no `moov`, a box that doesn't fit its
  * parent — falls through to returning the input unchanged rather than
@@ -55,6 +67,64 @@ object Mp4Tagger {
         /** The A2 form, kept beside [lyrics] rather than instead of it — see [freeformItem]. */
         wordLyrics: String? = null,
     ): ByteArray {
+        val items = tagItems(title, artist, album, lyrics, cover, coverIsPng, wordLyrics)
+        if (items.isEmpty()) return bytes
+
+        val moov = runCatching {
+            parseBoxes(bytes, 0, bytes.size).firstOrNull { it.type == "moov" }
+        }.getOrNull() ?: return bytes
+
+        return runCatching {
+            insert(bytes, moov, udtaAtom(metaAtom(ilstAtom(items))))
+        }.getOrDefault(bytes)
+    }
+
+    /**
+     * The same tags, written into a file that already has some.
+     *
+     * Two differences from [tag], both of them about not destroying what is
+     * already in the file. The `udta` the file carries is rewritten in place
+     * rather than joined by a second one, so there is one answer to "what does
+     * this track say". And anything in the old `ilst` this does not set is
+     * carried into the new one — `trkn`, `disk`, `gnre`, another tool's atoms,
+     * and above all `covr`, which is only replaced when a new [cover] is
+     * supplied. Without that last part a tag edit would silently drop the
+     * artwork of every M4A it touched.
+     *
+     * @param cover the new artwork, or null to keep whatever the file has.
+     */
+    fun retag(
+        bytes: ByteArray,
+        title: String,
+        artist: String,
+        album: String?,
+        lyrics: String?,
+        /** The A2 form, kept beside [lyrics] rather than instead of it — see [freeformItem]. */
+        wordLyrics: String? = null,
+        cover: ByteArray? = null,
+        coverIsPng: Boolean = false,
+    ): ByteArray {
+        val items = tagItems(title, artist, album, lyrics, cover, coverIsPng, wordLyrics)
+        if (items.isEmpty()) return bytes
+
+        val moov = runCatching {
+            parseBoxes(bytes, 0, bytes.size).firstOrNull { it.type == "moov" }
+        }.getOrNull() ?: return bytes
+
+        return runCatching {
+            replace(bytes, moov, items, hasCover = cover != null && cover.isNotEmpty())
+        }.getOrDefault(bytes)
+    }
+
+    private fun tagItems(
+        title: String,
+        artist: String,
+        album: String?,
+        lyrics: String?,
+        cover: ByteArray?,
+        coverIsPng: Boolean,
+        wordLyrics: String?,
+    ): List<ByteArray> {
         val items = mutableListOf<ByteArray>()
         // © is iTunes's own "copyright" prefix for the four text atoms
         // below — not a copyright mark here, just the byte their readers key on.
@@ -69,15 +139,7 @@ object Mp4Tagger {
         if (!lyrics.isNullOrBlank()) items += textItem("©lyr", lyrics)
         if (!wordLyrics.isNullOrBlank()) items += freeformItem(WORD_LYRICS_FIELD, wordLyrics)
         if (cover != null && cover.isNotEmpty()) items += coverItem(cover, coverIsPng)
-        if (items.isEmpty()) return bytes
-
-        val moov = runCatching {
-            parseBoxes(bytes, 0, bytes.size).firstOrNull { it.type == "moov" }
-        }.getOrNull() ?: return bytes
-
-        return runCatching {
-            insert(bytes, moov, udtaAtom(metaAtom(ilstAtom(items))))
-        }.getOrDefault(bytes)
+        return items
     }
 
     private fun insert(bytes: ByteArray, moov: BoxRef, udta: ByteArray): ByteArray {
@@ -100,13 +162,162 @@ object Mp4Tagger {
         collectOffsetBoxes(bytes, moov, offsetBoxes)
         offsetBoxes.forEach { box ->
             when (box.type) {
-                "stco" -> patchStco(prefix, box, insertAt, delta)
-                "co64" -> patchCo64(prefix, box, insertAt, delta)
+                "stco" -> patchStco(prefix, box, insertAt.toLong(), delta.toLong())
+                "co64" -> patchCo64(prefix, box, insertAt.toLong(), delta.toLong())
             }
         }
 
         val suffix = bytes.copyOfRange(insertAt, bytes.size)
         return prefix + udta + suffix
+    }
+
+    /**
+     * The file with the metadata under `moov/udta` replaced by an `ilst` built
+     * from [items] plus whatever the old one held and this does not set.
+     *
+     * The rewrite is bottom-up: a new `ilst`, a `meta` holding it in place of
+     * the old one, a `udta` holding that, then a `moov` holding that. Each
+     * container keeps its other children — `hdlr` and `keys` under `meta`, any
+     * legacy atoms beside it under `udta`, every `trak` under `moov` — and its
+     * own header width, so a box written with a 64-bit size stays one.
+     */
+    private fun replace(bytes: ByteArray, moov: BoxRef, items: List<ByteArray>, hasCover: Boolean): ByteArray {
+        val moovKids = parseBoxes(bytes, moov.contentOffset, moov.end)
+        val udta = moovKids.firstOrNull { it.type == "udta" }
+        val meta = udta
+            ?.let { parseBoxes(bytes, it.contentOffset, it.end).firstOrNull { kid -> kid.type == "meta" } }
+        // `meta` is a FullBox, unlike `udta` and `ilst`: its first four bytes are
+        // version/flags, and reading its children from the start of the payload
+        // would take those for a box size. That mode of failure is silent — the
+        // child list comes back empty and the rewrite then drops the artwork it
+        // was supposed to carry.
+        val metaKids = meta?.let { parseBoxes(bytes, it.contentOffset + 4, it.end) }.orEmpty()
+        val ilst = metaKids.firstOrNull { it.type == "ilst" }
+
+        val carried = ilst?.let { box ->
+            parseBoxes(bytes, box.contentOffset, box.end).mapNotNull { item ->
+                val raw = bytes.copyOfRange(item.offset, item.end)
+                when {
+                    // The file's own artwork is only replaced, never dropped.
+                    item.type == "covr" -> raw.takeUnless { hasCover }
+                    // The four text atoms this rewrite owns outright; a blank
+                    // value means the field is being cleared, not kept.
+                    item.type in TEXT_ITEMS -> null
+                    // Only this app's own word-timings item; another tool's
+                    // `----` payload is carried like anything else.
+                    item.type == "----" && isWordLyrics(bytes, item) -> null
+                    else -> raw
+                }
+            }
+        }.orEmpty()
+
+        val newIlst = ilstAtom(carried + items)
+        val newMeta = if (meta != null) {
+            container(
+                bytes = bytes,
+                box = meta,
+                prefix = bytes.copyOfRange(meta.contentOffset, meta.contentOffset + 4),
+                kids = metaKids,
+                replaced = "ilst",
+                replacement = newIlst,
+            )
+        } else {
+            metaAtom(newIlst)
+        }
+        val newUdta = if (udta != null) {
+            container(bytes, udta, EMPTY, parseBoxes(bytes, udta.contentOffset, udta.end), "meta", newMeta)
+        } else {
+            udtaAtom(newMeta)
+        }
+        val newMoov = container(bytes, moov, EMPTY, moovKids, "udta", newUdta)
+
+        return splice(bytes, moov, newMoov)
+    }
+
+    /**
+     * A container box's payload with its first [replaced] child swapped for
+     * [replacement], or the child appended when it had none. [prefix] is the
+     * FullBox version/flags of the container itself, empty for a plain one.
+     */
+    private fun container(
+        bytes: ByteArray,
+        box: BoxRef,
+        prefix: ByteArray,
+        kids: List<BoxRef>,
+        replaced: String,
+        replacement: ByteArray,
+    ): ByteArray {
+        val out = ByteArrayOutputStream(prefix.size + replacement.size + box.size)
+        out.write(prefix)
+        var placed = false
+        for (kid in kids) {
+            if (!placed && kid.type == replaced) {
+                out.write(replacement)
+                placed = true
+            } else {
+                out.write(bytes, kid.offset, kid.size)
+            }
+        }
+        if (!placed) out.write(replacement)
+        return boxed(box.type, out.toByteArray(), box.headerLen)
+    }
+
+    /** A box of [type] holding [payload], keeping the header width of the box it came from. */
+    private fun boxed(type: String, payload: ByteArray, headerLen: Int): ByteArray {
+        val size = headerLen + payload.size
+        val out = ByteArray(size)
+        if (headerLen == 16) {
+            writeU32(out, 0, 1L)
+            writeU64(out, 8, size.toLong())
+        } else {
+            writeU32(out, 0, size.toLong())
+        }
+        type.toByteArray(Charsets.ISO_8859_1).copyInto(out, 4)
+        payload.copyInto(out, headerLen)
+        return out
+    }
+
+    /**
+     * [bytes] with the `moov` at [moov] replaced by [newMoov], every absolute
+     * sample offset moved by however much the box grew or shrank.
+     *
+     * The threshold is the start of the box rather than its end, because this
+     * replacement can move `moov`'s *own* content as well as shift what follows
+     * it. An offset before the box — an `mdat` ahead of a non-faststart `moov` —
+     * is left alone; one at or past it moves with the box.
+     */
+    private fun splice(bytes: ByteArray, moov: BoxRef, newMoov: ByteArray): ByteArray {
+        val delta = (newMoov.size - moov.size).toLong()
+        val patched = newMoov.copyOf()
+        val newMoovBox = parseBoxes(patched, 0, patched.size).firstOrNull { it.type == "moov" } ?: return bytes
+        val offsetBoxes = mutableListOf<BoxRef>()
+        collectOffsetBoxes(patched, newMoovBox, offsetBoxes)
+        offsetBoxes.forEach { box ->
+            when (box.type) {
+                "stco" -> patchStco(patched, box, moov.offset.toLong(), delta)
+                "co64" -> patchCo64(patched, box, moov.offset.toLong(), delta)
+            }
+        }
+
+        val out = ByteArray(bytes.size + delta.toInt())
+        bytes.copyInto(out, 0, 0, moov.offset)
+        patched.copyInto(out, moov.offset)
+        bytes.copyInto(out, moov.offset + patched.size, moov.end, bytes.size)
+        return out
+    }
+
+    /**
+     * Whether [item] is this app's own word-timings `----` item.
+     *
+     * Matched on the `name` child rather than on `----` itself: that fourcc is
+     * iTunes' escape hatch and any tool can put anything in one, so dropping
+     * every `----` would throw away someone else's tags to rewrite our own.
+     */
+    private fun isWordLyrics(bytes: ByteArray, item: BoxRef): Boolean {
+        val name = parseBoxes(bytes, item.contentOffset, item.end).firstOrNull { it.type == "name" } ?: return false
+        val start = name.contentOffset + 4
+        if (start > name.end) return false
+        return String(bytes, start, name.end - start, Charsets.UTF_8) == WORD_LYRICS_FIELD
     }
 
     private fun collectOffsetBoxes(bytes: ByteArray, box: BoxRef, out: MutableList<BoxRef>) {
@@ -120,25 +331,25 @@ object Mp4Tagger {
     }
 
     /** `stco`: FullBox header, an entry count, then that many 32-bit offsets. */
-    private fun patchStco(bytes: ByteArray, box: BoxRef, insertAt: Int, delta: Int) {
+    private fun patchStco(bytes: ByteArray, box: BoxRef, threshold: Long, delta: Long) {
         val base = box.contentOffset + 4
         val count = readU32(bytes, base).toInt()
         var p = base + 4
         repeat(count) {
             val off = readU32(bytes, p)
-            if (off >= insertAt) writeU32(bytes, p, off + delta)
+            if (off >= threshold) writeU32(bytes, p, off + delta)
             p += 4
         }
     }
 
     /** `co64`: the same shape as [patchStco], with 64-bit offsets. */
-    private fun patchCo64(bytes: ByteArray, box: BoxRef, insertAt: Int, delta: Int) {
+    private fun patchCo64(bytes: ByteArray, box: BoxRef, threshold: Long, delta: Long) {
         val base = box.contentOffset + 4
         val count = readU32(bytes, base).toInt()
         var p = base + 4
         repeat(count) {
             val off = readU64(bytes, p)
-            if (off >= insertAt) writeU64(bytes, p, off + delta)
+            if (off >= threshold) writeU64(bytes, p, off + delta)
             p += 8
         }
     }
@@ -235,6 +446,18 @@ object Mp4Tagger {
     /** The reverse-DNS owner of [freeformItem], which is what keeps the name ours. */
     private const val MEAN = "com.music.bitchord"
 
+    /**
+     * The `ilst` children a retag replaces outright.
+     *
+     * `covr` is not among them: artwork is replaced when a new cover is supplied
+     * and carried across when one is not, which is a different decision from the
+     * four text atoms here — a blank title means "clear this field", never
+     * "keep whatever was there".
+     */
+    private val TEXT_ITEMS = setOf("©nam", "©ART", "©alb", "©lyr")
+
+    /** The empty FullBox prefix, for the containers that are not FullBoxes. */
+    private val EMPTY = ByteArray(0)
 
     /** A minimal handler box declaring this `meta` as iTunes-style metadata. */
     private fun hdlrAtom(): ByteArray {

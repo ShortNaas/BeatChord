@@ -20,11 +20,18 @@ import java.io.ByteArrayOutputStream
  * here is to emit a new block chain and copy the frames through untouched.
  *
  * What comes out is the magic, `STREAMINFO`, every other block the file already
- * had, then a fresh `VORBIS_COMMENT` and `PICTURE`. The old copies of those two
- * are dropped rather than added to — a second `VORBIS_COMMENT` is illegal, and
- * two front covers is a coin toss over which one a player shows. `PADDING` is
- * dropped as well, which is what it is there for: it exists to be spent on
- * exactly this.
+ * had, then a fresh `VORBIS_COMMENT` and — when a cover is supplied — a
+ * `PICTURE`. The old comment is dropped rather than added to, because a second
+ * `VORBIS_COMMENT` is illegal. `PADDING` is dropped as well, which is what it is
+ * there for: it exists to be spent on exactly this.
+ *
+ * A `PICTURE` the file already carries is only dropped when a new cover
+ * replaces it. That was not true while the only caller was the download path,
+ * which always ran on a fresh file with no metadata at all — but [retag] runs on
+ * files that have been on the device for years, and a cover is the one block
+ * there that a listener would notice going missing. Multiple `PICTURE` blocks
+ * are legal and every one of them is carried across; the front cover a rewrite
+ * adds is merely the last of them.
  *
  * Anything that doesn't fit the shape above — a file that doesn't open with
  * `fLaC`, a block that claims more bytes than the file has, a first block that
@@ -43,8 +50,50 @@ object FlacTagger {
         coverMime: String,
         /** The A2 form, under a name of this app's own — see [WORD_LYRICS_FIELD]. */
         wordLyrics: String? = null,
+    ): ByteArray = rewrite(bytes, title, artist, album, lyrics, cover, coverMime, wordLyrics, owned = null)
+
+    /**
+     * The same rewrite, for a file that already has tags of its own.
+     *
+     * The difference from [tag] is what happens to metadata this doesn't set: an
+     * existing `VORBIS_COMMENT` carries fields like `GENRE`, `DATE` and
+     * `TRACKNUMBER` that a download never had, and rebuilding the block from
+     * scratch would spend every one of them to change a title. [EDITABLE_FIELDS]
+     * names the five fields a retag owns, so clearing one of those — an album
+     * field the user emptied — really does clear it instead of resurrecting the
+     * old value, and every other field survives as it was.
+     *
+     * Artwork follows the same rule as [tag]: with no new [cover], the file's own
+     * `PICTURE` blocks stay exactly as they are, all of them.
+     */
+    fun retag(
+        bytes: ByteArray,
+        title: String,
+        artist: String,
+        album: String?,
+        lyrics: String?,
+        /** The A2 form, under a name of this app's own — see [WORD_LYRICS_FIELD]. */
+        wordLyrics: String? = null,
+        cover: ByteArray? = null,
+        coverMime: String = "image/jpeg",
+    ): ByteArray = rewrite(bytes, title, artist, album, lyrics, cover, coverMime, wordLyrics, owned = EDITABLE_FIELDS)
+
+    /**
+     * @param owned the `VORBIS_COMMENT` field names this rewrite sets, or null to
+     *   replace the file's comment wholesale — see [retag].
+     */
+    private fun rewrite(
+        bytes: ByteArray,
+        title: String,
+        artist: String,
+        album: String?,
+        lyrics: String?,
+        cover: ByteArray?,
+        coverMime: String,
+        wordLyrics: String?,
+        owned: Set<String>?,
     ): ByteArray = runCatching {
-        val done = header(bytes, title, artist, album, lyrics, cover, coverMime, wordLyrics)
+        val done = headerFrom(bytes, title, artist, album, lyrics, cover, coverMime, wordLyrics, owned)
             ?: return@runCatching bytes
         val out = ByteArrayOutputStream(done.metadata.size + (bytes.size - done.audioStart))
         out.write(done.metadata)
@@ -82,6 +131,23 @@ object FlacTagger {
         cover: ByteArray?,
         coverMime: String,
         wordLyrics: String? = null,
+    ): Rewrite? = headerFrom(head, title, artist, album, lyrics, cover, coverMime, wordLyrics, owned = null)
+
+    /**
+     * @param owned the `VORBIS_COMMENT` field names this rewrite sets, or null
+     *   when the whole comment is to be replaced rather than merged into — see
+     *   [retag]. Everything not named here is carried over from the file.
+     */
+    private fun headerFrom(
+        head: ByteArray,
+        title: String,
+        artist: String,
+        album: String?,
+        lyrics: String?,
+        cover: ByteArray?,
+        coverMime: String,
+        wordLyrics: String?,
+        owned: Set<String>?,
     ): Rewrite? {
         if (!head.regionMatches(0, MAGIC)) return null
 
@@ -106,9 +172,18 @@ object FlacTagger {
         // there is not one to guess at.
         if (blocks.firstOrNull()?.type != TYPE_STREAMINFO) return null
 
+        val kept = owned?.let { fields ->
+            blocks.firstOrNull { it.type == TYPE_VORBIS_COMMENT }
+                ?.let { block -> commentFields(head.copyOfRange(block.start, block.start + block.length)) }
+                ?.filterNot { it.fieldName() in fields }
+                .orEmpty()
+        }.orEmpty()
+
+        val comment = vorbisComment(title, artist, album, lyrics, wordLyrics, kept)
+        val newCover = cover?.takeIf { it.isNotEmpty() }
         val additions = listOfNotNull(
-            vorbisComment(title, artist, album, lyrics, wordLyrics)?.let { TYPE_VORBIS_COMMENT to it },
-            cover?.takeIf { it.isNotEmpty() }?.let { TYPE_PICTURE to picture(it, coverMime) },
+            comment?.let { TYPE_VORBIS_COMMENT to it },
+            newCover?.let { TYPE_PICTURE to picture(it, coverMime) },
         )
             // A payload past what three bytes of length can describe costs that
             // one block and nothing else. Only a cover could realistically reach
@@ -117,7 +192,19 @@ object FlacTagger {
             .filter { it.second.size <= MAX_BLOCK_BYTES }
         if (additions.isEmpty()) return null
 
-        val chain = blocks.filterNot { it.type in REPLACED }
+        // What this rewrite spends rather than carries. `PADDING` always goes —
+        // it exists to be spent on exactly this. The old comment only goes when
+        // there is a new one to take its place, and the old `PICTURE` blocks only
+        // when a new cover replaces them: a rewrite that changes a title has no
+        // business touching artwork it was not given, and carrying the blocks is
+        // the only way to keep every one of them, including the ones a
+        // single-cover rewrite would never know to re-add.
+        val replaced = buildSet {
+            add(TYPE_PADDING)
+            if (comment != null) add(TYPE_VORBIS_COMMENT)
+            if (newCover != null) add(TYPE_PICTURE)
+        }
+        val chain = blocks.filterNot { it.type in replaced }
             .map { it.type to head.copyOfRange(it.start, it.start + it.length) } + additions
 
         val out = ByteArrayOutputStream(offset + additions.sumOf { it.second.size } + 64)
@@ -150,6 +237,10 @@ object FlacTagger {
      * lyrics for a FLAC looks. Nothing about the layout minds it being long or
      * containing newlines: a field is a length-prefixed run of UTF-8 bytes, and
      * only the *name* before the `=` is constrained.
+     *
+     * [kept] are fields read back out of the file's own comment — `GENRE`,
+     * `DATE`, `TRACKNUMBER` and whatever else a track arrived with — which go in
+     * ahead of the five written here, in their original order. See [retag].
      */
     private fun vorbisComment(
         title: String,
@@ -157,8 +248,10 @@ object FlacTagger {
         album: String?,
         lyrics: String?,
         wordLyrics: String?,
+        kept: List<String> = emptyList(),
     ): ByteArray? {
         val fields = buildList {
+            addAll(kept)
             if (title.isNotBlank()) add("TITLE=$title")
             if (artist.isNotBlank()) add("ARTIST=$artist")
             if (!album.isNullOrBlank()) add("ALBUM=$album")
@@ -207,6 +300,52 @@ object FlacTagger {
         return out.toByteArray()
     }
 
+    /**
+     * The `NAME=value` fields of an existing `VORBIS_COMMENT` payload.
+     *
+     * Little-endian, like [vorbisComment], and read straight off the block the
+     * caller sliced out so the length of the block is the only bound that
+     * matters. A length that runs past it ends the list rather than throwing:
+     * half a corrupt comment is still better than refusing the edit, and the
+     * fields that did parse are carried across by [retag].
+     */
+    private fun commentFields(comment: ByteArray): List<String> {
+        var at = 0
+
+        fun u32(): Int? {
+            if (at + 4 > comment.size) return null
+            val value = (comment[at].toInt() and 0xFF) or
+                ((comment[at + 1].toInt() and 0xFF) shl 8) or
+                ((comment[at + 2].toInt() and 0xFF) shl 16) or
+                ((comment[at + 3].toInt() and 0xFF) shl 24)
+            at += 4
+            return value
+        }
+
+        val vendor = u32() ?: return emptyList()
+        // Bounded before it is added rather than after: a vendor length is a
+        // number the file chose, and `at += vendor` on an enormous one wraps
+        // negative and reads behind the block instead of ending the walk.
+        if (vendor < 0 || vendor > comment.size - at) return emptyList()
+        at += vendor
+        val count = u32() ?: return emptyList()
+        if (count < 0) return emptyList()
+        val out = mutableListOf<String>()
+        // Bounded for the same reason `EmbeddedLyrics` bounds its own walk: the
+        // count is a number the file chose, and this is a byte array someone else
+        // wrote.
+        repeat(count.coerceAtMost(4_096)) {
+            val length = u32() ?: return out
+            if (length < 0 || length > comment.size - at) return out
+            out += String(comment, at, length, Charsets.UTF_8)
+            at += length
+        }
+        return out
+    }
+
+    /** The name half of a `NAME=value` field, in the case-insensitive form the format compares in. */
+    private fun String.fieldName(): String = substringBefore('=').trim().uppercase()
+
     private class Block(val type: Int, val start: Int, val length: Int)
 
     private fun ByteArrayOutputStream.writeLe(value: Int) {
@@ -239,8 +378,12 @@ object FlacTagger {
     private const val TYPE_VORBIS_COMMENT = 4
     private const val TYPE_PICTURE = 6
 
-    /** Blocks this rewrites or spends, rather than carrying across. */
-    private val REPLACED = setOf(TYPE_PADDING, TYPE_VORBIS_COMMENT, TYPE_PICTURE)
+    /**
+     * The comment fields a [retag] owns. Every other name in the block — a
+     * `GENRE`, a `DATE`, a `TRACKNUMBER`, another tool's `COMMENT` — is carried
+     * across untouched, which is the whole difference between this and [tag].
+     */
+    private val EDITABLE_FIELDS = setOf("TITLE", "ARTIST", "ALBUM", "LYRICS", WORD_LYRICS_FIELD.uppercase())
 
     /** The most a three-byte length field can describe. */
     private const val MAX_BLOCK_BYTES = (1 shl 24) - 1
