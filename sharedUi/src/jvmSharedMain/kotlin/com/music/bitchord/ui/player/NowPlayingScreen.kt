@@ -41,7 +41,6 @@ import androidx.compose.ui.draw.alpha
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -57,7 +56,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Undo
 import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.FastRewind
 import androidx.compose.material.icons.rounded.MoreHoriz
@@ -152,7 +150,6 @@ import com.music.bitchord.data.model.PLAYER_ART_PX
 import com.music.bitchord.data.model.Song
 import com.music.bitchord.playback.BACK_RESTARTS_AFTER_MS
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
@@ -184,7 +181,6 @@ internal const val ART_RETRIES = 3
 internal const val ART_RETRY_DELAY_MS = 1_500L
 
 /** Long enough for the post-upgrade rollback cue to be noticed without lingering. */
-private const val REVERT_CUE_MS = 2_600L
 
 /**
  * How close the player's reported position has to get to a released scrub
@@ -597,20 +593,12 @@ fun NowPlayingScreen(
      */
     position: PlaybackPosition,
     durationMs: Long,
-    /** A version switch (video vs audio-only), triggered from the player's
-     * menu, is fetching and measuring the target cut. */
-    audioVersionSwitching: Boolean,
-    /** The player has just swapped this item to a higher-quality source. */
-    qualityUpgraded: Boolean,
     queue: List<Song>,
     queueIndex: Int,
     hasPrevious: Boolean,
     hasNext: Boolean,
     repeatMode: Int,
     shuffleEnabled: Boolean,
-    autoplayEnabled: Boolean,
-    signedIn: Boolean,
-    accountName: String?,
     likeStatus: LikeStatus,
     onToggleLike: () -> Unit,
     onPlayPause: () -> Unit,
@@ -631,7 +619,6 @@ fun NowPlayingScreen(
     onSeekFraction: (Float) -> Unit,
     onToggleShuffle: () -> Unit,
     onCycleRepeat: () -> Unit,
-    onToggleAutoplay: () -> Unit,
     onJumpTo: (Int) -> Unit,
     onRemoveFromQueue: (Int) -> Unit,
     onMoveInQueue: (Int, Int) -> Unit,
@@ -837,20 +824,6 @@ fun NowPlayingScreen(
     // so the words change underneath them and the panel stays. Closing it
     // dropped them back onto the artwork every few minutes with no gesture of
     // their own behind it.
-    // A brief, non-modal confirmation that the three-dot menu now contains a
-    // way back to the original YouTube rendition. The control keeps its usual
-    // action — opening the menu — so the cue teaches rather than surprises.
-    var showRevertCue by remember(song.videoId) { mutableStateOf(false) }
-    LaunchedEffect(song.videoId, qualityUpgraded) {
-        if (!qualityUpgraded) {
-            showRevertCue = false
-            return@LaunchedEffect
-        }
-        showRevertCue = true
-        delay(REVERT_CUE_MS)
-        showRevertCue = false
-    }
-
     // Lyrics are meant to be read continuously, so hold off the device's normal
     // screen timeout — but only while the panel is actually up. Closing it hands
     // the screen back, and the system starts its own timeout from that moment
@@ -1222,12 +1195,10 @@ fun NowPlayingScreen(
             queueOpen = queueOpen,
             shuffleEnabled = shuffleEnabled,
             repeatMode = repeatMode,
-            autoplayEnabled = autoplayEnabled,
             onToggleLyrics = toggleLyrics,
             onToggleQueue = toggleQueue,
             onToggleShuffle = onToggleShuffle,
             onCycleRepeat = onCycleRepeat,
-            onToggleAutoplay = onToggleAutoplay,
             onOpenOutput = openAudioOutput,
             isFavorite = likeStatus == LikeStatus.LIKE,
             onAddToPlaylist = onAddToPlaylist,
@@ -1240,7 +1211,6 @@ fun NowPlayingScreen(
             contentAlignment = Alignment.TopCenter,
         ) {
             OutputCaption(
-                accountName = accountName,
                 onOpenOutput = openAudioOutput,
             )
         }
@@ -1253,7 +1223,6 @@ fun NowPlayingScreen(
         if (showAudioOutput) {
             AudioOutputSheet(
                 hazeState = playerHaze,
-                accountName = accountName,
                 onDismiss = { showAudioOutput = false },
                 onOpenPipeline = { showAudioPipeline = true },
                 onOpenCast = { showCast = true },
@@ -1443,7 +1412,6 @@ fun NowPlayingScreen(
             animationSpec = tween(durationMillis = ARTWORK_SCALE_DURATION_MS, easing = ArtworkScaleEasing),
             label = "landscapeArtworkScale",
         )
-        val versionAligning by PlayerSettings.versionAlignmentInProgress.collectAsStateWithLifecycle()
         val transitionWindow by PlayerSettings.smartTransitionWindow.collectAsStateWithLifecycle()
         val panelOpen = lyricsOpen || queueOpen
 
@@ -1567,7 +1535,6 @@ fun NowPlayingScreen(
                         // The stats belong to the player, not to the sleeve, so
                         // they leave it along with the rest of the player.
                         SleeveNerdStats(
-                            song = song,
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
                                 .padding(horizontal = 10.dp, vertical = 8.dp)
@@ -1586,9 +1553,7 @@ fun NowPlayingScreen(
                         credits = {
                             LandscapeCredits(
                                 song = song,
-                                signedIn = signedIn,
                                 likeStatus = likeStatus,
-                                showRevertCue = showRevertCue,
                                 onToggleLike = onToggleLike,
                                 onOpenMenu = onOpenMenu,
                                 onOpenAlbum = onOpenAlbum,
@@ -1615,7 +1580,7 @@ fun NowPlayingScreen(
                             PlayerScrubber(
                                 shown = shown,
                                 durationMs = durationMs,
-                                loading = versionAligning || audioVersionSwitching,
+                                loading = false,
                                 mixing = mixing && !scrub.scrubbing,
                                 transitionWindow = transitionWindow
                                     ?.takeIf { !scrub.scrubbing && it.end > it.start }
@@ -1624,8 +1589,6 @@ fun NowPlayingScreen(
                                 onScrubFinished = onScrubFinished,
                             ) {
                                 PlaybackQualityLabel(
-                                    song = song,
-                                    isLoading = isLoading,
                                     modifier = Modifier
                                         .align(Alignment.Center)
                                         .padding(horizontal = 8.dp),
@@ -1635,7 +1598,7 @@ fun NowPlayingScreen(
                         transport = {
                             TransportRow(
                                 isPlaying = isPlaying,
-                                isLoading = isLoading || audioVersionSwitching,
+                                isLoading = isLoading,
                                 previousEnabled = hasPrevious || pastRestartPoint,
                                 nextEnabled = hasNext,
                                 onPrevious = onPrevious,
@@ -1730,7 +1693,7 @@ fun NowPlayingScreen(
                     InlineQueue(
                         queue = queue,
                         currentIndex = queueIndex,
-                        autoplayEnabled = autoplayEnabled,
+                        autoplayEnabled = false,
                         onJumpTo = onJumpTo,
                         onRemove = onRemoveFromQueue,
                         onMove = onMoveInQueue,
@@ -2007,13 +1970,9 @@ fun NowPlayingScreen(
             // ---- Top and centre: artwork, then the credits ----
             // Everything that changes between the artwork and the queue lives
             // in this one weighted box, so the controls below it never move.
-            // The loading state the scrubber wears for the length of a version
-            // switch — see [ThinSlider.loading]. The flag is the alignment
-            // half (fetch + measure); [audioVersionSwitching] is the resolve.
-            // Both named here, so there is no frame of the switch with nothing
-            // on screen saying the player is still working.
-            val versionAligning by PlayerSettings.versionAlignmentInProgress.collectAsStateWithLifecycle()
-            val versionSwitching = versionAligning || audioVersionSwitching
+            // The loading state the scrubber wears while the audio version is
+            // being resolved — see [ThinSlider.loading].
+            val versionSwitching = false
             // Height the artwork block below turns out not to need, spent by the
             // controls at the foot of the screen. Filled in from inside the box,
             // where the sleeve's real size is known; see [lastControlSpread].
@@ -2530,7 +2489,6 @@ fun NowPlayingScreen(
                     // following the compact credits to the bottom edge.
                     WhileShown({ !collapsePastHalf }) {
                         SleeveNerdStats(
-                            song = song,
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
                                 .padding(horizontal = 10.dp, vertical = 8.dp)
@@ -2671,8 +2629,8 @@ fun NowPlayingScreen(
                                         null
                                     },
                                     onOverflowChange = { titleOverflowing = it },
-                                    // Only the tracks YouTube hands us a browse id for
-                                    // lead anywhere; the rest stay plain text.
+                                    // Only the tracks that carry an album id lead
+                                    // anywhere; the rest stay plain text.
                                     modifier = Modifier.opensPage(song.albumId, onOpenAlbum),
                                 )
                                 ArtistCreditsMarquee(
@@ -2708,7 +2666,7 @@ fun NowPlayingScreen(
                     )
                     Spacer(Modifier.width(8.dp))
                     CircleGlyph(
-                        icon = if (showRevertCue) Icons.AutoMirrored.Rounded.Undo else Icons.Rounded.MoreHoriz,
+                        icon = Icons.Rounded.MoreHoriz,
                         contentDescription = stringResource(Res.string.more),
                         onClick = onOpenMenu,
                     )
@@ -2862,7 +2820,7 @@ fun NowPlayingScreen(
                         InlineQueue(
                             queue = queue,
                             currentIndex = queueIndex,
-                            autoplayEnabled = autoplayEnabled,
+                            autoplayEnabled = false,
                             onJumpTo = onJumpTo,
                             onRemove = onRemoveFromQueue,
                             onMove = onMoveInQueue,
@@ -2974,8 +2932,6 @@ fun NowPlayingScreen(
                 onScrubFinished = onScrubFinished,
             ) {
                 PlaybackQualityLabel(
-                    song = song,
-                    isLoading = isLoading,
                     modifier = Modifier
                         .align(Alignment.Center)
                         .padding(horizontal = 8.dp),
@@ -2991,7 +2947,7 @@ fun NowPlayingScreen(
 
             TransportRow(
                 isPlaying = isPlaying,
-                isLoading = isLoading || audioVersionSwitching,
+                isLoading = isLoading,
                 previousEnabled = hasPrevious || pastRestartPoint,
                 nextEnabled = hasNext,
                 onPrevious = onPrevious,

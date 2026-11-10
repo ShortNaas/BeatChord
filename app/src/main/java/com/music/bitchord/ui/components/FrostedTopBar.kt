@@ -1,20 +1,18 @@
 package com.music.bitchord.ui.components
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -31,11 +29,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -46,7 +42,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,8 +51,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -68,16 +61,12 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
-import kotlinx.coroutines.launch
 import com.music.bitchord.R
-import com.music.bitchord.data.model.Account
 import com.music.bitchord.data.settings.AppSettings
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.materials.HazeMaterials
 import kotlin.math.roundToInt
-import androidx.compose.ui.res.painterResource
 
 /**
  * The bar's own height, above whatever inset it is sitting under.
@@ -446,80 +435,6 @@ private fun artworkPageSurface(
 }
 
 /**
- * The account affordance at the right end of the bar.
- *
- * It is the signed-in Google account's own photo — the same one YouTube Music
- * shows there — and tapping it opens Settings, where the account lives. Signed
- * out, or before the account menu has come back, it falls back to a person
- * glyph on a filled circle so the tap target never disappears.
- *
- * The hairline ring is what keeps a photo with light edges from dissolving into
- * the bar's glass; it is the same one thumbnails elsewhere carry.
- */
-@Composable
-fun TopBarAccountButton(
-    account: Account?,
-    onClick: () -> Unit,
-    onSwipeProfile: ((forward: Boolean) -> Boolean)? = null,
-    modifier: Modifier = Modifier,
-) {
-    val translation = remember { Animatable(0f) }
-    val scope = rememberCoroutineScope()
-    // Wrapped in an IconButton so it keeps the 48dp target, the ripple and the
-    // spacing every other action in this bar has.
-    IconButton(
-        onClick = onClick,
-        modifier = modifier
-            .graphicsLayer { translationY = translation.value }
-            .pointerInput(onSwipeProfile) {
-                if (onSwipeProfile == null) return@pointerInput
-                var drag = 0f
-                detectVerticalDragGestures(
-                    onVerticalDrag = { change, amount -> change.consume(); drag += amount },
-                    onDragEnd = {
-                        if (kotlin.math.abs(drag) < 28f) return@detectVerticalDragGestures
-                        if (!onSwipeProfile.invoke(drag > 0f)) scope.launch {
-                            translation.snapTo(if (drag > 0f) 9f else -9f)
-                            translation.animateTo(0f, spring())
-                        }
-                    },
-                )
-            },
-    ) {
-        val photo = account?.thumbnailUrl
-        if (photo != null) {
-            AsyncImage(
-                error = painterResource(R.drawable.ic_logo),
-                fallback = painterResource(R.drawable.ic_logo),
-                model = photo,
-                contentDescription = stringResource(R.string.switch_account),
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .size(AVATAR_SIZE)
-                    .clip(CircleShape)
-                    .thumbnailBorder(CircleShape),
-            )
-        } else {
-            Box(
-                modifier = Modifier
-                    .size(AVATAR_SIZE)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .thumbnailBorder(CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    Icons.Rounded.Person,
-                    contentDescription = stringResource(R.string.switch_account),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp),
-                )
-            }
-        }
-    }
-}
-
-/**
  * The refresh indicator: a round puck that slides out from under the bar's
  * bottom edge as the list is pulled, Chrome-style.
  *
@@ -599,11 +514,3 @@ private val PUCK_REST = 16.dp
 
 /** Headroom for the damped travel past the threshold. */
 private val PUCK_OVERSHOOT = 20.dp
-
-/**
- * The account photo's diameter.
- *
- * Smaller than an icon's 24dp box: a filled circle carries more weight than a
- * glyph does, and at 24 it sat heavier in the bar than the wordmark opposite it.
- */
-private val AVATAR_SIZE = 28.dp

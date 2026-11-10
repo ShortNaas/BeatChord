@@ -40,14 +40,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.Album
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.FileUpload
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.MoreHoriz
@@ -55,15 +51,12 @@ import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.Sort
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
@@ -100,7 +93,6 @@ import com.music.bitchord.data.model.isSameTrackAs
 import com.music.bitchord.data.settings.AppSettings
 import com.music.bitchord.data.settings.LibraryViewType
 import com.music.bitchord.data.settings.LocalMusicSort
-import com.music.bitchord.download.DownloadedCollection
 import com.music.bitchord.ui.components.MessageState
 import com.music.bitchord.ui.components.PlayingAccent
 import com.music.bitchord.ui.components.PAGE_GUTTER
@@ -125,11 +117,8 @@ private const val LOCAL_TAB_ALBUMS = 2
 /**
  * Local Music folder view with three tabs: Songs (default), Artists, Albums.
  *
- * Also the Downloads folder — the two are the same thing from here, a flat list
- * of tracks on this device, and they read as the same page because they are the
- * same page. What differs is only where the list came from, what to say when it
- * is empty, and whether anything knows how those tracks were *asked* for: see
- * [collections], which is the Downloads folder's alone.
+ * Everything on it is a reading of this device: the flat list of tracks, the
+ * artists those tracks credit, and the albums their own tags group them into.
  *
  * Tapping an artist or album name slides in a filtered song list inline, so
  * the tab bar stays visible and Back returns to the grid rather than leaving
@@ -154,26 +143,8 @@ fun LocalMusicScreen(
      * here has a browse id to fetch, so this is the only way these get one.
      */
     onCollectionLongPress: ((String, List<Song>) -> Unit)? = null,
-    /**
-     * The albums and playlists that were downloaded *as* albums and playlists.
-     *
-     * They lead the Albums tab, because they are the only entries on it that the
-     * user actually asked for by name — the rest are groupings this screen
-     * derived from whatever album tag each file happens to carry, which is a
-     * good guess and nothing more. A playlist cannot be derived that way at all:
-     * its tracks are off forty different releases and no tag on any of them says
-     * which playlist they were pulled from, so without this a downloaded
-     * playlist simply scattered.
-     *
-     * Empty for Local Music, where nothing was asked for through this app and
-     * the tags are all there is.
-     */
-    collections: List<DownloadedCollection> = emptyList(),
-    isDownloads: Boolean = false,
     currentSong: Song? = null,
     isPlaying: Boolean = false,
-    /** Deletes the Downloads rows selected through this screen's long-press mode. */
-    onDeleteDownloads: ((List<Song>) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     // Which top-level tab is selected.
@@ -183,47 +154,16 @@ fun LocalMusicScreen(
     // and albums by name. Not saved across process death: a filter left on a
     // folder that was never reopened is more surprising than one that reset.
     var searchQuery by rememberSaveable { mutableStateOf("") }
-    val sortOrder by if (isDownloads) {
-        AppSettings.downloadedMusicSort.collectAsStateWithLifecycle()
-    } else {
-        AppSettings.localMusicSort.collectAsStateWithLifecycle()
-    }
-    val viewType by if (isDownloads) {
-        AppSettings.downloadedMusicViewType.collectAsStateWithLifecycle()
-    } else {
-        AppSettings.localMusicViewType.collectAsStateWithLifecycle()
-    }
+    val sortOrder by AppSettings.localMusicSort.collectAsStateWithLifecycle()
+    val viewType by AppSettings.localMusicViewType.collectAsStateWithLifecycle()
     val sortedSongs = remember(songs, sortOrder) { songs.sortedForLibrary(sortOrder) }
-    var selectedDownloadIds by remember { mutableStateOf<Set<String>>(emptySet()) }
-    // Kept separately from the tracks selected for deletion: different albums
-    // can share tracks, so inferring an album's selection from those track ids
-    // made one held playlist appear to select unrelated albums.
-    var selectedAlbumKeys by remember { mutableStateOf<Set<String>>(emptySet()) }
-    val selectingDownloads = isDownloads && selectedDownloadIds.isNotEmpty()
-
-    fun toggleDownloadSelection(song: Song) {
-        selectedDownloadIds = selectedDownloadIds.let { selected ->
-            if (song.videoId in selected) selected - song.videoId else selected + song.videoId
-        }
-    }
-
-    fun toggleAlbumSelection(entry: AlbumEntry) {
-        val albumIds = entry.songs.mapTo(linkedSetOf()) { it.videoId }
-        if (entry.key in selectedAlbumKeys) {
-            selectedAlbumKeys = selectedAlbumKeys - entry.key
-            selectedDownloadIds = selectedDownloadIds - albumIds
-        } else {
-            selectedAlbumKeys = selectedAlbumKeys + entry.key
-            selectedDownloadIds = selectedDownloadIds + albumIds
-        }
-    }
 
     // When non-null, we are showing a drill-down list for that artist or album.
     var drillDownLabel by remember { mutableStateOf<String?>(null) }
     var drillDownSongs by remember { mutableStateOf<List<Song>>(emptyList()) }
-    // The release's own cover, for the drill-down header. Only a downloaded
-    // album or playlist has one worth showing — a tag-derived grouping's
-    // "artwork" is just whichever of its rows happened to be first.
+    // The release's own cover, for the drill-down header. Only a grouping that
+    // found artwork has one worth showing — a tag-derived grouping's "artwork"
+    // is just whichever of its rows happened to be first.
     var drillDownArt by remember { mutableStateOf<String?>(null) }
 
     val inDrillDown = drillDownLabel != null
@@ -234,11 +174,7 @@ fun LocalMusicScreen(
         drillDownArt = null
     }
 
-    BackHandler(enabled = selectingDownloads) {
-        selectedDownloadIds = emptySet()
-        selectedAlbumKeys = emptySet()
-    }
-    BackHandler(enabled = inDrillDown && !selectingDownloads) { leaveDrillDown() }
+    BackHandler(enabled = inDrillDown) { leaveDrillDown() }
 
     // The tab row is fixed above the scrolling content, so its own top
     // padding has to clear the frosted top bar / status bar that the
@@ -254,41 +190,15 @@ fun LocalMusicScreen(
         // ── Search ───────────────────────────────────────────────────────────
         // Above the tabs rather than inside each one, since a query typed on
         // Songs is just as reasonable to carry over to Artists or Albums.
-        if (selectingDownloads) {
-            DownloadSelectionBar(
-                count = selectedDownloadIds.size,
-                allSelected = sortedSongs.isNotEmpty() && selectedDownloadIds.containsAll(sortedSongs.map { it.videoId }),
-                onSelectAll = { selectedDownloadIds = sortedSongs.mapTo(linkedSetOf()) { it.videoId } },
-                onDelete = {
-                    val chosen = songs.filter { it.videoId in selectedDownloadIds }
-                    selectedDownloadIds = emptySet()
-                    selectedAlbumKeys = emptySet()
-                    onDeleteDownloads?.invoke(chosen)
-                },
-                onCancel = {
-                    selectedDownloadIds = emptySet()
-                    selectedAlbumKeys = emptySet()
-                },
-                modifier = Modifier.padding(
-                    top = barHeight + TopBarContentGap,
-                    start = PAGE_GUTTER,
-                    end = PAGE_GUTTER,
-                    bottom = 4.dp,
-                ),
-            )
-        } else LocalSearchField(
+        LocalSearchField(
             query = searchQuery,
             onQueryChange = { searchQuery = it },
             sortOrder = sortOrder,
-            onSortOrderChange = {
-                if (isDownloads) AppSettings.setDownloadedMusicSort(it)
-                else AppSettings.setLocalMusicSort(it)
-            },
+            onSortOrderChange = { AppSettings.setLocalMusicSort(it) },
             viewType = viewType,
             onViewTypeToggle = {
                 val next = if (viewType == LibraryViewType.GRID) LibraryViewType.LIST else LibraryViewType.GRID
-                if (isDownloads) AppSettings.setDownloadedMusicViewType(next)
-                else AppSettings.setLocalMusicViewType(next)
+                AppSettings.setLocalMusicViewType(next)
             },
             modifier = Modifier.padding(
                 // The same clearance every other page under the frosted bar
@@ -379,20 +289,10 @@ fun LocalMusicScreen(
                         artworkUrl = drillDownArt,
                         songs = drillDownSongs,
                         viewType = viewType,
-                        selectedIds = selectedDownloadIds,
                         currentSong = currentSong,
                         isPlaying = isPlaying,
-                        onSongClick = { tracks, index ->
-                            val song = tracks[index]
-                            if (selectingDownloads) toggleDownloadSelection(song) else onSongClick(tracks, index)
-                        },
-                        onSongLongPress = { song ->
-                            if (isDownloads) selectedDownloadIds = selectedDownloadIds + song.videoId
-                            else onSongLongPress(song)
-                        },
-                        // Downloads redefines the hold as "select", so the ⋮ has to
-                        // carry the actions sheet itself or the page loses it.
-                        onSongMore = onSongLongPress,
+                        onSongClick = onSongClick,
+                        onSongLongPress = onSongLongPress,
                         onSongSwipe = onSongSwipe,
                         onShuffle = onShuffle,
                         onMore = onCollectionLongPress?.let { more ->
@@ -411,23 +311,10 @@ fun LocalMusicScreen(
                     SongsTab(
                         songs = filteredSongs,
                         viewType = viewType,
-                        selectedIds = selectedDownloadIds,
                         currentSong = currentSong,
                         isPlaying = isPlaying,
-                        onSongClick = { tracks, index ->
-                            val song = tracks[index]
-                            if (selectingDownloads) toggleDownloadSelection(song) else onSongClick(tracks, index)
-                        },
-                        onSongLongPress = { song ->
-                            if (isDownloads) {
-                                selectedDownloadIds = selectedDownloadIds + song.videoId
-                                selectedTab = LOCAL_TAB_SONGS
-                                leaveDrillDown()
-                            } else onSongLongPress(song)
-                        },
-                        // Downloads redefines the hold as "select", so the ⋮ has to
-                        // carry the actions sheet itself or the page loses it.
-                        onSongMore = onSongLongPress,
+                        onSongClick = onSongClick,
+                        onSongLongPress = onSongLongPress,
                         onSongSwipe = onSongSwipe,
                         contentPadding = bodyContentPadding,
                     )
@@ -455,8 +342,8 @@ fun LocalMusicScreen(
 
                 else -> {
                     // LOCAL_TAB_ALBUMS
-                    val albums = remember(sortedSongs, collections, searchQuery) {
-                        albumEntries(sortedSongs, collections).filter {
+                    val albums = remember(sortedSongs, searchQuery) {
+                        albumEntries(sortedSongs).filter {
                             searchQuery.isBlank() ||
                                 it.title.contains(searchQuery, ignoreCase = true) ||
                                 it.artist.contains(searchQuery, ignoreCase = true)
@@ -465,21 +352,13 @@ fun LocalMusicScreen(
                     AlbumsTab(
                         albums = albums,
                         viewType = viewType,
-                        selectedKeys = selectedAlbumKeys,
                         onAlbumClick = { entry ->
-                            if (selectingDownloads) {
-                                toggleAlbumSelection(entry)
-                            } else {
-                                drillDownLabel = entry.title
-                                drillDownSongs = entry.songs
-                                drillDownArt = entry.thumbnailUrl
-                            }
+                            drillDownLabel = entry.title
+                            drillDownSongs = entry.songs
+                            drillDownArt = entry.thumbnailUrl
                         },
                         onAlbumLongPress = { entry ->
-                            if (isDownloads) {
-                                selectedDownloadIds = selectedDownloadIds + entry.songs.map { it.videoId }
-                                selectedAlbumKeys = selectedAlbumKeys + entry.key
-                            } else onCollectionLongPress?.invoke(entry.title, entry.songs)
+                            onCollectionLongPress?.invoke(entry.title, entry.songs)
                         },
                         contentPadding = bodyContentPadding,
                     )
@@ -495,13 +374,10 @@ fun LocalMusicScreen(
 private fun SongsTab(
     songs: List<Song>,
     viewType: LibraryViewType,
-    selectedIds: Set<String> = emptySet(),
     currentSong: Song? = null,
     isPlaying: Boolean = false,
     onSongClick: (List<Song>, Int) -> Unit,
     onSongLongPress: (Song) -> Unit,
-    /** The row's ⋮, where holding it does something else — see [SongRow]. */
-    onSongMore: ((Song) -> Unit)? = null,
     onSongSwipe: (Song) -> Unit,
     contentPadding: PaddingValues,
 ) {
@@ -530,7 +406,6 @@ private fun SongsTab(
             itemsIndexed(songs, key = { index, song -> "${song.videoId}_$index" }) { index, song ->
                 SongGridCard(
                     song = song,
-                    selected = song.videoId in selectedIds,
                     isCurrent = song.isSameTrackAs(currentSong),
                     isPlaying = song.isSameTrackAs(currentSong) && isPlaying,
                     searchPlayingStyle = true,
@@ -555,14 +430,13 @@ private fun SongsTab(
             itemsIndexed(songs, key = { index, song -> "${song.videoId}_$index" }) { index, song ->
                 SongRow(
                     song = song,
-                    selected = song.videoId in selectedIds,
                     isCurrent = song.isSameTrackAs(currentSong),
                     isPlaying = song.isSameTrackAs(currentSong) && isPlaying,
                     searchPlayingStyle = true,
                     activeTint = PlayingAccent,
                     onClick = { onSongClick(songs, index) },
                     onLongPress = { onSongLongPress(song) },
-                    onMore = onSongMore?.let { more -> { more(song) } },
+                    onMore = { onSongLongPress(song) },
                     onSwipeToQueue = { onSongSwipe(song) },
                 )
                 if (index < songs.lastIndex) {
@@ -581,7 +455,6 @@ private fun SongsTab(
 @Composable
 private fun SongGridCard(
     song: Song,
-    selected: Boolean = false,
     isCurrent: Boolean = false,
     isPlaying: Boolean = false,
     searchPlayingStyle: Boolean = false,
@@ -592,7 +465,6 @@ private fun SongGridCard(
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
-            .background(if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f) else Color.Transparent)
             .longPressMenuClickable(onClick = onClick, onLongClick = onLongPress)
             .padding(4.dp),
     ) {
@@ -858,93 +730,57 @@ private fun ArtistGridCard(
 // ── Albums tab ────────────────────────────────────────────────────────────────
 
 /**
- * One row of the Albums tab, whichever of the two things it came from.
+ * One row of the Albums tab: whatever the files' own album tags group up.
  *
  * The tab used to be a `Map.Entry<String, List<Song>>` straight off a `groupBy`,
- * which was exactly as much as a tag grouping can say. A downloaded release
- * knows three more things — its own cover, whether it is a playlist rather than
- * an album, and the order its tracks go in — and none of those has anywhere to
- * live in a map entry.
+ * which was exactly as much as a tag grouping can say. A row here knows three
+ * more things — its own cover, the artist the grouping credits, and the order
+ * its tracks go in — and none of those has anywhere to live in a map entry.
  */
 private class AlbumEntry(
     val title: String,
     val artist: String,
     val thumbnailUrl: String?,
-    /** Billed as a playlist rather than by artist; see [AlbumRow]. */
-    val playlist: Boolean,
-    /** Kept in the order it was downloaded in, which is the release's own. */
     val songs: List<Song>,
-    /** Whether this is a release the user asked for, or a grouping inferred. */
-    val asked: Boolean,
     /**
-     * What the list keys this row by — the release's own id where it has one.
+     * What the list keys this row by.
      *
-     * Not the title: an album and a playlist can be called the same thing (a
-     * self-titled record and its "This is …" mix, say), and two rows sharing a
-     * key is a crash out of `LazyColumn` rather than a cosmetic clash.
+     * Not the title alone: the list is keyed for `LazyColumn`'s sake and two
+     * rows sharing a key is a crash out of it rather than a cosmetic clash.
      */
     val key: String,
 )
 
 /**
- * The Albums tab's rows: the releases downloaded whole, then whatever else the
- * files' own album tags group up.
+ * The Albums tab's rows: whatever the files' own album tags group up.
  *
- * The two are merged rather than shown as separate sections because they are the
- * same kind of thing to whoever is looking for one — a folder of songs with a
- * name they remember. What matters is only that the *named* ones win a collision:
- * an album downloaded whole also stamps its name onto each of its tracks (see
- * `withAlbum` in MainActivity), so without this every one of them would appear
- * twice, once with its cover and once without.
- *
- * Releases lead within their own alphabetical run rather than being sorted
- * together, because a tag grouping is a guess and a recorded release is not.
+ * A grouping is a guess — the name a file carries may be a proper album, a
+ * compilation, or something a tagger typed once — but it is the best thing the
+ * library can say about which tracks belong together without the network, and
+ * it is what the tab is for.
  */
-private fun albumEntries(
-    songs: List<Song>,
-    collections: List<DownloadedCollection>,
-): List<AlbumEntry> {
-    val asked = collections.map { collection ->
-        AlbumEntry(
-            title = collection.title,
-            artist = collection.subtitle.ifBlank {
-                collection.songs.firstOrNull()?.artist.orEmpty()
-            },
-            thumbnailUrl = collection.thumbnailUrl,
-            playlist = collection.playlist,
-            songs = collection.songs,
-            asked = true,
-            key = "asked:${collection.id}",
-        )
-    }
-    val claimed = asked.mapTo(HashSet()) { it.title.lowercase(Locale.ROOT) }
-    val derived = songs
+private fun albumEntries(songs: List<Song>): List<AlbumEntry> =
+    songs
         .groupBy { it.albumName }
         .mapNotNull { (name, group) ->
             // Null is every track that never said what release it was off, and
             // there is no row to draw for "no album" — those are the Songs tab's
             // and nothing else's.
-            if (name == null || name.lowercase(Locale.ROOT) in claimed) return@mapNotNull null
+            if (name == null) return@mapNotNull null
             AlbumEntry(
                 title = name,
                 artist = group.firstOrNull()?.artist.orEmpty(),
                 thumbnailUrl = group.firstNotNullOfOrNull { it.thumbnailUrl },
-                playlist = false,
                 songs = group,
-                asked = false,
                 key = "tagged:$name",
             )
         }
-    return (asked + derived).sortedWith(
-        compareByDescending<AlbumEntry> { it.asked }.thenBy { it.title.lowercase(Locale.ROOT) },
-    )
-}
+        .sortedBy { it.title.lowercase(Locale.ROOT) }
 
 @Composable
 private fun AlbumsTab(
     albums: List<AlbumEntry>,
     viewType: LibraryViewType,
-    selectedKeys: Set<String> = emptySet(),
     onAlbumClick: (AlbumEntry) -> Unit,
     onAlbumLongPress: ((AlbumEntry) -> Unit)?,
     contentPadding: PaddingValues,
@@ -981,7 +817,6 @@ private fun AlbumsTab(
             items(albums, key = { it.key }) { entry ->
                 AlbumGridCard(
                     entry = entry,
-                    selected = entry.key in selectedKeys,
                     onClick = { onAlbumClick(entry) },
                     onLongPress = onAlbumLongPress?.let { { it(entry) } },
                 )
@@ -1010,7 +845,6 @@ private fun AlbumsTab(
             items(albums, key = { it.key }) { entry ->
                 AlbumRow(
                     entry = entry,
-                    selected = entry.key in selectedKeys,
                     onClick = { onAlbumClick(entry) },
                     onLongPress = onAlbumLongPress?.let { { it(entry) } },
                 )
@@ -1028,7 +862,6 @@ private fun AlbumsTab(
 @Composable
 private fun AlbumGridCard(
     entry: AlbumEntry,
-    selected: Boolean = false,
     onClick: () -> Unit,
     onLongPress: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
@@ -1036,7 +869,6 @@ private fun AlbumGridCard(
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
-            .background(if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f) else Color.Transparent)
             .longPressMenuClickable(onClick = onClick, onLongClick = onLongPress)
             .padding(4.dp),
     ) {
@@ -1051,7 +883,7 @@ private fun AlbumGridCard(
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                imageVector = if (entry.playlist) Icons.AutoMirrored.Rounded.QueueMusic else Icons.Rounded.Album,
+                imageVector = Icons.Rounded.Album,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSecondaryContainer,
                 modifier = Modifier.size(36.dp),
@@ -1083,13 +915,9 @@ private fun AlbumGridCard(
             entry.songs.size,
             entry.songs.size,
         )
-        val playlistLabel = stringResource(R.string.playlist)
         Text(
             text = buildString {
-                if (entry.playlist) {
-                    append(playlistLabel)
-                    append(" · ")
-                } else if (entry.artist.isNotBlank() && entry.artist != entry.title) {
+                if (entry.artist.isNotBlank() && entry.artist != entry.title) {
                     append("${entry.artist} · ")
                 }
                 append(songCount)
@@ -1106,21 +934,18 @@ private fun AlbumGridCard(
 @Composable
 private fun AlbumRow(
     entry: AlbumEntry,
-    selected: Boolean = false,
     onClick: () -> Unit,
     onLongPress: (() -> Unit)? = null,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f) else Color.Transparent, RoundedCornerShape(10.dp))
             .longPressMenuClickable(onClick = onClick, onLongClick = onLongPress)
             .padding(horizontal = PAGE_GUTTER, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         CollectionArtwork(
             url = entry.thumbnailUrl ?: entry.songs.firstOrNull()?.thumbnailUrl,
-            playlist = entry.playlist,
             size = 48.dp,
         )
         Spacer(Modifier.width(14.dp))
@@ -1137,16 +962,9 @@ private fun AlbumRow(
                 entry.songs.size,
                 entry.songs.size,
             )
-            val playlistLabel = stringResource(R.string.playlist)
             Text(
                 text = buildString {
-                    // A playlist's tracks are off forty different releases, so
-                    // the first one's artist is not a credit for it — the kind
-                    // of thing it is says more, and is true.
-                    if (entry.playlist) {
-                        append(playlistLabel)
-                        append(" · ")
-                    } else if (entry.artist.isNotBlank() && entry.artist != entry.title) {
+                    if (entry.artist.isNotBlank() && entry.artist != entry.title) {
                         append("${entry.artist} · ")
                     }
                     append(songCount)
@@ -1158,9 +976,9 @@ private fun AlbumRow(
             )
         }
         Icon(
-            imageVector = if (selected) Icons.Rounded.CheckCircle else Icons.Rounded.PlayArrow,
-            contentDescription = if (selected) stringResource(R.string.selected) else null,
-            tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            imageVector = Icons.Rounded.PlayArrow,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(20.dp),
         )
     }
@@ -1176,7 +994,7 @@ private fun AlbumRow(
  * glyph without the row changing size under it.
  */
 @Composable
-private fun CollectionArtwork(url: String?, playlist: Boolean, size: Dp) {
+private fun CollectionArtwork(url: String?, size: Dp) {
     val shape = RoundedCornerShape(8.dp)
     Box(
         modifier = Modifier
@@ -1186,7 +1004,7 @@ private fun CollectionArtwork(url: String?, playlist: Boolean, size: Dp) {
         contentAlignment = Alignment.Center,
     ) {
         Icon(
-            imageVector = if (playlist) Icons.AutoMirrored.Rounded.QueueMusic else Icons.Rounded.Album,
+            imageVector = Icons.Rounded.Album,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSecondaryContainer,
             modifier = Modifier.size(size * 0.54f),
@@ -1355,13 +1173,10 @@ private fun DrillDownSongList(
     artworkUrl: String?,
     songs: List<Song>,
     viewType: LibraryViewType,
-    selectedIds: Set<String> = emptySet(),
     currentSong: Song? = null,
     isPlaying: Boolean = false,
     onSongClick: (List<Song>, Int) -> Unit,
     onSongLongPress: (Song) -> Unit,
-    /** The row's ⋮, where holding it does something else — see [SongRow]. */
-    onSongMore: ((Song) -> Unit)? = null,
     onSongSwipe: (Song) -> Unit,
     onShuffle: (List<Song>) -> Unit,
     /** The ⋮ in the header, acting on the whole artist or album. */
@@ -1403,7 +1218,6 @@ private fun DrillDownSongList(
             itemsIndexed(songs, key = { index, song -> "${song.videoId}_$index" }) { index, song ->
                 SongGridCard(
                     song = song,
-                    selected = song.videoId in selectedIds,
                     isCurrent = song.isSameTrackAs(currentSong),
                     isPlaying = song.isSameTrackAs(currentSong) && isPlaying,
                     searchPlayingStyle = true,
@@ -1438,7 +1252,6 @@ private fun DrillDownSongList(
             itemsIndexed(songs, key = { index, song -> "${song.videoId}_$index" }) { index, song ->
                 SongRow(
                     song = song,
-                    selected = song.videoId in selectedIds,
                     isCurrent = song.isSameTrackAs(currentSong),
                     isPlaying = song.isSameTrackAs(currentSong) && isPlaying,
                     searchPlayingStyle = true,
@@ -1446,7 +1259,7 @@ private fun DrillDownSongList(
                     trackNumber = index + 1,
                     onClick = { onSongClick(songs, index) },
                     onLongPress = { onSongLongPress(song) },
-                    onMore = onSongMore?.let { more -> { more(song) } },
+                    onMore = { onSongLongPress(song) },
                     onSwipeToQueue = { onSongSwipe(song) },
                 )
                 if (index < songs.lastIndex) {
@@ -1628,52 +1441,6 @@ private fun LocalMusicSort.localizedLabel(): String = when (this) {
     LocalMusicSort.DATE_MODIFIED -> stringResource(R.string.sort_date_modified)
 }
 
-/** The Downloads-only replacement for the usual search and sort controls. */
-@Composable
-private fun DownloadSelectionBar(
-    count: Int,
-    allSelected: Boolean,
-    onSelectAll: () -> Unit,
-    onDelete: () -> Unit,
-    onCancel: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(44.dp)
-            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(11.dp))
-            .padding(horizontal = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        IconButton(onClick = onSelectAll, enabled = !allSelected) {
-            Icon(
-                Icons.Rounded.Check,
-                contentDescription = stringResource(R.string.select_all),
-                tint = if (isSystemInDarkTheme()) Color.White else MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp),
-            )
-        }
-        Text(
-            text = "$count ${stringResource(R.string.selected)}",
-            style = MaterialTheme.typography.titleSmall,
-            color = if (isSystemInDarkTheme()) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f),
-        )
-        TextButton(onClick = onDelete, enabled = count > 0) {
-            Icon(
-                Icons.Rounded.Delete,
-                contentDescription = null,
-                tint = Color(0xFFFF453A),
-                modifier = Modifier.size(18.dp),
-            )
-            Spacer(Modifier.width(4.dp))
-            Text(stringResource(R.string.delete), color = Color(0xFFFF453A))
-        }
-        TextButton(onClick = onCancel) { Text(stringResource(R.string.cancel)) }
-    }
-}
-
 @Composable
 private fun LocalTab(
     icon: ImageVector,
@@ -1682,8 +1449,7 @@ private fun LocalTab(
     onClick: () -> Unit,
 ) {
     // Fired here rather than at each of the three call sites, so Songs, Artists
-    // and Albums can't drift apart — and the Downloads folder, which is this
-    // same screen, gets it for free. Silent on the tab that's already showing.
+    // and Albums can't drift apart. Silent on the tab that's already showing.
     val haptics = rememberHaptics()
     Tab(
         selected = selected,

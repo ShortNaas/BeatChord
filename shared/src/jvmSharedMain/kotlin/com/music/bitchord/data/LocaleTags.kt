@@ -7,7 +7,7 @@ import java.util.Locale
  *
  * Internally the app stores and compares full script tags ("zh-Hant",
  * "zh-Hans"). On the wire each service gets the dialect it understands:
- * YouTube / Google Translate want region tags ("zh-TW" / "zh-CN").
+ * Google Translate wants region tags ("zh-TW" / "zh-CN").
  */
 object LocaleTags {
     const val ZH_HANT = "zh-Hant"
@@ -45,25 +45,6 @@ object LocaleTags {
 
     /** Full tag for the current device/app locale, script-preserving. */
     fun systemTag(): String = normalizeAppTag(Locale.getDefault().toLanguageTag())
-
-    /** What YouTube Music wants as `hl` / Innertube context hl. */
-    fun ytHl(appTag: String): String {
-        val norm = normalizeAppTag(appTag)
-        return when (norm) {
-            ZH_HANT -> ZH_TW_WIRE
-            ZH_HANS -> ZH_CN_WIRE
-            else -> norm.substringBefore('-')
-        }
-    }
-
-    /** Geo for Innertube context gl + InnerTubeX locale. */
-    fun ytGl(appTag: String): String {
-        return when (normalizeAppTag(appTag)) {
-            ZH_HANT -> "TW"
-            ZH_HANS -> "CN"
-            else -> "US"
-        }
-    }
 
     fun acceptLanguage(appTag: String): String {
         return when (normalizeAppTag(appTag)) {

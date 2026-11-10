@@ -11,11 +11,6 @@ import com.music.bitchord.playback.smart.TrackFeatures
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import kotlinx.coroutines.runBlocking
-
-/** A file on this machine — a download or a local track — rather than anything streamed. */
-internal val DesktopStream.isLocalFile: Boolean
-    get() = !url.startsWith("http://", ignoreCase = true) && !url.startsWith("https://", ignoreCase = true)
 
 /**
  * Produces the evidence Automix mixes on: tempo, beat grid, key, structure and where a track can be
@@ -86,16 +81,13 @@ internal class DesktopTrackAnalyzer(
     /**
      * Asks for [song] to be analysed, if it has not been already.
      *
-     * [stream] is only read when it is a file on this machine. Anything streamed is measured on
-     * the track's YouTube Opus instead — never on the addon or lossless copy playback may be
-     * using — exactly as Android's analyser reads its own pinned Opus rendition (see
-     * `AutomixAnalysisSource`). That keeps an addon from being asked for a track nobody is
-     * playing yet, and one recording's measurements from being stored under another's id.
+     * [path] is the file the row plays from; a row with no file on this machine is never measured,
+     * because there is nothing to measure it from.
      */
-    fun request(song: Song, stream: DesktopStream?, durationSeconds: Double) {
+    fun request(song: Song, path: String?, durationSeconds: Double) {
         val trackId = song.videoId
         if (trackId.isBlank()) return
-        if (durationSeconds <= 0) return
+        if (path == null) return
         if (!DesktopAnalysisRuntime.available) {
             if (warnedNoAnalyser.compareAndSet(false, true)) {
                 DesktopTrackLog.log("automix: this build has no analyser, so nothing will be measured")
@@ -107,11 +99,7 @@ internal class DesktopTrackAnalyzer(
         failedAt[trackId]?.let { if (System.currentTimeMillis() - it < RETRY_AFTER_MS) return }
         if (!running.add(trackId)) return
         failed.remove(trackId)
-        val local = stream?.takeIf { it.isLocalFile }
-        DesktopTrackLog.log(
-            "automix: analysing '${song.title}' (${"%.0f".format(durationSeconds)}s)" +
-                if (local != null) " from the file" else " from YouTube Opus",
-        )
+        DesktopTrackLog.log("automix: analysing '${song.title}' from the file")
 
         worker.execute {
             run {
@@ -119,10 +107,7 @@ internal class DesktopTrackAnalyzer(
                 // core, and the thread count stays the speed knob for the other two.
                 Thread.currentThread().priority =
                     if (performance().yieldsToPlayback) Thread.MIN_PRIORITY else Thread.NORM_PRIORITY
-                val analysis = runCatching {
-                    val source = local ?: youTubeOpus(song) ?: return@runCatching null
-                    analyse(trackId, source, durationSeconds)
-                }
+                val analysis = runCatching { analyse(trackId, path, durationSeconds) }
                     .onFailure { DesktopTrackLog.log("analysis of '${song.title}' failed: ${it.message}") }
                     .getOrNull()
                 if (analysis == null) {
@@ -145,39 +130,27 @@ internal class DesktopTrackAnalyzer(
         }
     }
 
-    /**
-     * [song]'s YouTube Opus stream, bypassing the source race playback runs — or null when there
-     * is no YouTube copy of it to measure.
-     */
-    private fun youTubeOpus(song: Song): DesktopStream? = runBlocking {
-        val identity = DesktopSourceRegistry.youTubeIdentity(song)
-        if (identity == null) {
-            DesktopTrackLog.log("automix: no YouTube copy of '${song.title}' to measure")
-            return@runBlocking null
-        }
-        if (identity.videoId != song.videoId) {
-            DesktopTrackLog.log("automix: measuring '${song.title}' on YouTube's ${identity.videoId}")
-        }
-        DesktopStreamClient.resolve(identity).getOrThrow()
-    }
-
     private fun analyse(
         trackId: String,
-        stream: DesktopStream,
+        path: String,
         durationSeconds: Double,
     ): TrackAnalysis? {
-        val features = decode(stream, TrackFeatures.sampleRate)
-            ?.let { TrackFeatures.analyze(it, durationSeconds) }
-            ?: return null
+        val pcm = decode(path, TrackFeatures.sampleRate) ?: return null
+        // A local file's own length is often unknown until its header has been read, so an unstated
+        // one is taken from the samples themselves rather than refusing to measure the track.
+        val seconds = durationSeconds.takeIf { it > 0 }
+            ?: (pcm.size.toDouble() / TrackFeatures.sampleRate)
+        if (seconds <= 0.0) return null
+        val features = TrackFeatures.analyze(pcm, seconds) ?: return null
 
         // The model runs at its own rate, so it gets its own decode rather than a resample of the
         // analyser's.
-        val grid = decode(stream, MelSpectrogram.sampleRate)?.let { beats.track(it) }
+        val grid = decode(path, MelSpectrogram.sampleRate)?.let { beats.track(it) }
 
         return TrackAnalysis(
             status = TrackAnalysis.STATUS_READY,
             trackId = trackId,
-            duration = durationSeconds,
+            duration = seconds,
             // The grid wins where it has an opinion: a trained model reads meter, which
             // autocorrelation cannot.
             bpm = grid?.bpm ?: features.bpm,
@@ -205,14 +178,11 @@ internal class DesktopTrackAnalyzer(
     }
 
     /** The whole track as mono float at [rate]. */
-    private fun decode(stream: DesktopStream, rate: Double): FloatArray? {
+    private fun decode(path: String, rate: Double): FloatArray? {
         val decoder = DesktopAudioDecoder()
         val opened = decoder.open(
-            url = stream.url,
-            headers = stream.headers,
+            path = path,
             requested = DesktopPcmFormat(rate.toInt(), channels = 1, bytesPerSample = 4, isFloat = true),
-            windowed = stream.windowedReads,
-            transport = stream.transport,
         )
         if (opened.isFailure) {
             decoder.close()

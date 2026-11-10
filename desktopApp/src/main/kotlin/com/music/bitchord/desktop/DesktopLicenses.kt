@@ -45,10 +45,10 @@ internal object DesktopLicenses {
                     "The bridge from the JVM to FFmpeg.",
                 ),
                 DesktopLicense(
-                    "OpenJFX",
-                    "GPL-2.0-with-classpath-exception",
-                    "https://openjfx.io",
-                    "Video playback for animated cover art. Audio no longer goes through it.",
+                    "ONNX Runtime",
+                    "MIT",
+                    "https://onnxruntime.ai",
+                    "The two models Automix measures a track's tempo, beats and structure with.",
                 ),
             ),
         ),
@@ -62,7 +62,18 @@ internal object DesktopLicenses {
                     "https://www.jetbrains.com/lp/compose-multiplatform/",
                     "The user interface, shared with the Android application.",
                 ),
-                DesktopLicense("Ktor", "Apache-2.0", "https://ktor.io"),
+                DesktopLicense(
+                    "JNA",
+                    "Apache-2.0 / LGPL-2.1",
+                    "https://github.com/java-native-access/jna",
+                    "The Windows and macOS frame bridges.",
+                ),
+                DesktopLicense(
+                    "jsoup",
+                    "MIT",
+                    "https://jsoup.org",
+                    "Reads the lyric providers' pages.",
+                ),
                 DesktopLicense(
                     "Haze",
                     "Apache-2.0",
@@ -73,20 +84,8 @@ internal object DesktopLicenses {
             ),
         ),
         DesktopLicenseGroup(
-            "Sources and integration",
+            "Desktop integration",
             listOf(
-                DesktopLicense(
-                    "NewPipeExtractor",
-                    "GPL-3.0-or-later",
-                    "https://github.com/TeamNewPipe/NewPipeExtractor",
-                    "Stream URL deobfuscation, the same component the Android build uses.",
-                ),
-                DesktopLicense(
-                    "GraalVM JavaScript",
-                    "UPL-1.0",
-                    "https://www.graalvm.org",
-                    "Runs source modules in a sandbox with no access to host classes.",
-                ),
                 DesktopLicense(
                     "dbus-java",
                     "MIT",

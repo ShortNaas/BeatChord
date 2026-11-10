@@ -9,7 +9,7 @@ import kotlin.math.sin
  * Converts interleaved float audio from one sample rate to another, keeping its pitch.
  *
  * The output stream is opened at the rate of whichever track started it, and a track decodes at its
- * own rate — YouTube's Opus at 48 kHz, most lossless at 44.1 kHz, hi-res higher still. Samples of
+ * own rate — Opus at 48 kHz, most lossless at 44.1 kHz, hi-res higher still. Samples of
  * one rate written to a stream of another play back faster or slower, and so sharp or flat. Android
  * never meets this because each of its players has its own output; here an Automix handoff keeps
  * the one stream, so the incoming track has to be brought to its rate.

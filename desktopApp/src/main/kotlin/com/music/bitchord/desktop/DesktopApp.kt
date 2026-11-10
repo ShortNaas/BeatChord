@@ -13,21 +13,14 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.mutableStateListOf
 import com.music.bitchord.ui.components.PAGE_GUTTER
-import com.music.bitchord.ui.components.trackColumnWidth
 import com.music.bitchord.ui.replay.ReplayCreditCard
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
-import com.music.bitchord.data.YtMusicRepository
 import com.music.bitchord.data.model.EntityType
 import com.music.bitchord.data.model.SearchHistoryEntity
 import com.music.bitchord.ui.LocalPullToRefreshEnabled
-import com.music.bitchord.ui.screens.ExploreScreen
 import com.music.bitchord.ui.screens.HomeScreen
-import com.music.bitchord.ui.screens.CompactTrackRow
-import com.music.bitchord.ui.screens.LibraryGridPage
-import com.music.bitchord.ui.screens.LibraryLink
 import com.music.bitchord.ui.screens.LibraryScreen
-import com.music.bitchord.ui.screens.MoodGenrePlaylistsScreen
 import com.music.bitchord.ui.screens.SearchScreen
 import com.music.bitchord.data.NerdStats
 import com.music.bitchord.playback.PlaybackPosition
@@ -38,7 +31,6 @@ import com.music.bitchord.ui.LyricsProviderState
 import com.music.bitchord.ui.player.LyricsSidePanel
 import com.music.bitchord.ui.player.NowPlayingScreen
 import com.music.bitchord.ui.player.QueueSidePanel
-import com.music.bitchord.ui.player.PlayerBack
 import com.music.bitchord.ui.player.RepeatModes
 import com.music.bitchord.ui.player.rememberMixPulse
 import androidx.compose.runtime.SideEffect
@@ -261,32 +253,22 @@ import bitchord.desktopapp.generated.resources.sf_pro_display_heavy
 import bitchord.desktopapp.generated.resources.sf_pro_display_medium
 import bitchord.desktopapp.generated.resources.sf_pro_display_regular
 import bitchord.desktopapp.generated.resources.sf_pro_display_semibold
-import com.music.bitchord.data.model.ArtistPage
-import com.music.bitchord.data.model.BrowseItem
 import com.music.bitchord.data.model.BrowseType
 import com.music.bitchord.data.model.CARD_ART_PX
 import com.music.bitchord.data.model.HEADER_ART_PX
 import com.music.bitchord.data.model.HomeShelf
 import com.music.bitchord.data.model.LibraryPage
 import com.music.bitchord.data.model.LikeStatus
-import com.music.bitchord.data.model.MoodGenre
-import com.music.bitchord.data.model.MoodGenreSection
 import com.music.bitchord.data.model.PLAYER_ART_PX
-import com.music.bitchord.data.model.PlaylistPrivacy
 import com.music.bitchord.data.model.ROW_ART_PX
-import com.music.bitchord.data.model.SearchFilter
-import com.music.bitchord.data.model.SearchResult
 import com.music.bitchord.data.model.ShelfItem
 import com.music.bitchord.data.model.PlaybackSourceType
 import com.music.bitchord.data.model.Song
-import com.music.bitchord.data.model.SubscriptionState
 import com.music.bitchord.data.model.UiState
-import com.music.bitchord.data.model.UserPlaylist
 import com.music.bitchord.data.model.artworkAt
 import com.music.bitchord.data.model.durationMillis
 import com.music.bitchord.data.model.isSameTrackAs
 import com.music.bitchord.sharedui.resources.Res as SharedRes
-import com.music.bitchord.data.model.withoutRepeatsOf
 import com.music.bitchord.data.settings.AutomixPerformanceMode
 import com.music.bitchord.data.settings.LastPlayerScreen
 import com.music.bitchord.data.settings.SmartAnalysis
@@ -298,22 +280,18 @@ import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.materials.HazeMaterials
-import java.util.UUID
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.system.exitProcess
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import org.jetbrains.compose.resources.Font as composeFont
@@ -346,7 +324,7 @@ private val LocalDesktopBottomInset = staticCompositionLocalOf { 0.dp }
 private val DesktopBarEdge = Color(0x1AFFFFFF)
 internal val DesktopAccent = Color.White
 
-/** Deleting, signing out, and anything that failed — the one place a colour survives, as on Android. */
+/** Deleting, and anything that failed — the one place a colour survives, as on Android. */
 internal val DesktopDestructive = Color(0xFFFF453A)
 
 /** A chip the way Android draws a chosen segment: solid white with black on it, or nothing at all. */
@@ -372,39 +350,18 @@ internal val DesktopSecondary = Color(0xFF8E8E93)
 internal val DesktopDivider = Color(0xFF2C2C2E)
 private const val STATS_SAMPLE_MS = 5_000L
 
-/** How often the playhead is offered to the history tracker. */
-private const val HISTORY_SAMPLE_MS = 5_000L
-
-/** How long the search field is left alone before its typeahead is asked for. */
-private const val SUGGESTION_DEBOUNCE_MS = 220L
-
 /** How many tracks a station is built with when one is started explicitly. */
-/** A search costs more than a completion, so the live rows wait for a longer pause. */
-private const val TYPEAHEAD_MEDIA_DEBOUNCE_MS = 400L
-
-/** How many playable rows the dropdown shows, matching Android's own limit. */
-private const val TYPEAHEAD_MEDIA_LIMIT = 8
-
 private const val INITIAL_RADIO_TRACKS = 24
 
-/** An artist's top songs, capped so the release shelves are not buried. */
-private const val MAX_ARTIST_SONGS = 20
-private const val ARTIST_SONGS_PER_COLUMN = 4
+/** How many suggestions AutoPlay keeps queued ahead of what is playing. */
+internal const val MAX_QUEUED_AUTOPLAY = 10
 
-/** The artist photograph's height. */
-private val ARTIST_BANNER_HEIGHT = 340.dp
-
-/** The library shelf the account's own playlists arrive on, and the one edits are spliced into. */
-private const val PLAYLISTS_SHELF = "Playlists"
 private const val STATS_MAX_DELTA_MS = 15_000L
-private const val SCROBBLE_THRESHOLD_MS = 180_000L
+/** What counts as having played a track, even a very long one. */
+private const val PLAYED_THRESHOLD_MS = 180_000L
 
 /** Used for tracking restart of the current song when previous button is pressed. */
 private const val BACK_RESTARTS_AFTER_MS = 10_000L
-
-/** How long the supplier waits for the server to echo an AutoPlay queue addition. */
-/** The phone gives one empty station response a delayed second chance. */
-private const val AUTOPLAY_EMPTY_REFRESH_DELAY_MS = 2_000L
 
 /** The phone's dark scheme, which the shared pages are drawn against. */
 internal fun desktopColorScheme() = darkColorScheme(
@@ -455,13 +412,10 @@ internal fun desktopTypography(): Typography {
 
 private enum class DesktopDestination(val id: String, val label: String) {
     LISTEN_NOW("listen-now", "Home"),
-    EXPLORE("explore", "Explore"),
+    PLAYLISTS("playlists", "Playlists"),
     LIBRARY("library", "Library"),
     SEARCH("search", "Search"),
-    HISTORY("history", "History"),
-    DOWNLOADS("downloads", "Downloads"),
     LOCAL_MUSIC("local-music", "Local Music"),
-    SETTINGS("settings", "Settings"),
 }
 
 private enum class DesktopRepeatMode {
@@ -489,37 +443,17 @@ fun BitChordDesktopApp() {
     val persistence = remember { DesktopPersistence() }
     var destination by remember { mutableStateOf(DesktopDestination.LISTEN_NOW) }
     var query by remember { mutableStateOf("") }
-    var searchFilter by remember { mutableStateOf(SearchFilter.ALL) }
-    var searchRows by remember { mutableStateOf<List<SearchResult>>(emptyList()) }
-    // What has been searched before, and what YouTube thinks is being typed.
+    // What has been searched before.
     val searchHistory by DesktopSearchHistory.recent.collectAsState()
-    // Whether anything has been searched for since the field was last emptied: until then the
-    // page shows recent searches rather than a result set.
-    var searchCommitted by remember { mutableStateOf(false) }
     var searchScrollReset by remember { mutableStateOf(0) }
     var searchFocusRequested by remember { mutableStateOf(false) }
-    var searchSuggestions by remember { mutableStateOf<List<String>>(emptyList()) }
-    // Playable rows for the half-typed query, shown under the text completions.
-    var searchTypeahead by remember { mutableStateOf<List<SearchResult>>(emptyList()) }
-    // False while the query is being set *by* the app.
-    var searchTyping by remember { mutableStateOf(false) }
-    var searchLoading by remember { mutableStateOf(false) }
-    var searchError by remember { mutableStateOf<String?>(null) }
-    var homeState by remember { mutableStateOf<UiState<List<HomeShelf>>>(UiState.Loading) }
-    // The home feed is paged: `FEmusic_home` answers with a couple of shelves and a token, and
-    // everything else arrives by following it.
-    var homeContinuation by remember { mutableStateOf<String?>(null) }
-    var homeLoadingMore by remember { mutableStateOf(false) }
-    // Recently Played has its own request and its own skeleton at the head of the page, as on the
-    // phone; it is only asked for with an account to have played on.
-    var homeRecentsLoading by remember { mutableStateOf(false) }
+    // The home feed is built from this computer's own files: nothing here is fetched, so a page is
+    // dealt afresh whenever the library or the refresh counter changes.
+    var homeGeneration by remember { mutableStateOf(0) }
     // Held out here so a page keeps its place when another is visited and it is come back to.
     val homeListState = rememberLazyListState()
-    val exploreListState = rememberLazyListState()
-    val moodGenreListState = rememberLazyListState()
     val searchListState = rememberLazyListState()
     val libraryListState = rememberLazyListState()
-    val libraryGridState = rememberLazyGridState()
     /** A Library shelf's "Show all", open as a grid in place of the page. */
     var libraryShowAll by remember { mutableStateOf<HomeShelf?>(null) }
     /** Where the one back button in the top bar goes: every place visited, oldest first. */
@@ -528,16 +462,6 @@ fun BitChordDesktopApp() {
     val navRestoring = remember { booleanArrayOf(false) }
     /** Opens a song's menu at the pointer; set by the pages' menu host once it is in place. */
     var pageMenu by remember { mutableStateOf<(Song) -> Unit>({}) }
-    val homeSeenTitles = remember { HashSet<String>() }
-    var homeGeneration by remember { mutableStateOf(0) }
-    var homeIdentity by remember { mutableStateOf<String?>(null) }
-    var exploreState by remember { mutableStateOf<UiState<List<MoodGenreSection>>>(UiState.Loading) }
-    var selectedMoodGenre by remember { mutableStateOf<MoodGenre?>(null) }
-    // Bumped by a retry so the loaders below re-run without the state they are keyed on having to
-    // change to something and back again.
-    var exploreReloads by remember { mutableStateOf(0) }
-    var moodGenreReloads by remember { mutableStateOf(0) }
-    var moodGenreShelves by remember { mutableStateOf<UiState<List<HomeShelf>>>(UiState.Loading) }
     var selectedSong by remember { mutableStateOf<Song?>(null) }
     // The live queue: what is playing, what played before it, what is next.
     var liveQueue by remember {
@@ -551,24 +475,16 @@ fun BitChordDesktopApp() {
     // The order the queue was in before shuffle rearranged it, so the toggle can be undone.
     var preShuffleOrder by remember { mutableStateOf<List<String>>(emptyList()) }
     val queue = liveQueue.songs
-    // What was played on this computer. The account's own history replaces it
-    // while signed in — see [remoteHistory] — because that is what Android's
-    // History screen is and what makes a phone and a desktop agree.
+    // What was played on this computer.
     var history by remember { mutableStateOf(persistence.history()) }
-    var remoteHistory by remember { mutableStateOf<List<Song>>(emptyList()) }
+    // The tracks the heart has been tapped on, kept here and nowhere else.
     var likedIds by remember { mutableStateOf(persistence.likedIds()) }
-    // In-flight tail of the Liked Music chain; replaced whenever the library is fetched again.
-    var likedSyncJob by remember { mutableStateOf<Job?>(null) }
-    var dislikedIds by remember { mutableStateOf(persistence.dislikedIds()) }
     val overlays = remember { DesktopOverlays() }
-    var downloads by remember { mutableStateOf(persistence.downloads()) }
     var localSongs by remember { mutableStateOf<List<Song>>(emptyList()) }
-    val downloadQueue by DesktopDownloadQueue.active.collectAsState()
-    val downloadInProgress = downloadQueue.keys
     var playlists by remember { mutableStateOf(persistence.playlists()) }
     var statsRevision by remember { mutableStateOf(0L) }
     var replayPeriod by remember { mutableStateOf(DesktopReplayPeriod.ALL_TIME) }
-    val replayHolder = remember { DesktopAccounts.active()?.name.orEmpty() }
+    val replayHolder = remember { "" }
     var replaySummary by remember { mutableStateOf(DesktopListeningStats.summary()) }
     var statsCountedSongs by remember { mutableStateOf<Set<String>>(emptySet()) }
     var playlistTarget by remember { mutableStateOf<Song?>(null) }
@@ -576,12 +492,6 @@ fun BitChordDesktopApp() {
     // because each is driven by a dialog that is modal.
     var playlistBusy by remember { mutableStateOf(false) }
     var playlistError by remember { mutableStateOf<String?>(null) }
-    // The album and artist pages the playing track belongs to, looked up while
-    // the player is open. Whatever started a track knew its title and artwork
-    // but rarely its ids — a home-feed tile carries neither — so without this
-    // the credit under the title is not a link at all. Android does the same
-    // thing, and for the same reason; see its `links` in MainActivity.
-    var trackLinks by remember { mutableStateOf<Song?>(null) }
     // Settings is a modal over whatever page is open, the way Music puts its own preferences in a
     // sheet rather than a navigation destination.
     var autoplay by remember { mutableStateOf(persistence.boolean("autoplay", true)) }
@@ -615,11 +525,10 @@ fun BitChordDesktopApp() {
     var playbackSpeed by remember { mutableStateOf(persistence.string("playback_speed", "1.0").toFloatOrNull() ?: 1.0f) }
     var volume by remember { mutableStateOf(persistence.string("volume", "1.0").toFloatOrNull()?.coerceIn(0.0f, 1.0f) ?: 1.0f) }
     var crossfadeSeconds by remember { mutableStateOf(persistence.string("crossfade_seconds", "0").toIntOrNull()?.coerceIn(0, 12) ?: 0) }
-    var downloadQuality by remember { mutableStateOf(persistence.string("download_quality", "LOSSLESS")) }
     var trayIconEnabled by remember { mutableStateOf(persistence.boolean("tray_icon", true)) }
     var closeToTray by remember { mutableStateOf(persistence.boolean("close_to_tray", true)) }
-    // The three the FFmpeg engine unlocked: none of them could exist while JavaFX owned the decode,
-    // because none of them can be done without the samples themselves.
+    // The three the FFmpeg engine unlocked: none of them can be done without the samples
+    // themselves.
     var spatialAudio by remember { mutableStateOf(persistence.boolean("spatial_audio", false)) }
     var dolbyAtmos by remember { mutableStateOf(persistence.boolean("dolby_atmos", true)) }
     var skipSilence by remember { mutableStateOf(persistence.boolean("skip_silence", false)) }
@@ -639,77 +548,26 @@ fun BitChordDesktopApp() {
     var lyricsOrder by remember { mutableStateOf(persistence.lyricsSourceOrder()) }
     var lyricsOn by remember { mutableStateOf(persistence.lyricsEnabledSources()) }
     var fullBleedArtwork by remember { mutableStateOf(persistence.boolean("full_bleed_artwork", false)) }
-    var accounts by remember { mutableStateOf(DesktopAccounts.accounts()) }
-    var activeAccountId by remember { mutableStateOf(DesktopAccounts.activeAccountId()) }
-    var activeProfileId by remember { mutableStateOf(DesktopAccounts.activeProfileId()) }
-    var signInBusy by remember { mutableStateOf<String?>(null) }
-    var signInError by remember { mutableStateOf<String?>(null) }
-    var webSignInJob by remember { mutableStateOf<Job?>(null) }
-    val activeAccount = accounts.firstOrNull { it.accountId == activeAccountId } ?: accounts.firstOrNull()
-    // The account's own library, fetched once a session is in force.
-    var libraryState by remember { mutableStateOf<UiState<LibraryPage>>(UiState.Loading) }
-    // Whether YouTube is actually accepting the session, which is not the same as having an account
-    // saved.
-    var youtubeSignedIn by remember { mutableStateOf(false) }
-    // Set by an edit that the library feed has not caught up with yet.
-    var libraryStale by remember { mutableStateOf(false) }
-    // Bumped when the session changes underneath, so the loader below re-runs without anything it
-    // is keyed on having to change to something and back.
-    var sessionRevision by remember { mutableStateOf(0) }
-    // Read off the library rather than fetched again: the Playlists shelf is the same feed the
-    // picker wants, minus the entries no edit can be aimed at.
-    val accountPlaylists = remember(libraryState) {
-        (libraryState as? UiState.Success)?.data?.shelves
-            ?.firstOrNull { it.title == PLAYLISTS_SHELF }
-            ?.items
-            ?.let(DesktopSearchClient::userPlaylists)
-            .orEmpty()
+    // The Library's shelves, dealt from what this computer holds. Keyed on the library itself, so
+    // a file that lands or is deleted shows up without a relaunch.
+    val libraryPage = remember(localSongs, history, playlists, likedIds) {
+        localLibraryPage(
+            songs = localSongs,
+            recentlyPlayed = history,
+            playlists = playlists,
+            likedSongs = localSongs.filter { it.videoId in likedIds },
+        )
     }
-    // The add-to-playlist dialog intentionally keeps only playlists owned by the account. The
-    // sidebar is a library browser instead, so it shows the complete paged shelf: owned, saved,
-    // and YouTube's built-in playlists such as Liked Music.
-    val sidebarAccountPlaylists = remember(libraryState) {
-        (libraryState as? UiState.Success)?.data?.shelves
-            ?.firstOrNull { it.title == PLAYLISTS_SHELF }
-            ?.items
-            ?.filter { it.browseId != null }
-            .orEmpty()
-    }
-
-    fun reloadLibrary() {
-        libraryState = UiState.Loading
-        sessionRevision++
-    }
-
-    /** Edits the Playlists shelf in place, without re-fetching it. */
-    fun editPlaylistShelf(edit: (List<ShelfItem>) -> List<ShelfItem>) {
-        val page = (libraryState as? UiState.Success)?.data ?: return
-        val index = page.shelves.indexOfFirst { it.title == PLAYLISTS_SHELF }
-        val shelves = if (index >= 0) {
-            page.shelves.toMutableList().apply {
-                this[index] = this[index].copy(items = edit(this[index].items))
-            }
+    // Listen Now, with the shuffle re-dealt on every refresh.
+    val homeState: UiState<List<HomeShelf>> = remember(localSongs, history, playlists, homeGeneration) {
+        val shelves = localHomeShelves(songs = localSongs, recentlyPlayed = history, playlists = playlists)
+        if (shelves.isEmpty()) {
+            // Nothing scanned at all is not an empty feed with a skeleton over it: it is the one
+            // thing this app needs the listener to do something about.
+            UiState.Error(DesktopStrings["no_local_audio_found", "No audio files found on this device"])
         } else {
-            // A fresh account has no Playlists shelf at all, and it is exactly the account most
-            // likely to be making its first one.
-            val items = edit(emptyList())
-            if (items.isEmpty()) return
-            listOf(HomeShelf(PLAYLISTS_SHELF, items)) + page.shelves
+            UiState.Success(shelves)
         }
-        libraryState = UiState.Success(page.copy(shelves = shelves.toList()))
-    }
-
-    // Whoever was signed in last is signed in again, before anything asks YouTube for something
-    // that depends on it.
-    LaunchedEffect(Unit) {
-        withContext(Dispatchers.IO) { DesktopAccounts.activate() }
-        sessionRevision++
-    }
-    var audioQuality by remember { mutableStateOf(persistence.audioQuality()) }
-    var sourceConfigs by remember { mutableStateOf(persistence.sourceConfigs()) }
-    var sourceStatus by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
-    val youtubeSourceEnabled = sourceConfigs.any {
-        it.kind == DesktopSourceKind.YOUTUBE && it.enabled
     }
     val sleepTimerMinutes by DesktopSleepTimer.minutes.collectAsState()
     val sleepAfterTrack by DesktopSleepTimer.afterTrack.collectAsState()
@@ -724,32 +582,6 @@ fun BitChordDesktopApp() {
         DesktopSleepTimer.remainingMs()
     }
     var openedCollection by remember { mutableStateOf<DesktopCollection?>(null) }
-    var collectionLoadingMore by remember { mutableStateOf(false) }
-    var collectionError by remember { mutableStateOf<String?>(null) }
-    var collectionReloads by remember { mutableStateOf(0) }
-    // The artist page is its own destination rather than a collection with a different header.
-    var openedArtist by remember { mutableStateOf<DesktopArtistTarget?>(null) }
-    var artistState by remember { mutableStateOf<UiState<ArtistPage>>(UiState.Loading) }
-    var artistReloads by remember { mutableStateOf(0) }
-
-    fun canonicalSong(song: Song): Song {
-        val homeSong = (homeState as? UiState.Success)?.data.orEmpty()
-            .asSequence()
-            .flatMap { it.items.asSequence() }
-            .filter { it.videoId == song.videoId }
-            .map(ShelfItem::toSong)
-            .firstOrNull()
-        return if (homeSong != null && song.artist.isUnknownArtist()) {
-            song.copy(
-                artist = homeSong.artist,
-                durationText = song.durationText ?: homeSong.durationText,
-                thumbnailUrl = song.thumbnailUrl ?: homeSong.thumbnailUrl,
-            )
-        } else {
-            song
-        }
-    }
-
     lateinit var startSong: (Song, Boolean) -> Unit
     lateinit var playbackEngine: DesktopPlaybackEngine
 
@@ -770,7 +602,12 @@ fun BitChordDesktopApp() {
 
     /** A song played on its own — from a search row, a shelf card, history. */
     fun playSong(song: Song, startPlaying: Boolean = true, source: DesktopQueueSource? = null) {
-        val tapped = canonicalSong(song).withSource(source)
+        // A row with no file on this computer has nothing to play, so it is never queued.
+        if (localFileOf(song) == null) {
+            DesktopTrackLog.log("playback: '${song.title}' has no file on this computer")
+            return
+        }
+        val tapped = song.withSource(source)
         // The phone's one-off queue: the song, then whatever the listener had queued by hand.
         val songs = QueueTimeline.buildOneOffQueue(liveQueue.songs, liveQueue.index, tapped, tapped.queueSource())
         liveQueue = DesktopQueue(songs, index = 0)
@@ -778,40 +615,12 @@ fun BitChordDesktopApp() {
         playCurrent(startPlaying)
     }
 
-    /** Takes a captured cookie all the way to a saved account. */
-    suspend fun signIn(cookie: String, label: String, sourceProfile: String? = null) {
-        signInError = null
-        signInBusy = label
-        try {
-            val scope = withContext(Dispatchers.IO) { DesktopYouTubeSession.adoptSessionScope(cookie) }
-            if (scope == null) {
-                signInError = "$label is not signed in to YouTube Music."
-                return
-            }
-            DesktopYouTubeAuth.adopt(scope)
-            // Asked with the session in force, so they describe the account that was just captured
-            // rather than nobody in particular.
-            val details = DesktopSearchClient.accountMenu().getOrNull()?.let(DesktopAccountParser::account)
-            val channels = DesktopSearchClient.accountsList().getOrNull()
-                ?.let(DesktopAccountParser::channels)
-                .orEmpty()
-            // Off the UI thread: saving reaches the platform keyring over D-Bus, and a blocking
-            // call to another process is not something to do on the thread that is drawing.
-            withContext(Dispatchers.IO) { DesktopAccounts.save(cookie, scope, details, channels, sourceProfile) }
-            accounts = withContext(Dispatchers.IO) { DesktopAccounts.accounts() }
-            activeAccountId = DesktopAccounts.activeAccountId()
-            activeProfileId = DesktopAccounts.activeProfileId()
-            overlays.signIn = false
-            overlays.accounts = false
-        } finally {
-            signInBusy = null
-        }
-    }
-
     fun playSongs(songs: List<Song>, startIndex: Int = 0, source: DesktopQueueSource? = null) {
         if (songs.isEmpty()) return
-        val playable = songs.map { canonicalSong(it).withSource(source) }
-        val at = startIndex.coerceIn(0, songs.lastIndex)
+        // Anything without a file is dropped rather than queued to fail when its turn comes.
+        val playable = songs.filter { localFileOf(it) != null }.map { it.withSource(source) }
+        if (playable.isEmpty()) return
+        val at = startIndex.coerceIn(0, playable.lastIndex)
         // The phone's context queue: the album up to the pick, the pick, what the listener had
         // queued by hand, then the rest of the album.
         val built = QueueTimeline.buildContextQueue(
@@ -851,27 +660,11 @@ fun BitChordDesktopApp() {
     }
     startSong = ::playSong
 
-    /** Applies a rating locally and carries it to the account. */
-    fun rate(song: Song, status: LikeStatus) {
-        likedIds = if (status == LikeStatus.LIKE) likedIds + song.videoId else likedIds - song.videoId
-        dislikedIds = if (status == LikeStatus.DISLIKE) {
-            dislikedIds + song.videoId
-        } else {
-            dislikedIds - song.videoId
-        }
+    /** The heart, kept on this computer: the one list of favourites this app has. */
+    fun toggleLike(song: Song) {
+        likedIds = if (song.videoId in likedIds) likedIds - song.videoId else likedIds + song.videoId
         persistence.saveLikedIds(likedIds)
-        persistence.saveDislikedIds(dislikedIds)
-        scope.launch {
-            DesktopSearchClient.rate(song.videoId, status)
-                .onFailure { DesktopTrackLog.log("youtube: rating ${song.videoId} failed: ${it.message}") }
-        }
     }
-
-    fun toggleLike(song: Song) =
-        rate(song, if (song.videoId in likedIds) LikeStatus.INDIFFERENT else LikeStatus.LIKE)
-
-    fun toggleDislike(song: Song) =
-        rate(song, if (song.videoId in dislikedIds) LikeStatus.INDIFFERENT else LikeStatus.DISLIKE)
 
     /** The origin the live queue is carrying, for anything appended to it. */
     fun currentQueueSource(): DesktopQueueSource? = liveQueue.current?.playbackSource?.let {
@@ -887,8 +680,8 @@ fun BitChordDesktopApp() {
      * queue" at its end, above the album and AutoPlay either way.
      */
     fun enqueue(song: Song, next: Boolean) {
-        val queued = canonicalSong(song).copy(radioName = liveQueue.current?.radioName)
-            .withSource(currentQueueSource())
+        if (localFileOf(song) == null) return
+        val queued = song.withSource(currentQueueSource())
         liveQueue = liveQueue.enqueue(queued, playNext = next)
         saveQueue()
     }
@@ -899,146 +692,47 @@ fun BitChordDesktopApp() {
     /** Puts a track at the end of what the listener queued — not the end of the queue. */
     fun addToQueue(song: Song) = enqueue(song, next = false)
 
-    /** Starts the station YouTube Music builds around one track. */
+    /**
+     * A station built out of this computer's own files: everything else the seed's artist has here,
+     * shuffled behind it.
+     */
     fun startRadio(song: Song) {
-        val seed = canonicalSong(song).copy(radioName = song.title)
-        scope.launch {
-            // AutoPlay's section behind the seed, as the phone queues a station.
-            val related = DesktopAutoplay.tracksFor(listOf(seed), seed, INITIAL_RADIO_TRACKS)
-                .getOrNull()
-                .orEmpty()
-            if (related.isEmpty()) {
-                DesktopTrackLog.log("radio: nothing to build a station on for '${song.title}'")
-                return@launch
-            }
-            if (liveQueue.current?.videoId == seed.videoId) {
-                liveQueue = DesktopQueue(listOf(liveQueue.current!!) + related, index = 0)
-                saveQueue()
-            } else {
-                val station = listOf(seed.asQueueEntry(QueueTier.CONTEXT)) + related
-                liveQueue = if (shuffle) DesktopQueue.shuffledStartingAt(station, 0) else DesktopQueue(station, 0)
-                preShuffleOrder = if (shuffle) station.map(DesktopQueue::orderKey) else emptyList()
-                playCurrent()
-            }
-            DesktopTrackLog.log("radio: started a station on '${song.title}' with ${related.size} tracks")
+        val seed = song.copy(radioName = song.title)
+        val related = localSongs
+            .filter { it.videoId != seed.videoId && it.artist.equals(seed.artist, ignoreCase = true) }
+            .shuffled()
+            .take(INITIAL_RADIO_TRACKS - 1)
+            .map { it.copy(radioName = song.title) }
+        if (related.isEmpty()) {
+            DesktopTrackLog.log("radio: nothing else by '${song.artist}' is on this computer")
+            return
         }
+        if (liveQueue.current?.videoId == seed.videoId) {
+            liveQueue = DesktopQueue(listOf(liveQueue.current!!) + related, index = 0)
+            saveQueue()
+        } else {
+            val station = listOf(seed.asQueueEntry(QueueTier.CONTEXT)) + related
+            liveQueue = if (shuffle) DesktopQueue.shuffledStartingAt(station, 0) else DesktopQueue(station, 0)
+            preShuffleOrder = if (shuffle) station.map(DesktopQueue::orderKey) else emptyList()
+            playCurrent()
+        }
+        DesktopTrackLog.log("radio: started a station on '${song.title}' with ${related.size} tracks")
     }
 
-    /**
-     * Opens an album or playlist in place of whatever page was open. The page it replaces is kept
-     * in the history, not underneath: an artist page left standing under an album would be drawn
-     * over it, which is how an album opened from an artist once went nowhere.
-     */
+    /** Opens a page of this app's own — a playlist, an artist or an album — in place of the open one. */
     fun showCollection(collection: DesktopCollection) {
-        openedArtist = null
         overlays.replay = false
         overlays.settingsPage = null
-        collectionError = null
         openedCollection = collection
     }
 
     /**
-     * Opens an album or playlist by id straight away, with a loader where the tracks go, the way an
-     * artist's page opens — rather than leaving the click with nothing to show until YouTube answers.
-     * [fallback] is what the card that was clicked already knew.
+     * Keeps the queue fed once it runs out, out of this computer's own library.
+     *
+     * The phone asks a station for this; here the station is the library, and a suggestion is a
+     * track that is not already queued and — when the listener has asked for it — not one played
+     * or offered already this session.
      */
-    fun openCollection(browseId: String, fallback: BrowseItem? = null) {
-        val current = openedCollection
-        if (current?.browseId == browseId && !current.loading) {
-            showCollection(current)
-            return
-        }
-        showCollection(
-            DesktopCollection(
-                browseId = browseId,
-                title = fallback?.title.orEmpty(),
-                subtitle = fallback?.subtitle.orEmpty(),
-                thumbnailUrl = fallback?.thumbnailUrl,
-                type = fallback?.type?.takeIf { it != BrowseType.OTHER } ?: browseTypeOf(browseId),
-                songs = emptyList(),
-                loading = true,
-            ),
-        )
-        collectionReloads++
-    }
-
-    // Keyed on the id, so a second page opened before the first answered cancels the first rather
-    // than racing it; and a loading page restored by Back fetches again.
-    LaunchedEffect(openedCollection?.browseId, openedCollection?.loading, collectionReloads) {
-        val pending = openedCollection
-            ?.takeIf { it.loading }
-            ?: return@LaunchedEffect
-        collectionError = null
-        DesktopSearchClient.browse(
-            browseId = pending.browseId,
-            fallback = BrowseItem(
-                browseId = pending.browseId,
-                title = pending.title,
-                subtitle = pending.subtitle,
-                thumbnailUrl = pending.thumbnailUrl,
-                type = pending.type,
-            ),
-        ).fold(
-            onSuccess = { loaded ->
-                if (openedCollection?.browseId == pending.browseId) openedCollection = loaded
-            },
-            onFailure = { collectionError = it.message ?: "Could not open ${pending.title.ifBlank { "this page" }}" },
-        )
-    }
-
-    fun openAlbum(browseId: String) = openCollection(browseId)
-
-    /** Copies the track's YouTube Music link. */
-    fun shareSong(song: Song) {
-        DesktopExternalLinks.copy("https://music.youtube.com/watch?v=${song.videoId}")
-        DesktopTrackLog.log("copied a link to '${song.title}'")
-    }
-
-    /**
-     * The link YouTube Music's own overflow shares for a release, built from the browse id rather
-     * than fetched — nothing about it depends on the tracks or the account. Albums and playlists
-     * only: an artist's is a channel link, not a release.
-     */
-    fun shareCollection(collection: DesktopCollection) {
-        val id = collection.browseId
-        val url = when (collection.type) {
-            BrowseType.PLAYLIST -> "https://music.youtube.com/playlist?list=${id.removePrefix("VL")}"
-            BrowseType.ALBUM -> "https://music.youtube.com/browse/$id"
-            else -> return
-        }
-        DesktopExternalLinks.copy(url)
-        DesktopTrackLog.log("copied a link to '${collection.title}'")
-    }
-
-    fun downloadSong(song: Song) {
-        // A second tap on something already queued or running calls it off.
-        if (song.videoId in downloadInProgress) {
-            DesktopDownloadQueue.cancel(song.videoId)
-            return
-        }
-        if (song.videoId in downloads.map(Song::videoId) || song.localPath != null) return
-        DesktopDownloadQueue.enqueue(song)
-    }
-
-    /** Deletes the file a download saved and forgets the record. */
-    fun removeDownload(song: Song) {
-        scope.launch {
-            withContext(Dispatchers.IO) { DesktopDownloadManager.delete(song) }
-            downloads = downloads.filterNot { it.videoId == song.videoId }
-            persistence.saveDownloads(downloads)
-        }
-    }
-
-    /** Everything on a page, in the order it is listed. */
-    fun downloadAll(songs: List<Song>) {
-        val have = downloads.map(Song::videoId).toSet()
-        DesktopDownloadQueue.enqueueAll(
-            songs.filterNot { it.videoId in have || it.localPath != null },
-        )
-    }
-
-    /** Keeps a station queued ahead of whatever is playing. */
-
     fun loadAutoplaySongs(playFirst: Boolean = false) {
         val current = selectedSong ?: return
         if (!autoplay || repeatMode == DesktopRepeatMode.ALL) return
@@ -1048,60 +742,36 @@ fun BitChordDesktopApp() {
         val queued = liveQueue.songs.drop(liveQueue.index + 1).count { it.fromAutoplay }
         val needed = MAX_QUEUED_AUTOPLAY - queued
         if (needed <= 0 && !playFirst) return
-        // One request per seed.
+        // One pass per seed.
         if (!playFirst && autoplaySeed == current.videoId) return
         autoplaySeed = current.videoId
 
         autoplayJob?.cancel()
         autoplayJob = scope.launch {
-            var remaining = needed.coerceAtLeast(1)
-            var emptyRefreshesRemaining = 1
-            while (isActive) {
-                DesktopTrackLog.log("autoplay: building a station from '${current.title}'")
-                val at = liveQueue.songs.size
-                // What the queue holds, plus everything this session has already offered.
-                val suggestions = DesktopAutoplay.tracksFor(
-                    existing = if (dontRepeatSuggestions) {
-                        liveQueue.songs + sessionSongHistory
-                    } else {
-                        liveQueue.songs
-                    },
-                    seedSong = current,
-                    limit = remaining,
-                ).getOrElse { failure ->
-                    DesktopTrackLog.log("autoplay: could not build a station: ${failure.message}")
-                    emptyList()
-                }
-                // The listener may have moved on while the station was being fetched; appending
-                // then would attach it to the wrong seed.
-                if (selectedSong?.videoId != current.videoId || !autoplay) return@launch
-                if (suggestions.isEmpty()) {
-                    DesktopTrackLog.log("autoplay: no station came back for '${current.title}'")
-                    // Match the phone's bounded recovery: retry once after a short delay, but only
-                    // while the current track genuinely has no tail to play next.
-                    if (liveQueue.index < 0 || liveQueue.index != liveQueue.songs.lastIndex) return@launch
-                    if (emptyRefreshesRemaining-- <= 0) return@launch
-                    delay(AUTOPLAY_EMPTY_REFRESH_DELAY_MS)
-                    remaining = MAX_QUEUED_AUTOPLAY
-                    continue
-                }
-                // The station carries on from what was playing, so it keeps that queue's origin —
-                // Android holds the source on every queue item, not just the ones picked by hand.
-                val inherited = current.playbackSource?.let {
-                    DesktopQueueSource(it, current.playbackSourceType ?: PlaybackSourceType.QUEUE, current.playbackSourceId)
-                }
-                val queuedSuggestions = suggestions.map { it.withSource(inherited) }
-                liveQueue = liveQueue.append(queuedSuggestions)
-                saveQueue()
-                // The mix continues from where it was added rather than starting a queue of its
-                // own.
-                if (playFirst) playQueueIndex(at)
-                if (dontRepeatSuggestions) sessionSongHistory += suggestions
-                DesktopTrackLog.log(
-                    "autoplay: queued ${suggestions.size} after '${current.title}'",
-                )
+            val at = liveQueue.songs.size
+            val taken = (liveQueue.songs + if (dontRepeatSuggestions) sessionSongHistory else emptyList())
+                .mapTo(HashSet(), Song::videoId)
+            val suggestions = localSongs
+                .filter { it.videoId != current.videoId && it.videoId !in taken && localFileOf(it) != null }
+                .shuffled()
+                .take(needed.coerceAtLeast(1))
+                .map { it.asQueueEntry(QueueTier.AUTOPLAY) }
+            if (suggestions.isEmpty()) {
+                DesktopTrackLog.log("autoplay: nothing left on this computer to queue after '${current.title}'")
                 return@launch
             }
+            // The listener may have moved on since this pass was queued.
+            if (selectedSong?.videoId != current.videoId || !autoplay) return@launch
+            // The mix carries on from what was playing, so it keeps that queue's origin.
+            val inherited = current.playbackSource?.let {
+                DesktopQueueSource(it, current.playbackSourceType ?: PlaybackSourceType.QUEUE, current.playbackSourceId)
+            }
+            liveQueue = liveQueue.append(suggestions.map { it.withSource(inherited) })
+            saveQueue()
+            // The mix continues from where it was added rather than starting a queue of its own.
+            if (playFirst) playQueueIndex(at)
+            if (dontRepeatSuggestions) sessionSongHistory += suggestions
+            DesktopTrackLog.log("autoplay: queued ${suggestions.size} after '${current.title}'")
         }
     }
 
@@ -1185,61 +855,17 @@ fun BitChordDesktopApp() {
         playlistBusy = false
     }
 
-    /** Creates a playlist — on the account when there is one, otherwise here. */
-    fun createPlaylist(title: String, privacy: PlaylistPrivacy) {
+    /** Creates a playlist on this computer, with the track it was opened from already in it. */
+    fun createPlaylist(title: String) {
         val name = title.trim()
         if (name.isBlank()) return
         val seed = playlistTarget
-        // A track from another source cannot go in an account playlist, so the playlist made to
-        // hold it is one kept here.
-        if (!DesktopYouTubeAuth.isSignedIn || (seed != null && !DesktopSearchClient.isVideoId(seed.videoId))) {
-            playlists = playlists + DesktopPlaylist(title = name, songs = listOfNotNull(seed))
-            persistence.savePlaylists(playlists)
-            closePlaylistDialogs()
-            return
-        }
-        playlistBusy = true
-        playlistError = null
-        scope.launch {
-            DesktopSearchClient.createPlaylist(name, privacy, listOfNotNull(seed?.videoId))
-                .onSuccess { playlistId ->
-                    closePlaylistDialogs()
-                    editPlaylistShelf { items ->
-                        val card = ShelfItem(
-                            title = name,
-                            // Only what this request itself establishes: an unseeded playlist gets
-                            // a card of just its name rather than a guess at what the feed will
-                            // call it.
-                            subtitle = if (seed != null) "1 song" else "",
-                            thumbnailUrl = seed?.thumbnailUrl,
-                            videoId = null,
-                            browseId = "VL$playlistId",
-                        )
-                        // Leads the shelf because it is the newest, which is the order the feed
-                        // itself comes in.
-                        listOf(card) + items.filterNot { it.browseId == card.browseId }
-                    }
-                    libraryStale = true
-                }
-                .onFailure {
-                    playlistBusy = false
-                    playlistError = it.message ?: "Could not create the playlist"
-                }
-        }
+        playlists = playlists + DesktopPlaylist(title = name, songs = listOfNotNull(seed))
+        persistence.savePlaylists(playlists)
+        closePlaylistDialogs()
     }
 
-    fun openPlaylist(playlist: DesktopPlaylist) {
-        showCollection(
-            DesktopCollection(
-                browseId = playlist.id,
-                title = playlist.title,
-                subtitle = "Playlist • ${playlist.songs.size} songs",
-                thumbnailUrl = playlist.songs.firstOrNull()?.thumbnailUrl,
-                type = BrowseType.PLAYLIST,
-                songs = playlist.songs,
-            ),
-        )
-    }
+    fun openPlaylist(playlist: DesktopPlaylist) = showCollection(localPlaylistCollection(playlist))
 
     fun addToPlaylist(playlist: DesktopPlaylist) {
         val song = playlistTarget ?: return
@@ -1248,21 +874,6 @@ fun BitChordDesktopApp() {
         }
         persistence.savePlaylists(playlists)
         playlistTarget = null
-    }
-
-    fun addToAccountPlaylist(playlist: UserPlaylist) {
-        val song = playlistTarget ?: return
-        playlistBusy = true
-        playlistError = null
-        scope.launch {
-            DesktopSearchClient.addToPlaylist(playlist.playlistId, listOf(song.videoId))
-                .onSuccess { closePlaylistDialogs() }
-                .onFailure {
-                    DesktopTrackLog.log("playlist: could not add ${song.videoId}: ${it.message}")
-                    playlistBusy = false
-                    playlistError = it.message ?: "Could not add to ${playlist.title}"
-                }
-        }
     }
 
     playbackEngine = remember {
@@ -1359,7 +970,6 @@ fun BitChordDesktopApp() {
 
     LaunchedEffect(playbackSpeed) { playbackEngine.setPlaybackSpeed(playbackSpeed) }
     LaunchedEffect(volume) { playbackEngine.setVolume(volume) }
-    LaunchedEffect(audioQuality) { playbackEngine.setAudioQuality(audioQuality.name) }
     LaunchedEffect(automixPerformance) {
         playbackEngine.setAutomixPerformance(automixPerformance)
     }
@@ -1381,7 +991,7 @@ fun BitChordDesktopApp() {
         playbackEngine.setSkipSilence(skipSilence)
         playbackEngine.setOutputPrecision(outputPrecision)
     }
-    LaunchedEffect(automix, crossfadeSeconds, audioQuality, selectedSong?.videoId, queue, liveQueue.index, shuffle, repeatMode) {
+    LaunchedEffect(automix, crossfadeSeconds, selectedSong?.videoId, queue, liveQueue.index, shuffle, repeatMode) {
         playbackEngine.setAutomixEnabled(automix)
         playbackEngine.setCrossfadeSeconds(crossfadeSeconds)
         // Exactly what Next would play, so a crossfade can never blend into anything else. Shuffle
@@ -1401,13 +1011,10 @@ fun BitChordDesktopApp() {
     }
     LaunchedEffect(liveQueue.songs.size, liveQueue.index) {
         val currentId = selectedSong?.videoId
-        val shouldRefresh = DesktopAutoplay.queueNeedsRefresh(
-            enabled = autoplay,
-            repeatAll = repeatMode == DesktopRepeatMode.ALL,
-            currentIndex = liveQueue.index,
-            itemCount = liveQueue.songs.size,
-            loadInProgress = autoplayJob?.isActive == true,
-        )
+        val shouldRefresh = autoplay &&
+            repeatMode != DesktopRepeatMode.ALL &&
+            liveQueue.index >= liveQueue.songs.lastIndex &&
+            autoplayJob?.isActive != true
         // Only re-arm a seed that has already been attempted. The track-change effect above owns
         // the initial load; this effect owns later local or server queue edits that expose a tail.
         if (shouldRefresh && currentId != null && autoplaySeed == currentId) {
@@ -1525,37 +1132,6 @@ fun BitChordDesktopApp() {
     LaunchedEffect(playback.song?.videoId, playback.isPlaying, playback.durationMs) {
         DesktopWindowsMedia.publish(playback)
     }
-    // Refetched on opening the page rather than cached for the session: the
-    // point of it is that something played elsewhere shows up here.
-    LaunchedEffect(destination, youtubeSignedIn, sessionRevision) {
-        if (destination != DesktopDestination.HISTORY || !youtubeSignedIn) return@LaunchedEffect
-        DesktopSearchClient.history().onSuccess { remoteHistory = it }
-    }
-    LaunchedEffect(selectedSong?.videoId, overlays.nowPlaying) {
-        trackLinks = null
-        val current = selectedSong ?: return@LaunchedEffect
-        // Only while the player is up, so playing from the mini player costs
-        // nothing, and only when something is actually missing.
-        if (!overlays.nowPlaying) return@LaunchedEffect
-        if (current.artistId != null && current.albumId != null) return@LaunchedEffect
-        trackLinks = DesktopSearchClient.trackLinks(current.videoId).getOrNull()
-    }
-    // The account's own history on YouTube Music, which is what the home feed is built out of.
-    DisposableEffect(playback.song?.videoId) {
-        val previous = playbackEngine.state.value.positionMs / 1_000
-        onDispose { DesktopPlaybackTracker.onTrackChanged(previous) }
-    }
-    LaunchedEffect(playback.song?.videoId, playback.isPlaying) {
-        val songId = playback.song?.videoId ?: return@LaunchedEffect
-        if (!playback.isPlaying) return@LaunchedEffect
-        DesktopPlaybackTracker.onPlaying(songId)
-        while (currentCoroutineContext().isActive) {
-            delay(HISTORY_SAMPLE_MS)
-            val snapshot = playbackEngine.state.value
-            if (snapshot.song?.videoId != songId) break
-            DesktopPlaybackTracker.onProgress(songId, snapshot.positionMs / 1_000)
-        }
-    }
     LaunchedEffect(playback.song?.videoId, playback.isPlaying) {
         val songId = playback.song?.videoId ?: return@LaunchedEffect
         if (!playback.isPlaying) return@LaunchedEffect
@@ -1568,8 +1144,8 @@ fun BitChordDesktopApp() {
             val position = snapshot.positionMs
             val delta = (position - previousPosition).takeIf { it in 1L..STATS_MAX_DELTA_MS } ?: 0L
             if (delta > 0L) {
-                val threshold = snapshot.durationMs.takeIf { it > 0L }?.let { minOf(it / 2L, SCROBBLE_THRESHOLD_MS) }
-                    ?: SCROBBLE_THRESHOLD_MS
+                val threshold = snapshot.durationMs.takeIf { it > 0L }?.let { minOf(it / 2L, PLAYED_THRESHOLD_MS) }
+                    ?: PLAYED_THRESHOLD_MS
                 val reachedThreshold = !countedAsPlay && position >= threshold
                 DesktopListeningStats.record(snapshot.song, delta, reachedThreshold)
                 if (reachedThreshold) {
@@ -1588,132 +1164,6 @@ fun BitChordDesktopApp() {
         onDispose { playbackEngine.release() }
     }
 
-    /** Opens an artist's page, from a card, a search row or the player's credit. */
-    fun openArtist(browseId: String, name: String) {
-        val target = DesktopArtistTarget(browseId, name)
-        if (openedArtist == target && artistState is UiState.Success) return
-        openedCollection = null
-        overlays.replay = false
-        overlays.settingsPage = null
-        openedArtist = target
-        artistState = UiState.Loading
-        artistReloads++
-    }
-
-    /**
-     * The "…" menu for one row, wherever it is drawn.
-     *
-     * Built once so a row on Downloads or Local Music offers what the player's own "…" offers —
-     * Android opens the same `SongActionsSheet` from every one of them.
-     */
-    fun songActionsFor(song: Song) = DesktopSongActions(
-        signedIn = youtubeSignedIn,
-        disliked = song.videoId in dislikedIds,
-        downloaded = downloads.any { it.videoId == song.videoId },
-        downloadInProgress = song.videoId in downloadInProgress,
-        sleepTimerMinutes = sleepTimerMinutes,
-        sleepAfterTrack = sleepAfterTrack,
-        onToggleDislike = ::toggleDislike,
-        onAddToPlaylist = { playlistTarget = it },
-        onDownload = ::downloadSong,
-        onRemoveDownload = ::removeDownload,
-        onStartRadio = ::startRadio,
-        onPlayNext = ::playNext,
-        onAddToQueue = ::addToQueue,
-        onOpenAlbum = ::openAlbum,
-        onOpenArtist = { id -> openArtist(id, song.artist) },
-        onSleepTimer = { minutes ->
-            if (minutes == null) DesktopSleepTimer.cancel() else DesktopSleepTimer.start(minutes)
-        },
-        onSleepAfterTrack = { DesktopSleepTimer.startAfterTrack() },
-        onShare = ::shareSong,
-    )
-
-    /** The "…" a song row hangs off, built the same way on every page that offers one. */
-    @Composable
-    fun songMenu(song: Song) = DesktopSongMenuAnchor(
-        song = song,
-        liked = song.videoId in likedIds,
-        actions = songActionsFor(song),
-        onToggleLike = { toggleLike(song) },
-        onRevertToOriginal = null,
-        onUpgradeQuality = null,
-    )
-
-    /** Replay counts artists by name, so the page has to be found from the name alone. */
-    fun openArtistByName(name: String) {
-        scope.launch {
-            val match = DesktopSearchClient.search(name, SearchFilter.ARTISTS)
-                .getOrDefault(emptyList())
-                .filterIsInstance<SearchResult.Browse>()
-                .map { it.item }
-                .firstOrNull { it.browseId.isNotBlank() }
-                ?: return@launch
-            openArtist(match.browseId, match.title)
-        }
-    }
-
-    LaunchedEffect(openedArtist, artistReloads) {
-        val target = openedArtist ?: return@LaunchedEffect
-        if (artistState !is UiState.Loading) return@LaunchedEffect
-        DesktopSearchClient.artistPage(target.browseId).fold(
-            onSuccess = { artistState = UiState.Success(it) },
-            onFailure = { artistState = UiState.Error(it.message ?: "Could not open ${target.name}") },
-        )
-    }
-
-    fun toggleSubscription(subscription: SubscriptionState) {
-        val target = openedArtist ?: return
-        val next = !subscription.subscribed
-        // Painted before the network answers and put back if it refuses.
-        artistState = (artistState as? UiState.Success)?.let { current ->
-            UiState.Success(current.data.copy(subscription = subscription.copy(subscribed = next)))
-        } ?: artistState
-        scope.launch {
-            DesktopSearchClient.setSubscribed(subscription.channelId, next).onFailure { failure ->
-                DesktopTrackLog.log("subscription: ${target.name} failed: ${failure.message}")
-                artistState = (artistState as? UiState.Success)?.let { current ->
-                    UiState.Success(current.data.copy(subscription = subscription))
-                } ?: artistState
-            }
-        }
-    }
-
-    /** A search hit or a recent search that is a page: an artist's own, or a collection's. */
-    fun openBrowseItem(item: BrowseItem) {
-        if (item.type == BrowseType.ARTIST) {
-            openArtist(item.browseId, item.title)
-        } else {
-            openCollection(item.browseId, item)
-        }
-    }
-
-    fun openShelfItem(item: ShelfItem, shelfTitle: String? = null) {
-        val videoId = item.videoId
-        val browseId = item.browseId
-        when {
-            videoId != null -> {
-                val source = shelfTitle?.let { DesktopQueueSource(it, PlaybackSourceType.HOME) }
-                playSong(item.toSong(), source = source)
-            }
-            // An artist is a page of its own, not a list of tracks with a photograph on top.
-            browseTypeOf(browseId.orEmpty()) == BrowseType.ARTIST ->
-                openArtist(browseId!!, item.title)
-            browseId != null -> openCollection(
-                browseId = browseId,
-                fallback = BrowseItem(
-                    browseId = browseId,
-                    title = item.title,
-                    subtitle = item.subtitle,
-                    thumbnailUrl = item.thumbnailUrl,
-                    type = BrowseType.OTHER,
-                ),
-            )
-        }
-    }
-
-    fun openMenu(song: Song) = pageMenu(song)
-
     /** What the phone records for a search hit: the thing picked, not the words typed to find it. */
     fun recordSongSearch(song: Song) = DesktopSearchHistory.record(
         SearchHistoryEntity(
@@ -1725,127 +1175,120 @@ fun BitChordDesktopApp() {
         ),
     )
 
-    fun recordBrowseSearch(item: BrowseItem) = DesktopSearchHistory.record(
-        SearchHistoryEntity(
-            id = item.browseId,
-            title = item.title,
-            subtitle = item.subtitle,
-            artworkUrl = item.thumbnailUrl,
-            entityType = when (item.type) {
-                BrowseType.ALBUM -> EntityType.ALBUM
-                BrowseType.ARTIST -> EntityType.ARTIST
-                BrowseType.PLAYLIST -> EntityType.PLAYLIST
-                else -> EntityType.TRACK
-            },
-        ),
-    )
-
-    /** Typing, from the page's field or the sidebar's: the typeahead follows, and an empty field goes back to recents. */
+    /** Typing, from the page's field or the sidebar's: an empty field goes back to recents. */
     fun editQuery(text: String) {
         query = text
-        searchTyping = true
-        if (text.isBlank()) {
-            searchCommitted = false
-            searchRows = emptyList()
-            searchError = null
-        }
+        if (text.isBlank()) searchScrollReset++
     }
 
+    /**
+     * Commits the query: shows the Search page. The matches are a filter over the local library —
+     * see the page's `libraryResults` — so there is nothing to fetch and nothing to wait for.
+     */
     fun search() {
-        if (query.isBlank() || searchLoading) return
+        if (query.isBlank()) return
         overlays.settingsPage = null
         destination = DesktopDestination.SEARCH
-        searchTyping = false
-        searchSuggestions = emptyList()
-        // Submitting is picking the first track the typeahead offered, as on the phone — or, with
-        // none, the first the results bring back.
-        val typedHit = searchTypeahead.firstNotNullOfOrNull { row ->
-            when (row) {
-                is SearchResult.TopTrack -> row.song
-                is SearchResult.Track -> row.song
-                else -> null
-            }
-        }
-        typedHit?.let(::recordSongSearch)
-        searchCommitted = true
         searchScrollReset++
-        searchLoading = true
-        searchError = null
-        scope.launch {
-            try {
-                DesktopMusicSources.search(query, searchFilter).fold(
-                    onSuccess = { rows ->
-                        searchRows = rows
-                        if (typedHit == null) {
-                            rows.firstNotNullOfOrNull { row ->
-                                when (row) {
-                                    is SearchResult.TopTrack -> row.song
-                                    is SearchResult.Track -> row.song
-                                    else -> null
-                                }
-                            }?.let(::recordSongSearch)
-                        }
-                    },
-                    onFailure = { searchError = it.message ?: "Search failed" },
-                )
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (failure: Throwable) {
-                searchError = failure.message ?: "Search failed"
-            } finally {
-                // OBS and other desktop capture tools can briefly interrupt focus/coroutines.
-                searchLoading = false
-            }
-        }
-    }
-
-    /** The typeahead, one request behind the keystrokes rather than one per. */
-    LaunchedEffect(query, searchTyping) {
-        if (!searchTyping || query.isBlank()) {
-            searchSuggestions = emptyList()
-            return@LaunchedEffect
-        }
-        delay(SUGGESTION_DEBOUNCE_MS)
-        DesktopSearchClient.searchSuggestions(query)
-            .onSuccess { if (searchTyping) searchSuggestions = it }
-            .onFailure { searchSuggestions = emptyList() }
-    }
-
-    // Its own pass, on its own delay: a search costs far more than a completion, so it waits for a
-    // longer pause in the typing rather than riding the same one.
-    LaunchedEffect(query, searchTyping) {
-        if (!searchTyping || query.isBlank()) {
-            searchTypeahead = emptyList()
-            return@LaunchedEffect
-        }
-        delay(TYPEAHEAD_MEDIA_DEBOUNCE_MS)
-        DesktopSearchClient.searchTypeahead(query)
-            .onSuccess { if (searchTyping) searchTypeahead = it.take(TYPEAHEAD_MEDIA_LIMIT) }
-            .onFailure { searchTypeahead = emptyList() }
     }
 
     fun runSearch(term: String) {
         query = term
-        searchTyping = false
-        searchSuggestions = emptyList()
-        searchTypeahead = emptyList()
         search()
     }
 
     fun selectDestination(next: DesktopDestination) {
-        if (next == DesktopDestination.LIBRARY && libraryStale) {
-            libraryStale = false
-            reloadLibrary()
-        }
-        openedArtist = null
         openedCollection = null
         overlays.replay = false
         overlays.settingsPage = null
-        selectedMoodGenre = null
         libraryShowAll = null
         if (next == DesktopDestination.SEARCH) searchFocusRequested = true
         destination = next
     }
+
+    /** Opens the page of every track filed under an artist's name on this computer. */
+    fun openArtist(name: String) {
+        val collection = localArtistCollection(name, localSongs)
+        if (collection.songs.isEmpty()) return
+        showCollection(collection)
+    }
+
+    /** Opens the page of every track from one album on this computer. */
+    fun openAlbum(name: String) {
+        val collection = localAlbumCollection(name, localSongs)
+        if (collection.songs.isEmpty()) return
+        showCollection(collection)
+    }
+
+    fun openMenu(song: Song) = pageMenu(song)
+
+    /**
+     * The song a card stands for, from the id the card carries.
+     *
+     * Cards are built from the library's own rows, so the id on one is a local `videoId` — the
+     * same key history, playlists and the queue all use.
+     */
+    fun songFor(item: ShelfItem): Song? =
+        item.videoId?.let { id -> localSongs.firstOrNull { it.videoId == id } }
+
+    /** Opens a card: a track plays, an artist or an album opens its page, a playlist its own. */
+    fun openShelfItem(item: ShelfItem, shelfTitle: String? = null) {
+        val videoId = item.videoId
+        val browseId = item.browseId.orEmpty()
+        when {
+            videoId != null -> {
+                val song = songFor(item) ?: return
+                val source = shelfTitle?.let { DesktopQueueSource(it, PlaybackSourceType.HOME) }
+                playSong(song, source = source)
+            }
+            browseId.startsWith(LOCAL_PLAYLIST_PREFIX) ->
+                playlists.firstOrNull { it.id == browseId.removePrefix(LOCAL_PLAYLIST_PREFIX) }?.let(::openPlaylist)
+            browseId.startsWith(LOCAL_ARTIST_PREFIX) ->
+                openArtist(browseId.removePrefix(LOCAL_ARTIST_PREFIX))
+            browseId.startsWith(LOCAL_ALBUM_PREFIX) ->
+                openAlbum(browseId.removePrefix(LOCAL_ALBUM_PREFIX))
+            browseId == LOCAL_MUSIC_ID -> selectDestination(DesktopDestination.LOCAL_MUSIC)
+            else -> Unit
+        }
+    }
+
+    /** The row's own "…", from a card that stands for a track. */
+    fun openShelfItemMenu(item: ShelfItem) {
+        songFor(item)?.let(::openMenu)
+    }
+
+    /** Replay counts artists by name, so its chart opens the page their files are filed under. */
+    fun openArtistByName(name: String) = openArtist(name)
+
+    /**
+     * The "…" menu for one row, wherever it is drawn.
+     *
+     * Built once so a row on Local Music offers what the player's own "…" offers — Android opens
+     * the same `SongActionsSheet` from every one of them.
+     */
+    fun songActionsFor(song: Song) = DesktopSongActions(
+        liked = song.videoId in likedIds,
+        sleepTimerMinutes = sleepTimerMinutes,
+        sleepAfterTrack = sleepAfterTrack,
+        onAddToPlaylist = { playlistTarget = it },
+        onStartRadio = ::startRadio,
+        onPlayNext = ::playNext,
+        onAddToQueue = ::addToQueue,
+        onOpenAlbum = { name -> openAlbum(name) },
+        onOpenArtist = { name -> openArtist(name) },
+        onSleepTimer = { minutes ->
+            if (minutes == null) DesktopSleepTimer.cancel() else DesktopSleepTimer.start(minutes)
+        },
+        onSleepAfterTrack = { DesktopSleepTimer.startAfterTrack() },
+    )
+
+    /** The "…" a song row hangs off, built the same way on every page that offers one. */
+    @Composable
+    fun songMenu(song: Song) = DesktopSongMenuAnchor(
+        song = song,
+        actions = songActionsFor(song),
+        onToggleLike = { toggleLike(song) },
+    )
 
     // Settings' search and scroll outlive a visit to one of its pages, and start over each time
     // Settings itself is opened.
@@ -1853,61 +1296,17 @@ fun BitChordDesktopApp() {
     var settingsQuery by remember(settingsSession) { mutableStateOf("") }
     val settingsListState = remember(settingsSession) { LazyListState() }
 
-    /** Settings in place of the page — from the sidebar, the account switcher or the tray. */
+    /** Settings in place of the page — from the sidebar or the tray. */
     fun openSettings() {
         overlays.nowPlaying = false
         if (overlays.settingsPage == null) settingsSession++
         overlays.settingsPage = DesktopSettingsPage.MAIN
     }
 
-    /** The Library's folder rows: the two folders this computer has. */
-    val libraryLinks = remember {
-        listOfNotNull(
-            LibraryLink(
-                item = ShelfItem(
-                    title = DesktopStrings["downloads", "Downloads"],
-                    subtitle = DesktopStrings["downloaded_songs", "Downloaded songs"],
-                    thumbnailUrl = null,
-                    videoId = null,
-                    browseId = LOCAL_DOWNLOADS_ID,
-                ),
-                icon = Icons.Rounded.Download,
-            ),
-            LibraryLink(
-                item = ShelfItem(
-                    title = DesktopStrings["local_music", "Local Music"],
-                    subtitle = DesktopStrings["d_audio_files_on_this_computer", "Audio files on this computer"],
-                    thumbnailUrl = null,
-                    videoId = null,
-                    browseId = LOCAL_MUSIC_ID,
-                ),
-                icon = Icons.Rounded.Folder,
-            ),
-        )
-    }
-
-    /**
-     * The Library's "On device" shelf: the playlists kept on this computer rather than on the
-     * account — the desktop's counterpart of the phone's downloaded releases, and like them
-     * reachable from nowhere else.
-     */
-    val libraryDeviceItems = remember(playlists) {
-        playlists.map { playlist ->
-            ShelfItem(
-                title = playlist.title,
-                subtitle = "Playlist • ${playlist.songs.size} songs",
-                thumbnailUrl = playlist.songs.firstOrNull()?.thumbnailUrl,
-                videoId = null,
-                browseId = LOCAL_PLAYLIST_PREFIX + playlist.id,
-            )
-        }
-    }
-
     /** A Library card: a folder is a page of this app's, a local playlist is opened from here. */
     fun openLibraryItem(item: ShelfItem) {
         val browseId = item.browseId.orEmpty()
         when {
-            browseId == LOCAL_DOWNLOADS_ID -> selectDestination(DesktopDestination.DOWNLOADS)
             browseId == LOCAL_MUSIC_ID -> selectDestination(DesktopDestination.LOCAL_MUSIC)
             browseId.startsWith(LOCAL_PLAYLIST_PREFIX) ->
                 playlists.firstOrNull { it.id == browseId.removePrefix(LOCAL_PLAYLIST_PREFIX) }?.let(::openPlaylist)
@@ -1915,97 +1314,10 @@ fun BitChordDesktopApp() {
         }
     }
 
-    /**
-     * Adds shelves to the page as they arrive, skipping any heading already on it and any shelf
-     * that repeats one's releases — the phone's `publishHomeShelves`. Recently Played is
-     * [prepend]ed and replaces any stale copy the core feed carried.
-     */
-    fun publishHomeShelves(shelves: List<HomeShelf>, prepend: Boolean = false) {
-        val existing = (homeState as? UiState.Success)?.data.orEmpty()
-        if (prepend) {
-            val replacing = shelves.map { it.title.lowercase() }.toSet()
-            homeSeenTitles.addAll(replacing)
-            homeState = UiState.Success(shelves + existing.filterNot { it.title.lowercase() in replacing })
-            return
-        }
-        val added = shelves.withoutRepeatsOf(existing)
-            .filter { it.items.isNotEmpty() && homeSeenTitles.add(it.title.lowercase()) }
-        if (added.isNotEmpty()) homeState = UiState.Success(existing + added)
-    }
-
-    /**
-     * The phone's Home: the core feed, the account's own Recently Played at its head, and the
-     * supplementary browse feeds, all asked for at once and laid down as each lands. Signed out
-     * there is no Recently Played to ask for, which is also how the phone has it.
-     */
-    fun loadHome() {
-        if (!youtubeSourceEnabled) {
-            homeState = UiState.Error("YouTube Music is disabled")
-            return
-        }
-        val generation = ++homeGeneration
-        val signedIn = DesktopYouTubeAuth.isSignedIn
-        homeIdentity = "$signedIn/${DesktopAccounts.activeAccountId()}"
-        homeState = UiState.Loading
-        homeContinuation = null
-        homeSeenTitles.clear()
-        homeLoadingMore = false
-        homeRecentsLoading = signedIn
-        scope.launch {
-            launch {
-                DesktopSearchClient.home().fold(
-                    onSuccess = { feed ->
-                        if (generation != homeGeneration) return@fold
-                        homeContinuation = feed.continuation
-                        publishHomeShelves(feed.shelves)
-                    },
-                    onFailure = {
-                        if (generation == homeGeneration && homeState !is UiState.Success) {
-                            homeState = UiState.Error(it.message ?: "Could not load Home")
-                        }
-                    },
-                )
-            }
-            if (signedIn) {
-                launch {
-                    YtMusicRepository.homeRecentlyPlayed()
-                        .onSuccess { shelf ->
-                            if (generation != homeGeneration) return@onSuccess
-                            homeRecentsLoading = false
-                            shelf?.let { publishHomeShelves(listOf(it), prepend = true) }
-                        }
-                        .onFailure { if (generation == homeGeneration) homeRecentsLoading = false }
-                }
-            }
-            DesktopSearchClient.HOME_SUPPLEMENT_BROWSE_IDS.forEach { browseId ->
-                launch {
-                    DesktopSearchClient.homeSupplement(browseId).onSuccess { shelves ->
-                        if (generation == homeGeneration) publishHomeShelves(shelves)
-                    }
-                }
-            }
-        }
-    }
-
-    /** The next page of the core feed, as the list nears its end; a no-op once it has run dry. */
-    fun loadMoreHome() {
-        val token = homeContinuation ?: return
-        if (homeLoadingMore || homeState !is UiState.Success) return
-        val generation = homeGeneration
-        homeLoadingMore = true
-        scope.launch {
-            DesktopSearchClient.moreHome(token).fold(
-                onSuccess = { feed ->
-                    if (generation != homeGeneration) return@fold
-                    val before = homeSeenTitles.size
-                    publishHomeShelves(feed.shelves)
-                    // A page with nothing new is the feed looping back on itself, not running dry.
-                    homeContinuation = feed.continuation.takeIf { homeSeenTitles.size > before }
-                },
-                onFailure = { homeContinuation = null },
-            )
-            homeLoadingMore = false
-        }
+    /** Deals Listen Now again — a fresh shuffle out of the same collection. */
+    fun refreshHome() {
+        homeGeneration++
+        localSongs = runCatching { DesktopLocalMusic.scan() }.getOrDefault(localSongs)
     }
 
     // The tray icon speaks StatusNotifierItem rather than going through AWT, which only implements
@@ -2071,39 +1383,6 @@ fun BitChordDesktopApp() {
         DesktopAnalysisRuntime.ensureStarted()
         DesktopHorizontalScroll.install()
         localSongs = withContext(Dispatchers.IO) { DesktopLocalMusic.scan() }
-        // A download record is a claim about a folder this app does not own, so it can outlive the
-        // file it names. Checked once at startup rather than trusted: a stale entry showed the
-        // track as downloaded, refused to fetch it again, and then would not play.
-        val onDisk = withContext(Dispatchers.IO) { DesktopDownloadManager.verified(downloads) }
-        if (onDisk.size != downloads.size) {
-            DesktopTrackLog.log(
-                "downloads: ${downloads.size - onDisk.size} recorded file(s) are gone; forgetting them",
-            )
-            downloads = onDisk
-            persistence.saveDownloads(onDisk)
-        }
-        loadHome()
-    }
-
-    // The feed is the account's: signing in, out or across to another channel is a different Home,
-    // and Recently Played only exists with an account behind it.
-    LaunchedEffect(youtubeSignedIn, activeAccountId) {
-        val identity = "${DesktopYouTubeAuth.isSignedIn}/${DesktopAccounts.activeAccountId()}"
-        if (homeIdentity != null && identity != homeIdentity) loadHome()
-    }
-
-    // The mark on a downloaded row, for the shared pages.
-    LaunchedEffect(downloads) {
-        DesktopAppUiHost.downloaded.value = downloads.mapTo(HashSet(), Song::videoId)
-    }
-
-    // What reached disk goes into the library's own record, which is what the Downloads page and
-    // every row's tick read from.
-    LaunchedEffect(Unit) {
-        DesktopDownloadQueue.finished.collect { saved ->
-            downloads = (listOf(saved) + downloads.filterNot { it.videoId == saved.videoId }).take(200)
-            persistence.saveDownloads(downloads)
-        }
     }
 
     // The charts are period-filtered at read time, so a different period is a different read.
@@ -2126,220 +1405,42 @@ fun BitChordDesktopApp() {
         }
     }
 
-    suspend fun loadExplore() {
-        if (!youtubeSourceEnabled) {
-            exploreState = UiState.Error("YouTube Music is disabled")
-            return
-        }
-        exploreState = UiState.Loading
-        DesktopSearchClient.moodAndGenres().fold(
-            onSuccess = { sections ->
-                exploreState = if (sections.isEmpty()) {
-                    UiState.Error("Nothing to explore right now")
-                } else {
-                    UiState.Success(sections)
-                }
-            },
-            onFailure = { exploreState = UiState.Error(it.message ?: "Could not load Explore") },
-        )
-    }
-
-    LaunchedEffect(destination, exploreReloads) {
-        if (destination == DesktopDestination.EXPLORE &&
-            (exploreState is UiState.Loading || exploreReloads > 0)
-        ) {
-            loadExplore()
-        }
-    }
-
-    // Category buttons carry no artwork of their own, so a few are resolved at a time from the
-    // shelves they open.
-    LaunchedEffect(exploreState) {
-        val sections = (exploreState as? UiState.Success)?.data ?: return@LaunchedEffect
-        if (sections.all { section -> section.items.all { it.thumbnailUrl != null } }) return@LaunchedEffect
-        val limiter = Semaphore(4)
-        coroutineScope {
-            sections.flatMap(MoodGenreSection::items)
-                .filter { it.thumbnailUrl == null }
-                .forEach { item ->
-                    launch {
-                        val artwork = limiter.withPermit {
-                            DesktopSearchClient.moodGenreArtwork(item.browseId, item.params).getOrNull()
-                        } ?: return@launch
-                        val current = (exploreState as? UiState.Success)?.data ?: return@launch
-                        exploreState = UiState.Success(
-                            current.map { section ->
-                                section.copy(
-                                    items = section.items.map { entry ->
-                                        if (entry.browseId == item.browseId && entry.params == item.params) {
-                                            entry.copy(thumbnailUrl = artwork)
-                                        } else {
-                                            entry
-                                        }
-                                    },
-                                )
-                            },
-                        )
-                    }
-                }
-        }
-    }
-
-    /** The next page of the open collection, appended in place. */
-    fun loadMoreCollectionSongs() {
-        val collection = openedCollection ?: return
-        val token = collection.continuation ?: return
-        if (collectionLoadingMore) return
-        collectionLoadingMore = true
-        scope.launch {
-            DesktopSearchClient.moreCollectionSongs(token, collection.songs.firstOrNull()?.artist)
-                .onSuccess { (songs, next) ->
-                    val current = openedCollection
-                    if (current != null && current.browseId == collection.browseId) {
-                        openedCollection = current.copy(
-                            songs = (current.songs + songs).distinctBy(Song::videoId),
-                            continuation = next,
-                        )
-                    }
-                }
-                .onFailure {
-                    DesktopTrackLog.log("collection: no more rows for ${collection.browseId}: ${it.message}")
-                    val current = openedCollection
-                    if (current != null && current.browseId == collection.browseId) {
-                        // Dropped rather than retried on scroll for ever: the trailing row is what
-                        // asks, and leaving the token in place would have it ask again on every
-                        // frame.
-                        openedCollection = current.copy(continuation = null)
-                    }
-                }
-            collectionLoadingMore = false
-        }
-    }
-
+    /** Renames the playlist whose page is open, in the one store every page reads from. */
     fun renameOpenPlaylist(title: String) {
         val collection = openedCollection ?: return
-        playlistBusy = true
-        playlistError = null
-        scope.launch {
-            DesktopSearchClient.renamePlaylist(collection.playlistId, title)
-                .onSuccess {
-                    // Renamed in place as well as re-fetched: the page that ordered it is still on
-                    // screen showing the old name, and the library reload behind it takes a moment.
-                    openedCollection = openedCollection
-                        ?.takeIf { it.browseId == collection.browseId }
-                        ?.copy(title = title)
-                        ?: openedCollection
-                    editPlaylistShelf { items ->
-                        items.map { if (it.browseId == collection.browseId) it.copy(title = title) else it }
-                    }
-                    closePlaylistDialogs()
-                    libraryStale = true
-                }
-                .onFailure {
-                    playlistBusy = false
-                    playlistError = it.message ?: "Could not rename the playlist"
-                }
-        }
+        val id = collection.playlistId
+        playlists = playlists.map { if (it.id == id) it.copy(title = title) else it }
+        persistence.savePlaylists(playlists)
+        openedCollection = collection.copy(title = title)
+        closePlaylistDialogs()
     }
 
     fun deleteOpenPlaylist() {
         val collection = openedCollection ?: return
-        playlistBusy = true
-        playlistError = null
-        scope.launch {
-            DesktopSearchClient.deletePlaylist(collection.playlistId)
-                .onSuccess {
-                    closePlaylistDialogs()
-                    // Its page is the one open, and a deleted playlist has nothing left to show.
-                    if (openedCollection?.browseId == collection.browseId) openedCollection = null
-                    editPlaylistShelf { items -> items.filterNot { it.browseId == collection.browseId } }
-                    libraryStale = true
-                }
-                .onFailure {
-                    playlistBusy = false
-                    playlistError = it.message ?: "Could not delete the playlist"
-                }
-        }
+        val id = collection.playlistId
+        playlists = playlists.filterNot { it.id == id }
+        persistence.savePlaylists(playlists)
+        closePlaylistDialogs()
+        // Its page is the one open, and a deleted playlist has nothing left to show.
+        if (openedCollection?.browseId == collection.browseId) openedCollection = null
     }
 
     /** Takes one row back out of the playlist it is being read in. */
     fun removeFromOpenPlaylist(song: Song) {
         val collection = openedCollection ?: return
-        val setVideoId = song.setVideoId ?: return
-        scope.launch {
-            DesktopSearchClient.removeFromPlaylist(
-                collection.playlistId,
-                listOf(setVideoId to song.videoId),
-            ).onSuccess {
-                val current = openedCollection
-                if (current != null && current.browseId == collection.browseId) {
-                    openedCollection = current.copy(
-                        songs = current.songs.filterNot { it.setVideoId == setVideoId },
-                    )
-                }
-            }.onFailure {
-                DesktopTrackLog.log("playlist: could not remove ${song.videoId}: ${it.message}")
-            }
-        }
-    }
-
-    /**
-     * The account's library, re-read whenever the session behind it changes — signing in, switching
-     * channel, signing out.
-     */
-    LaunchedEffect(activeAccountId, activeProfileId, sessionRevision) {
-        youtubeSignedIn = DesktopYouTubeAuth.isSignedIn
-        if (!DesktopYouTubeAuth.isSignedIn) {
-            libraryState = UiState.Success(LibraryPage(emptyList(), emptyList(), emptyList()))
-            return@LaunchedEffect
-        }
-        libraryState = UiState.Loading
-        DesktopSearchClient.library().fold(
-            onSuccess = { page ->
-                // The continuation is a job to run, not page state — it is consumed below.
-                libraryState = UiState.Success(page.copy(likedContinuation = null))
-                DesktopTrackLog.log(
-                    "library: ${page.likedSongs.size} liked, ${page.librarySongs.size} added, " +
-                        "shelves ${page.shelves.joinToString { "${it.title}=${it.items.size}" }}",
-                )
-                val fromAccount = page.likedSongs.mapTo(HashSet(), Song::videoId)
-                if (!likedIds.containsAll(fromAccount)) {
-                    likedIds = likedIds + fromAccount
-                    // Off the drawing thread: an account with a long Liked Music writes a few tens
-                    // of kilobytes through the preference store, and that is a disk flush.
-                    withContext(Dispatchers.IO) { persistence.saveLikedIds(likedIds) }
-                }
-                // Liked Music is published to the tab a page budget deep; the rest is followed here
-                // for its ids alone, so a liked track past the budget still reads as liked.
-                // Tied to the account it was fetched for: the liked set is one shared map, and a
-                // sync still running after a switch would seed it with a stranger's likes.
-                val syncingFor = activeAccountId
-                page.likedContinuation?.let { token ->
-                    likedSyncJob?.cancel()
-                    likedSyncJob = scope.launch {
-                        val extra = HashSet<String>()
-                        DesktopSearchClient.syncLikedIds(token, onIds = { ids -> extra += ids })
-                        if (syncingFor != DesktopAccounts.activeAccountId()) return@launch
-                        if (!likedIds.containsAll(extra)) {
-                            likedIds = likedIds + extra
-                            withContext(Dispatchers.IO) { persistence.saveLikedIds(likedIds) }
-                            DesktopTrackLog.log("library: liked sync added ${extra.size} ids past the first pages")
-                        }
-                    }
-                }
-            },
-            onFailure = { libraryState = UiState.Error(it.message ?: "Could not load your library") },
+        val id = collection.playlistId
+        val remaining = collection.songs.filterNot { it.videoId == song.videoId }
+        playlists = playlists.map { if (it.id == id) it.copy(songs = remaining) else it }
+        persistence.savePlaylists(playlists)
+        openedCollection = collection.copy(
+            songs = remaining,
+            subtitle = "Playlist • ${remaining.size} songs",
         )
-        // A session refused mid-flight is dropped by the request itself, so the answer to "are we
-        // signed in" is only settled once the call is over.
-        youtubeSignedIn = DesktopYouTubeAuth.isSignedIn
     }
 
     fun here() = DesktopNavEntry(
         destination = destination,
-        artist = openedArtist,
         collection = openedCollection,
-        mood = selectedMoodGenre,
         showAll = libraryShowAll,
         replay = overlays.replay,
         settings = overlays.settingsPage,
@@ -2359,8 +1460,8 @@ fun BitChordDesktopApp() {
                     if (navHistory.size > NAV_HISTORY_LIMIT) navHistory.removeAt(0)
                 }
             }
-            // The newest copy of the same place, so an album that has paged in more tracks comes
-            // back with them.
+            // The newest copy of the same place, so a playlist that gained a track comes back
+            // with it.
             last = now
         }
     }
@@ -2373,40 +1474,8 @@ fun BitChordDesktopApp() {
         destination = entry.destination
         overlays.replay = entry.replay
         overlays.settingsPage = entry.settings
-        collectionError = null
         openedCollection = entry.collection
         libraryShowAll = entry.showAll
-        if (entry.mood != selectedMoodGenre) {
-            selectedMoodGenre = entry.mood
-            moodGenreShelves = UiState.Loading
-        }
-        if (entry.artist != openedArtist) {
-            openedArtist = entry.artist
-            if (entry.artist != null) {
-                artistState = UiState.Loading
-                artistReloads++
-            }
-        }
-    }
-
-    fun openMoodGenre(item: MoodGenre) {
-        selectedMoodGenre = item
-        moodGenreShelves = UiState.Loading
-    }
-
-    LaunchedEffect(selectedMoodGenre, moodGenreReloads) {
-        val item = selectedMoodGenre ?: return@LaunchedEffect
-        if (moodGenreShelves !is UiState.Loading) return@LaunchedEffect
-        DesktopSearchClient.moodGenreShelves(item.browseId, item.params).fold(
-            onSuccess = { shelves ->
-                moodGenreShelves = if (shelves.isEmpty()) {
-                    UiState.Error("Nothing to explore here yet")
-                } else {
-                    UiState.Success(shelves)
-                }
-            },
-            onFailure = { moodGenreShelves = UiState.Error(it.message ?: "Could not load this category") },
-        )
     }
 
     // The menu the shared player's "…" opens.
@@ -2414,33 +1483,26 @@ fun BitChordDesktopApp() {
 
     /** The song menu's verbs for [song], as the player sheet offers them. */
     fun playerSongActions(song: Song) = DesktopSongActions(
-        signedIn = youtubeSignedIn,
-        disliked = song.videoId in dislikedIds,
-        downloaded = downloads.any { it.videoId == song.videoId },
-        downloadInProgress = song.videoId in downloadInProgress,
+        liked = song.videoId in likedIds,
         sleepTimerMinutes = sleepTimerMinutes,
         sleepAfterTrack = sleepAfterTrack,
-        onToggleDislike = ::toggleDislike,
         onAddToPlaylist = { playlistTarget = it },
-        onDownload = ::downloadSong,
-        onRemoveDownload = ::removeDownload,
         onStartRadio = ::startRadio,
         onPlayNext = ::playNext,
         onAddToQueue = ::addToQueue,
         // Both leave the player, the way opening a page from Android's sheet collapses it.
-        onOpenAlbum = { id ->
+        onOpenAlbum = { name ->
             overlays.nowPlaying = false
-            openAlbum(id)
+            openAlbum(name)
         },
-        onOpenArtist = { id ->
+        onOpenArtist = { name ->
             overlays.nowPlaying = false
-            openArtist(id, song.artist)
+            openArtist(name)
         },
         onSleepTimer = { minutes ->
             if (minutes == null) DesktopSleepTimer.cancel() else DesktopSleepTimer.start(minutes)
         },
         onSleepAfterTrack = { DesktopSleepTimer.startAfterTrack() },
-        onShare = ::shareSong,
     )
 
     // What the shared player reads as settings, kept in step with the window's own.
@@ -2463,35 +1525,25 @@ fun BitChordDesktopApp() {
         }
     }
 
-    // The engine's measured stream, as the player's quality badge and stats line read it.
-    LaunchedEffect(playback.streamFormat, playback.streamSourceId) {
-        NerdStats.current.value = playback.streamFormat?.let { format ->
-            val codec = format.codec?.substringAfterLast('/')?.substringBefore(';')?.trim()?.lowercase()
+    // What the decoder is actually being fed, as the player's stats line reads it. Local files only:
+    // the codec, rate, depth and bitrate come off the file being played.
+    LaunchedEffect(playback.format, playback.song?.videoId) {
+        NerdStats.current.value = playback.format?.let { format ->
             NerdStats.Snapshot(
-                mimeType = codec?.let { "audio/$it" },
+                mimeType = format.mimeType,
                 bitrateKbps = format.kbps,
                 sampleRateHz = format.sampleRateHz,
                 channels = format.channels,
                 bitDepth = format.bitDepth,
-                sourceName = playback.streamSourceId,
             )
         }
     }
-    LaunchedEffect(playback.searchingBetter, selectedSong?.videoId) {
-        NerdStats.racingLossless.value = selectedSong?.videoId
-            ?.takeIf { playback.searchingBetter }
-            ?.let(::setOf)
-            .orEmpty()
-    }
-    LaunchedEffect(playback.streamFormat, playback.isPlaying) {
+    LaunchedEffect(playback.format, playback.isPlaying) {
         DesktopPlayerHost.pipeline.value = playbackEngine.pipeline()
     }
     DesktopPlayerHost.pipelineDialog = { onDismiss ->
         DesktopAudioPipelineDialog(
-            format = playback.streamFormat,
-            sourceName = playback.streamSourceId?.let { id ->
-                sourceConfigs.firstOrNull { it.id == id }?.displayName
-            },
+            format = playback.format,
             pipeline = playbackEngine.pipeline(),
             onDismiss = onDismiss,
         )
@@ -2607,9 +1659,8 @@ fun BitChordDesktopApp() {
                         // One layer at a time, innermost first: the player's own side panel, then
                         // the player.
                         event.key == Key.Escape -> when {
-                            // The player's own layers first — the lyrics, the queue, a
-                            // drawer — in the order Android's back reaches them.
-                            overlays.nowPlaying && PlayerBack.dispatch() -> true
+                            // The player's own drawers close themselves on Escape; what is left
+                            // here is the player itself.
                             overlays.nowPlaying -> {
                                 overlays.nowPlaying = false
                                 true
@@ -2662,9 +1713,6 @@ fun BitChordDesktopApp() {
                         onOpenLyrics = { overlays.toggleSidePanel(DesktopSidePanel.LYRICS) },
                         onOpenQueue = { overlays.toggleSidePanel(DesktopSidePanel.QUEUE) },
                         sidePanel = overlays.sidePanel,
-                        accountAvatar = activeAccount?.avatar
-                            ?: activeAccount?.profiles?.firstOrNull()?.avatar,
-                        onOpenAccounts = { DesktopTrackLog.log("accounts: opening the switcher"); overlays.accounts = true },
                         canGoBack = navHistory.isNotEmpty(),
                         onBack = ::goBack,
                     )
@@ -2673,7 +1721,7 @@ fun BitChordDesktopApp() {
                     DesktopSidebar(
                         destination = destination,
                         settingsOpen = overlays.settingsPage != null,
-                        accountPlaylists = sidebarAccountPlaylists,
+                        replayOpen = overlays.replay,
                         localPlaylists = playlists,
                         openedCollectionId = openedCollection?.browseId,
                         query = query,
@@ -2685,8 +1733,13 @@ fun BitChordDesktopApp() {
                         },
                         onSearch = ::search,
                         onDestinationSelected = ::selectDestination,
-                        onOpenAccountPlaylist = { openShelfItem(it, PLAYLISTS_SHELF) },
                         onOpenLocalPlaylist = ::openPlaylist,
+                        onOpenReplay = {
+                            openedCollection = null
+                            libraryShowAll = null
+                            overlays.settingsPage = null
+                            overlays.replay = true
+                        },
                         onOpenSettings = ::openSettings,
                         focusSearch = searchFocusRequested,
                         onSearchFocused = { searchFocusRequested = false },
@@ -2746,28 +1799,13 @@ fun BitChordDesktopApp() {
                         },
                     ) { windowWidth, windowHeight ->
                         val current = selectedSong ?: return@DesktopPlayerSheet
-                        val playerSong = trackLinks?.takeIf { it.videoId == current.videoId }
-                            ?.let { extra ->
-                                current.copy(
-                                    artistId = current.artistId ?: extra.artistId,
-                                    // Same as on the phone: the watch-queue lookup
-                                    // is what carries a channel per credited
-                                    // artist, so it is what makes every name in
-                                    // the credit line openable.
-                                    artists = current.artists.ifEmpty { extra.artists },
-                                    albumId = current.albumId ?: extra.albumId,
-                                    albumName = current.albumName ?: extra.albumName,
-                                )
-                            }
-                            ?: current
+                        val playerSong = current
                         NowPlayingScreen(
                             song = playerSong,
                             isPlaying = playback.isPlaying,
                             isLoading = playback.isLoading,
                             position = playerPosition,
                             durationMs = playback.durationMs,
-                            audioVersionSwitching = false,
-                            qualityUpgraded = false,
                             queue = liveQueue.songs,
                             queueIndex = liveQueue.index,
                             hasPrevious = liveQueue.hasPrevious,
@@ -2778,13 +1816,12 @@ fun BitChordDesktopApp() {
                                 DesktopRepeatMode.ALL -> RepeatModes.ALL
                             },
                             shuffleEnabled = shuffle,
-                            autoplayEnabled = autoplay,
-                            signedIn = youtubeSignedIn,
-                            accountName = activeAccount?.name?.takeIf(String::isNotBlank),
-                            likeStatus = when (current.videoId) {
-                                in likedIds -> LikeStatus.LIKE
-                                in dislikedIds -> LikeStatus.DISLIKE
-                                else -> LikeStatus.INDIFFERENT
+                            // There is no account behind this player any more: the heart is the
+                            // whole of its taste, and it lives on this computer.
+                            likeStatus = if (current.videoId in likedIds) {
+                                LikeStatus.LIKE
+                            } else {
+                                LikeStatus.INDIFFERENT
                             },
                             onToggleLike = { toggleLike(current) },
                             onPlayPause = ::togglePlayPauseFromUser,
@@ -2805,38 +1842,31 @@ fun BitChordDesktopApp() {
                                 }
                                 persistence.saveString("repeat_mode", repeatMode.name)
                             },
-                            onToggleAutoplay = { setAutoplay(!autoplay) },
                             onJumpTo = ::playQueueIndex,
                             onRemoveFromQueue = ::removeFromQueue,
                             onMoveInQueue = ::moveInQueue,
                             onClearQueue = ::clearQueue,
                             onOpenMenu = { playerMenuOpen = true },
-                            onOpenAlbum = { id ->
+                            // The player names an album by id; this app groups its files by the
+                            // album's name, which is the only thing a scan of the folder knows.
+                            onOpenAlbum = { _ ->
                                 overlays.nowPlaying = false
-                                openAlbum(id)
+                                playerSong.albumName?.let(::openAlbum)
                             },
-                            // The lead credit carries the track's own channel
-                            // id and opens straight away; anyone else on the
-                            // line has no id, so the page is found from the
-                            // name — and only when the answer is that name
-                            // exactly, so a fragment like "2115" opens nothing
-                            // rather than White 2115.
-                            onOpenArtist = { id, name ->
+                            // Every credit is a name on this computer's own files, so its page is
+                            // found from that name — an id would only ever be somebody else's.
+                            onOpenArtist = { _, name ->
                                 overlays.nowPlaying = false
-                                if (id != null) {
-                                    openArtist(id, name)
-                                } else {
-                                    scope.launch {
-                                        YtMusicRepository.findArtistPageId(name).getOrNull()
-                                            ?.let { found -> openArtist(found, name) }
-                                    }
-                                }
+                                openArtist(name)
                             },
+                            // The caption above the player goes back to the page it names. The
+                            // two folders are the only pages a track can be started from.
                             onOpenPlaybackSource = {
-                                val id = playerSong.playbackSourceId
                                 overlays.nowPlaying = false
-                                if (playerSong.playbackSourceType == PlaybackSourceType.BROWSE && id != null) {
-                                    openAlbum(id)
+                                when (playerSong.playbackSourceType) {
+                                    PlaybackSourceType.HOME -> selectDestination(DesktopDestination.LISTEN_NOW)
+                                    PlaybackSourceType.SEARCH -> selectDestination(DesktopDestination.SEARCH)
+                                    else -> Unit
                                 }
                             },
                             lyrics = sharedLyrics,
@@ -2861,22 +1891,8 @@ fun BitChordDesktopApp() {
                             ) {
                                 DesktopSongMenuFor(
                                     song = playerSong,
-                                    liked = current.videoId in likedIds,
                                     actions = playerSongActions(current),
                                     onToggleLike = { toggleLike(current) },
-                                    onRevertToOriginal = {
-                                        DesktopOriginalVersion.pin(current.videoId)
-                                        playbackEngine.reloadCurrent()
-                                    }.takeIf {
-                                        playback.streamSourceId != null &&
-                                            playback.streamSourceId != "youtube" &&
-                                            DesktopMusicSources.hasYouTubeOriginal(current) &&
-                                            !DesktopOriginalVersion.isPinned(current.videoId)
-                                    },
-                                    onUpgradeQuality = {
-                                        DesktopOriginalVersion.clear(current.videoId)
-                                        playbackEngine.reloadCurrent(forceSourceRefresh = true)
-                                    }.takeIf { DesktopOriginalVersion.isPinned(current.videoId) },
                                     onDismiss = { playerMenuOpen = false },
                                 )
                             }
@@ -2902,96 +1918,12 @@ fun BitChordDesktopApp() {
                             )
                         }
                     }
-                    if (overlays.accounts) {
-                        DesktopAccountSelector(
-                            accounts = accounts,
-                            activeAccountId = activeAccountId,
-                            activeProfileId = activeProfileId,
-                            busy = signInBusy != null,
-                            onSelect = { account, profile ->
-                                DesktopAccounts.select(account.accountId, profile.profileId)
-                                activeAccountId = account.accountId
-                                activeProfileId = profile.profileId
-                            },
-                            onAddAccount = { overlays.accounts = false; overlays.signIn = true },
-                            onRemoveAccount = { account ->
-                                scope.launch {
-                                    accounts = withContext(Dispatchers.IO) {
-                                        DesktopAccounts.remove(account.accountId)
-                                        DesktopAccounts.accounts()
-                                    }
-                                    activeAccountId = DesktopAccounts.activeAccountId()
-                                    activeProfileId = DesktopAccounts.activeProfileId()
-                                }
-                            },
-                            onOpenSettings = { overlays.accounts = false; openSettings() },
-                            onDismiss = { overlays.accounts = false },
-                        )
-                    }
-
-                    if (overlays.signIn) {
-                        DesktopSignInDialog(
-                            busy = signInBusy,
-                            error = signInError,
-                            webSignIn = DesktopWebSignIn.available,
-                            onWebSignIn = {
-                                webSignInJob?.cancel()
-                                webSignInJob = scope.launch {
-                                    signInError = null
-                                    signInBusy = WEB_SIGN_IN
-                                    try {
-                                        val cookie = DesktopWebSignIn.captureYouTube()
-                                        signIn(cookie, WEB_SIGN_IN)
-                                    } catch (cancelled: kotlinx.coroutines.CancellationException) {
-                                        throw cancelled
-                                    } catch (failure: Exception) {
-                                        DesktopTrackLog.log("sign-in: YouTube Music failed: ${failure.message}")
-                                        signInError = failure.message ?: "Could not complete the sign-in."
-                                    } finally {
-                                        signInBusy = null
-                                        webSignInJob = null
-                                    }
-                                }
-                            },
-                            onImport = { profile ->
-                                scope.launch {
-                                    when (val found = withContext(Dispatchers.IO) { DesktopBrowserCookies.read(profile) }) {
-                                        is DesktopBrowserCookies.Result.Session ->
-                            signIn(found.cookie, profile.label, profile.database.toString())
-                                        DesktopBrowserCookies.Result.SignedOut ->
-                                            signInError = "${profile.label} is not signed in."
-                                        is DesktopBrowserCookies.Result.Unavailable ->
-                                            signInError = "${profile.label}: ${found.reason}."
-                                    }
-                                }
-                            },
-                            onPaste = { pasted ->
-                                scope.launch {
-                                    if (!DesktopBrowserCookies.hasSigningSecret(pasted)) {
-                                        signInError = "That cookie has no signing secret in it — copy the whole header."
-                                    } else {
-                                        signIn(pasted, "the cookie you pasted")
-                                    }
-                                }
-                            },
-                            onDismiss = {
-                                webSignInJob?.cancel()
-                                overlays.signIn = false
-                                signInError = null
-                            },
-                        )
-                    }
                     if (overlays.playlistDialog || playlistTarget != null) {
                         DesktopPlaylistDialog(
                             song = playlistTarget,
-                            accountPlaylists = accountPlaylists,
                             localPlaylists = playlists,
-                            signedIn = youtubeSignedIn,
-                            canUseAccount = playlistTarget
-                                ?.let { DesktopSearchClient.isVideoId(it.videoId) } ?: true,
                             busy = playlistBusy,
                             error = playlistError,
-                            onPickAccount = ::addToAccountPlaylist,
                             onPickLocal = ::addToPlaylist,
                             onCreate = ::createPlaylist,
                             onDismiss = ::closePlaylistDialogs,
@@ -3015,18 +1947,12 @@ fun BitChordDesktopApp() {
                             onDismiss = ::closePlaylistDialogs,
                         )
                     }
-                    if (overlays.downloadManager) {
-                        DesktopDownloadManagerDialog(onDismiss = { overlays.downloadManager = false })
-                    }
                     if (overlays.audioOutput) {
                         DesktopAudioOutputDialog(onDismiss = { overlays.audioOutput = false })
                     }
                     if (overlays.pipeline) {
                         DesktopAudioPipelineDialog(
-                            format = playback.streamFormat,
-                            sourceName = playback.streamSourceId?.let { id ->
-                                sourceConfigs.firstOrNull { it.id == id }?.displayName
-                            },
+                            format = playback.format,
                             pipeline = playbackEngine.pipeline(),
                             onDismiss = { overlays.pipeline = false },
                         )
@@ -3044,11 +1970,8 @@ fun BitChordDesktopApp() {
                     menu = { song, onDismiss ->
                         DesktopSongMenuFor(
                             song = song,
-                            liked = song.videoId in likedIds,
                             actions = songActionsFor(song),
                             onToggleLike = { toggleLike(song) },
-                            onRevertToOriginal = null,
-                            onUpgradeQuality = null,
                             onDismiss = onDismiss,
                         )
                     },
@@ -3165,9 +2088,7 @@ fun BitChordDesktopApp() {
                                     dolbyAtmos = dolbyAtmos,
                                     onDolbyAtmosChange = {
                                         dolbyAtmos = it
-                                        DesktopAddonSettings.dolbyAtmosEnabled = it
                                         persistence.saveBoolean("dolby_atmos", it)
-                                        DesktopAddonSource.clearCompletedTrackCalls()
                                     },
                                     skipSilence = skipSilence,
                                     onSkipSilenceChange = {
@@ -3190,78 +2111,10 @@ fun BitChordDesktopApp() {
                                         trayIconEnabled = it
                                         persistence.saveBoolean("tray_icon", it)
                                     },
-                                    downloadQuality = downloadQuality,
-                                    onDownloadQualityChange = {
-                                        downloadQuality = it
-                                        persistence.saveString("download_quality", it)
-                                    },
-                                    audioQuality = audioQuality,
-                                    onAudioQualityChange = {
-                                        audioQuality = it
-                                        persistence.saveAudioQuality(it)
-                                    },
                                     sleepTimerMinutes = sleepTimerMinutes,
                                     sleepAfterTrack = sleepAfterTrack,
                                     sleepRemainingMs = sleepRemainingMs,
                                     onSleepTimerCycle = ::cycleSleepTimer,
-                                    sourceConfigs = sourceConfigs,
-                                    sourceStatus = sourceStatus,
-                                    onSourceEnabledChange = { config, enabled ->
-                                        val next = sourceConfigs.map {
-                                            if (it.id == config.id && it.kind != DesktopSourceKind.YOUTUBE) {
-                                                it.copy(enabled = enabled)
-                                            } else {
-                                                it
-                                            }
-                                        }
-                                        persistence.saveSourceConfigs(next)
-                                        sourceConfigs = persistence.sourceConfigs()
-                                        DesktopModuleSource.reload()
-                                    },
-                                    onSaveSource = { saved ->
-                                        // Replaced by id, so any number of addons can be configured.
-                                        val without = sourceConfigs.filterNot {
-                                            it.id == saved.id ||
-                                                (saved.kind == DesktopSourceKind.CUSTOM_MODULE &&
-                                                    it.kind == DesktopSourceKind.CUSTOM_MODULE)
-                                        }
-                                        persistence.saveSourceConfigs((without + saved).inSourceOrder())
-                                        sourceConfigs = persistence.sourceConfigs()
-                                        // Whatever was held for this entry describes a server that may no
-                                        // longer be the one selected.
-                                        DesktopAddonSource.forget(saved.id)
-                                        DesktopModuleSource.reload()
-                                    },
-                                    onRemoveSource = { config ->
-                                        if (config.isUserAdded) {
-                                            persistence.saveSourceConfigs(sourceConfigs.filterNot { it.id == config.id })
-                                            sourceConfigs = persistence.sourceConfigs()
-                                            DesktopAddonSource.forget(config.id)
-                                            DesktopModuleSource.reload()
-                                        }
-                                    },
-                                    onMoveSource = { config, delta ->
-                                        val next = moveUserSource(sourceConfigs, config.id, delta)
-                                        persistence.saveSourceConfigs(next)
-                                        sourceConfigs = persistence.sourceConfigs()
-                                    },
-                                    onTestSource = { candidate ->
-                                        sourceStatus = sourceStatus + (candidate.id to "Checking source…")
-                                        scope.launch {
-                                            val health = if (candidate.kind == DesktopSourceKind.ADDON) {
-                                                DesktopAddonSource.health(candidate)
-                                            } else {
-                                                DesktopModuleSource.health(candidate)
-                                            }
-                                            health.fold(
-                                                onSuccess = { sourceStatus = sourceStatus + (candidate.id to it) },
-                                                onFailure = {
-                                                    sourceStatus = sourceStatus +
-                                                        (candidate.id to (it.message ?: "Source unavailable"))
-                                                },
-                                            )
-                                        }
-                                    },
                                     onOpenLicenses = { overlays.settingsPage = DesktopSettingsPage.LICENSES },
                                 )
                                 DesktopSettingsPage.EQUALIZER -> DesktopEqualizerDialog(onDismiss = ::goBack)
@@ -3306,45 +2159,9 @@ fun BitChordDesktopApp() {
                             onOpenArtist = ::openArtistByName,
                             contentPadding = contentPadding,
                         )
-                        openedArtist != null -> DesktopArtistPage(
-                            state = artistState,
-                            fallbackName = openedArtist!!.name,
-                            onRetry = {
-                                artistState = UiState.Loading
-                                artistReloads++
-                            },
-                            onPlaySongs = { songs, index ->
-                                playSongs(songs, index, openedArtist?.let { artistSource(it) })
-                            },
-                            onShuffle = { songs ->
-                                playSongs(songs, 0, openedArtist?.let { artistSource(it) })
-                            },
-                            onOpenMenu = { song -> openMenu(song) },
-                            onShelfItemClick = ::openShelfItem,
-                            // A channel subscription is the account's, so a guest is never shown
-                            // the button.
-                            onToggleSubscription = if (youtubeSignedIn) ::toggleSubscription else null,
-                            contentPadding = contentPadding,
-                        )
-                        openedCollection?.loading == true -> DesktopPageScaffold(contentPadding) {
-                            Box(Modifier.fillMaxSize()) {
-                                val error = collectionError
-                                if (error != null) {
-                                    DesktopErrorPage(error) { collectionReloads++ }
-                                } else {
-                                    val title = openedCollection?.title.orEmpty()
-                                    DesktopLoadingPage(if (title.isBlank()) "Loading…" else "Loading $title…")
-                                }
-                            }
-                        }
                         openedCollection != null -> DesktopCollectionPage(
                             collection = openedCollection!!,
-                            loadingMore = collectionLoadingMore,
-                            onLoadMore = ::loadMoreCollectionSongs,
                             onRename = { overlays.rename = true }.takeIf { openedCollection?.owned == true },
-                            onShare = openedCollection
-                                ?.takeIf { it.type == BrowseType.ALBUM || it.type == BrowseType.PLAYLIST }
-                                ?.let { collection -> { shareCollection(collection) } },
                             onDelete = { overlays.delete = true }.takeIf { openedCollection?.owned == true },
                             onRemoveFromPlaylist = ::removeFromOpenPlaylist
                                 .takeIf { openedCollection?.owned == true },
@@ -3355,147 +2172,80 @@ fun BitChordDesktopApp() {
                             onShuffle = { songs ->
                                 playSongs(songs.shuffled(), 0, openedCollection?.let { collectionSource(it) })
                             },
-                            onDownloadAll = ::downloadAll,
-                            onToggleLike = { song ->
-                                toggleLike(song)
-                            },
+                            onToggleLike = { song -> toggleLike(song) },
                             onAddToPlaylist = { playlistTarget = it },
-                            onDownload = ::downloadSong,
-                            downloadedIds = downloads.map(Song::videoId).toSet(),
-                            downloadInProgress = downloadInProgress,
+                            menu = { song -> songMenu(song) },
                             contentPadding = contentPadding,
                         )
                         destination == DesktopDestination.LISTEN_NOW -> HomeScreen(
                             state = homeState,
                             listState = homeListState,
                             onItemClick = { item, shelfTitle -> openShelfItem(item, shelfTitle) },
-                            onRetry = ::loadHome,
+                            onRetry = ::refreshHome,
                             refreshing = false,
-                            onRefresh = ::loadHome,
+                            onRefresh = ::refreshHome,
                             pullState = rememberPullToRefreshState(),
                             contentPadding = sharedPagePadding,
                             title = null,
-                            signedIn = youtubeSignedIn,
-                            onSignIn = { overlays.accounts = true },
-                            onItemLongPress = { item -> if (item.videoId != null) openMenu(item.toSong()) },
-                            onLoadMore = ::loadMoreHome,
-                            loadingMore = homeLoadingMore,
-                            recentlyPlayedLoading = homeRecentsLoading,
+                            onItemLongPress = { item -> openShelfItemMenu(item) },
+                            onLoadMore = null,
+                            loadingMore = false,
+                            recentlyPlayedLoading = false,
                             leadHero = false,
                         )
-                        destination == DesktopDestination.EXPLORE && selectedMoodGenre != null -> Column(Modifier.fillMaxSize()) {
-                            MoodGenrePlaylistsScreen(
-                                title = selectedMoodGenre!!.title,
-                                state = moodGenreShelves,
-                                listState = moodGenreListState,
-                                onItemClick = { item -> openShelfItem(item, selectedMoodGenre?.title) },
-                                onRetry = {
-                                    moodGenreShelves = UiState.Loading
-                                    moodGenreReloads++
-                                },
-                                contentPadding = PaddingValues(bottom = sharedPagePadding.calculateBottomPadding()),
-                                modifier = Modifier.weight(1f),
-                            )
-                        }
-                        destination == DesktopDestination.EXPLORE -> ExploreScreen(
-                            state = exploreState,
-                            listState = exploreListState,
-                            onCategoryClick = ::openMoodGenre,
-                            onRetry = { exploreReloads++ },
-                            refreshing = false,
-                            onRefresh = { exploreReloads++ },
-                            pullState = rememberPullToRefreshState(),
-                            contentPadding = sharedPagePadding,
-                            showTitle = false,
+                        destination == DesktopDestination.PLAYLISTS -> DesktopPlaylistsPage(
+                            playlists = playlists,
+                            onOpen = ::openPlaylist,
+                            onNewPlaylist = { overlays.playlistDialog = true },
+                            contentPadding = contentPadding,
                         )
                         destination == DesktopDestination.SEARCH -> SearchScreen(
                             query = query,
                             onQueryChange = ::editQuery,
-                            filter = searchFilter,
                             // The playing row's indicator, as the phone passes it: the engine's
                             // live state, not the selection a track change publishes behind it.
                             currentSong = playback.song,
                             isPlaying = playback.isPlaying,
-                            onFilterChange = {
-                                searchFilter = it
-                                if (query.isNotBlank()) search()
-                            },
-                            results = when {
-                                searchLoading -> UiState.Loading
-                                searchError != null -> UiState.Error(searchError!!)
-                                searchCommitted -> UiState.Success(searchRows)
-                                else -> null
-                            },
-                            loadingMore = false,
-                            onLoadMore = {},
                             listState = searchListState,
                             scrollResetTrigger = searchScrollReset,
                             focusRequested = searchFocusRequested,
                             onFocusHandled = { searchFocusRequested = false },
-                            onSongClick = { songs, index ->
-                                songs.getOrNull(index)?.let { song ->
-                                    recordSongSearch(song)
-                                    playSong(song, source = DesktopQueueSource(DesktopStrings["search", "Search"], PlaybackSourceType.SEARCH))
-                                }
-                            },
                             onSongLongPress = ::openMenu,
                             onSongSwipe = { song ->
                                 if (DesktopAppUiHost.swipeToPlayNext.value) playNext(song) else addToQueue(song)
                             },
-                            onTopResultPlay = { song ->
-                                recordSongSearch(song)
-                                playSong(song, source = DesktopQueueSource(DesktopStrings["search", "Search"], PlaybackSourceType.SEARCH))
-                            },
-                            onTopResultPlaylist = { song ->
-                                recordSongSearch(song)
-                                playlistTarget = song
-                            },
-                            onBrowseClick = { item ->
-                                recordBrowseSearch(item)
-                                openBrowseItem(item)
-                            },
                             history = searchHistory,
-                            // The typed text leads the list, put there by the keystroke rather than
-                            // taken from the response — the page drops it, as the phone's does.
-                            suggestions = if (searchTyping && query.isNotBlank()) {
-                                listOf(query) +
-                                    searchSuggestions.filterNot { it.equals(query, ignoreCase = true) }
-                            } else {
-                                emptyList()
-                            },
-                            typeaheadResults = if (searchTyping && query.isNotBlank()) searchTypeahead else emptyList(),
-                            onSubmit = ::search,
-                            onSuggestionClick = ::runSearch,
-                            onHistoryClick = { entity ->
-                                // Going back to a recent does not record it again, as on the phone.
-                                when (entity.entityType) {
-                                    EntityType.TRACK -> playSong(
-                                        Song(
-                                            videoId = entity.id,
-                                            title = entity.title,
-                                            artist = entity.subtitle,
-                                            thumbnailUrl = entity.artworkUrl,
-                                        ),
-                                        source = DesktopQueueSource(entity.title, PlaybackSourceType.SEARCH),
-                                    )
-                                    EntityType.ARTIST -> openArtist(entity.id, entity.title)
-                                    EntityType.ALBUM, EntityType.PLAYLIST -> openBrowseItem(
-                                        BrowseItem(
-                                            browseId = entity.id,
-                                            title = entity.title,
-                                            subtitle = entity.subtitle,
-                                            thumbnailUrl = entity.artworkUrl,
-                                            type = if (entity.entityType == EntityType.ALBUM) BrowseType.ALBUM else BrowseType.PLAYLIST,
-                                        ),
-                                    )
-                                }
-                            },
+                            // Tapping a remembered search asks it again: the record is local, and
+                            // the only thing it can name now is a name on this machine.
+                            onHistoryClick = { entity -> runSearch(entity.title) },
                             onHistoryRemove = DesktopSearchHistory::remove,
                             onHistoryClear = DesktopSearchHistory::clear,
-                            onTypeaheadLongPress = ::openMenu,
                             contentPadding = sharedPagePadding,
                             topPadding = 0.dp,
                             showField = false,
+                            // The matches are the local library, narrowed as the field changes.
+                            libraryResults = remember(query, localSongs) {
+                                val term = query.trim()
+                                if (term.isEmpty()) {
+                                    null
+                                } else {
+                                    UiState.Success(
+                                        localSongs.filter { song ->
+                                            song.title.contains(term, true) ||
+                                                song.artist.contains(term, true) ||
+                                                song.albumName?.contains(term, true) == true
+                                        },
+                                    )
+                                }
+                            },
+                            onLibrarySongClick = { songs, index ->
+                                songs.getOrNull(index)?.let(::recordSongSearch)
+                                playSongs(
+                                    songs,
+                                    index,
+                                    DesktopQueueSource(DesktopStrings["search", "Search"], PlaybackSourceType.SEARCH),
+                                )
+                            },
                         )
                         destination == DesktopDestination.LIBRARY && libraryShowAll != null -> Column(Modifier.fillMaxSize()) {
                             // The phone keeps the grid's sort beside it, in the bar above; here it sits
@@ -3504,23 +2254,18 @@ fun BitChordDesktopApp() {
                                 Modifier.fillMaxWidth().padding(top = 8.dp, end = 12.dp),
                                 horizontalArrangement = Arrangement.End,
                             ) { DesktopLibrarySortMenu() }
-                            LibraryGridPage(
+                            DesktopLibraryGridPage(
                                 shelf = libraryShowAll!!,
-                                gridState = libraryGridState,
                                 onItemClick = ::openLibraryItem,
-                                onItemLongPress = { item -> if (item.videoId != null) openMenu(item.toSong()) },
                                 contentPadding = PaddingValues(bottom = sharedPagePadding.calculateBottomPadding()),
                                 modifier = Modifier.weight(1f),
-                                onNewPlaylist = { overlays.playlistDialog = true }
-                                    .takeIf { libraryShowAll?.title == PLAYLISTS_SHELF },
                             )
                         }
                         destination == DesktopDestination.LIBRARY -> LibraryScreen(
-                            signedIn = youtubeSignedIn,
-                            state = libraryState,
+                            state = UiState.Success(libraryPage),
                             listState = libraryListState,
                             onShelfItemClick = ::openLibraryItem,
-                            onShelfItemLongPress = { item -> if (item.videoId != null) openMenu(item.toSong()) },
+                            onShelfItemLongPress = ::openShelfItemMenu,
                             onNewPlaylist = { overlays.playlistDialog = true },
                             onShowAll = { shelf -> libraryShowAll = shelf },
                             replay = {
@@ -3548,47 +2293,13 @@ fun BitChordDesktopApp() {
                                     }
                                 }
                             },
-                            onSignIn = { overlays.accounts = true },
-                            onRetry = ::reloadLibrary,
+                            onRetry = ::refreshHome,
                             refreshing = false,
-                            onRefresh = ::reloadLibrary,
+                            onRefresh = ::refreshHome,
                             pullState = rememberPullToRefreshState(),
                             contentPadding = sharedPagePadding,
-                            links = libraryLinks,
-                            deviceItems = libraryDeviceItems,
                             showTitle = false,
                         )
-                        destination == DesktopDestination.HISTORY -> DesktopHistoryPage(
-                            // The account's history when there is one, and what
-                            // this computer played when there is not.
-                            history = remoteHistory.ifEmpty { history },
-                            onSongClick = { playSong(it, source = DesktopQueueSource(DesktopStrings["history", "History"], PlaybackSourceType.HISTORY)) },
-                            onDownload = ::downloadSong,
-                            onAddToPlaylist = { playlistTarget = it },
-                            downloadedIds = downloads.map(Song::videoId).toSet(),
-                            downloadInProgress = downloadInProgress,
-                            contentPadding = contentPadding,
-                            menu = { song -> songMenu(song) },
-                        )
-                        destination == DesktopDestination.DOWNLOADS -> Box(Modifier.fillMaxSize()) {
-                            DesktopDownloadsPage(
-                                downloads = downloads,
-                                onSongClick = { playSong(it, source = DesktopQueueSource(DesktopStrings["downloads", "Downloads"], PlaybackSourceType.BROWSE)) },
-                                contentPadding = contentPadding,
-                                menu = { song -> songMenu(song) },
-                            )
-                            // Only while there is a queue to look at.
-                            if (downloadInProgress.isNotEmpty()) {
-                                DesktopActionButton(
-                                    "Queue · ${downloadInProgress.size}",
-                                    BitChordIcons.Download,
-                                    onClick = { overlays.downloadManager = true },
-                                    modifier = Modifier
-                                        .align(Alignment.BottomEnd)
-                                        .padding(end = 28.dp, bottom = 28.dp + contentPadding.calculateBottomPadding()),
-                                )
-                            }
-                        }
                         destination == DesktopDestination.LOCAL_MUSIC -> DesktopLocalMusicPage(
                             songs = localSongs,
                             onSongClick = { playSong(it, source = DesktopQueueSource(DesktopStrings["local_music", "Local Music"], PlaybackSourceType.BROWSE)) },
@@ -3629,8 +2340,6 @@ private fun DesktopTopBar(
     onOpenQueue: () -> Unit,
     /** Which of the two the column beside the page is showing, lit on its button. */
     sidePanel: DesktopSidePanel?,
-    accountAvatar: String?,
-    onOpenAccounts: () -> Unit,
     /** The app's one way back — every page's own arrow was folded into this. */
     canGoBack: Boolean,
     onBack: () -> Unit,
@@ -3878,7 +2587,6 @@ private fun DesktopTopBar(
                             modifier = Modifier.size(19.dp),
                         )
                     }
-                    DesktopAccountButton(avatar = accountAvatar, onClick = onOpenAccounts)
                 }
             }
             }
@@ -3917,15 +2625,15 @@ internal fun DesktopToolbarButton(
 private fun DesktopSidebar(
     destination: DesktopDestination,
     settingsOpen: Boolean,
-    accountPlaylists: List<ShelfItem>,
+    replayOpen: Boolean,
     localPlaylists: List<DesktopPlaylist>,
     openedCollectionId: String?,
     query: String,
     onQueryChange: (String) -> Unit,
     onSearch: () -> Unit,
     onDestinationSelected: (DesktopDestination) -> Unit,
-    onOpenAccountPlaylist: (ShelfItem) -> Unit,
     onOpenLocalPlaylist: (DesktopPlaylist) -> Unit,
+    onOpenReplay: () -> Unit,
     onOpenSettings: () -> Unit,
     /** Search was picked: the sidebar's box is the page's field, so it takes the focus. */
     focusSearch: Boolean,
@@ -3991,8 +2699,12 @@ private fun DesktopSidebar(
             DesktopSidebarItem(BitChordIcons.Home, DesktopStrings["home", "Home"], destination == DesktopDestination.LISTEN_NOW) {
                 onDestinationSelected(DesktopDestination.LISTEN_NOW)
             }
-            DesktopSidebarItem(BitChordIcons.Explore, "Explore", destination == DesktopDestination.EXPLORE) {
-                onDestinationSelected(DesktopDestination.EXPLORE)
+            DesktopSidebarItem(
+                Icons.AutoMirrored.Rounded.PlaylistPlay,
+                DesktopStrings["playlists", "Playlists"],
+                destination == DesktopDestination.PLAYLISTS,
+            ) {
+                onDestinationSelected(DesktopDestination.PLAYLISTS)
             }
             DesktopSidebarItem(BitChordIcons.Library, "Library", destination == DesktopDestination.LIBRARY) {
                 onDestinationSelected(DesktopDestination.LIBRARY)
@@ -4003,19 +2715,11 @@ private fun DesktopSidebar(
             Spacer(Modifier.height(6.dp))
             HorizontalDivider(color = desktopChromeDivider())
             Spacer(Modifier.height(12.dp))
-            DesktopSidebarItem(BitChordIcons.Clock, "History", destination == DesktopDestination.HISTORY) {
-                onDestinationSelected(DesktopDestination.HISTORY)
-            }
-            val queued by DesktopDownloadQueue.active.collectAsState()
-            DesktopSidebarItem(
-                BitChordIcons.Download,
-                if (queued.isEmpty()) "Downloads" else "Downloads · ${queued.size}",
-                destination == DesktopDestination.DOWNLOADS,
-            ) {
-                onDestinationSelected(DesktopDestination.DOWNLOADS)
-            }
             DesktopSidebarItem(BitChordIcons.Library, "Local Music", destination == DesktopDestination.LOCAL_MUSIC) {
                 onDestinationSelected(DesktopDestination.LOCAL_MUSIC)
+            }
+            DesktopSidebarItem(Icons.Rounded.GraphicEq, DesktopStrings["replay", "Replay"], replayOpen) {
+                onOpenReplay()
             }
             Spacer(Modifier.height(6.dp))
             HorizontalDivider(color = desktopChromeDivider())
@@ -4024,21 +2728,14 @@ private fun DesktopSidebar(
                 modifier = Modifier.fillMaxWidth().weight(1f),
                 contentPadding = PaddingValues(bottom = 8.dp),
             ) {
-                items(accountPlaylists, key = { "account:${it.browseId}" }) { playlist ->
-                    DesktopSidebarItem(
-                        Icons.AutoMirrored.Rounded.PlaylistPlay,
-                        playlist.title,
-                        openedCollectionId == playlist.browseId,
-                    ) { onOpenAccountPlaylist(playlist) }
-                }
                 items(localPlaylists, key = { "local:${it.id}" }) { playlist ->
                     DesktopSidebarItem(
                         Icons.AutoMirrored.Rounded.PlaylistPlay,
                         playlist.title,
-                        openedCollectionId == playlist.id,
+                        openedCollectionId == LOCAL_PLAYLIST_PREFIX + playlist.id,
                     ) { onOpenLocalPlaylist(playlist) }
                 }
-                if (accountPlaylists.isEmpty() && localPlaylists.isEmpty()) {
+                if (localPlaylists.isEmpty()) {
                     item {
                         Text(
                             "Your playlists will appear here",
@@ -4131,10 +2828,12 @@ private fun DesktopFloatingNavigation(
     onDestinationSelected: (DesktopDestination) -> Unit,
 ) {
     val tabs = listOf(
-        DesktopDestination.LISTEN_NOW to (BitChordIcons.Play to "Play"),
-        DesktopDestination.EXPLORE to (BitChordIcons.Explore to "Explore"),
-        DesktopDestination.LIBRARY to (BitChordIcons.Library to "Library"),
-        DesktopDestination.SEARCH to (BitChordIcons.Search to "Search"),
+        DesktopDestination.LISTEN_NOW to (BitChordIcons.Home to DesktopStrings["home", "Home"]),
+        DesktopDestination.PLAYLISTS to (
+            Icons.AutoMirrored.Rounded.PlaylistPlay to DesktopStrings["playlists", "Playlists"]
+            ),
+        DesktopDestination.LIBRARY to (BitChordIcons.Library to DesktopStrings["library", "Library"]),
+        DesktopDestination.SEARCH to (BitChordIcons.Search to DesktopStrings["search", "Search"]),
     )
     val selected = tabs.firstOrNull { it.first == destination }?.first ?: DesktopDestination.LIBRARY
     val shape = RoundedCornerShape(percent = 50)
@@ -4409,230 +3108,11 @@ internal const val KEY_DONT_REPEAT_SUGGESTIONS = "dont_repeat_suggestions"
 
 internal const val KEY_LIBRARY_SORT = "library_sort"
 
-private const val MESH_SOURCE_PX = 120
 
 
 
-/** Enough to scroll through, short of turning the shelf into the history page. */
-/** The Library's "On device" cards — the phone's ids for the two folders, so their cards draw alike. */
-private const val LOCAL_DOWNLOADS_ID = "local:downloads"
-private const val LOCAL_MUSIC_ID = "local:all"
-private const val LOCAL_PLAYLIST_PREFIX = "desktop-playlist:"
 
 
-
-/**
- * An artist: their picture, the numbers under it, their top songs, and the carousels of what they
- * have released.
- */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun DesktopArtistPage(
-    state: UiState<ArtistPage>,
-    fallbackName: String,
-    onRetry: () -> Unit,
-    onPlaySongs: (List<Song>, Int) -> Unit,
-    onShuffle: (List<Song>) -> Unit,
-    /** The ⋮ on a top song, or a right-click on it. */
-    onOpenMenu: (Song) -> Unit,
-    onShelfItemClick: (ShelfItem, String?) -> Unit,
-    /** Null for a guest: a channel subscription is the account's. */
-    onToggleSubscription: ((SubscriptionState) -> Unit)?,
-    contentPadding: PaddingValues,
-) {
-    DesktopPageScaffold(contentPadding) {
-        when (state) {
-            UiState.Loading -> Box(Modifier.fillMaxSize()) {
-                DesktopLoadingPage("Loading $fallbackName…")
-            }
-            is UiState.Error -> Box(Modifier.fillMaxSize()) {
-                DesktopErrorPage(state.message, onRetry)
-            }
-            is UiState.Success -> {
-                val artist = state.data
-                val name = artist.name?.takeIf(String::isNotBlank) ?: fallbackName
-                val palette = rememberDesktopArtworkPalette(artist.thumbnailUrl)
-                // Android caps the top-songs block and pages it sideways so the release shelves are
-                // not buried under a hundred rows.
-                val top = artist.songs.take(MAX_ARTIST_SONGS)
-                Box(Modifier.fillMaxSize()) {
-                    LazyColumn(
-                        contentPadding = pagePadding(bottom = 32.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        item(key = "artist-header") {
-                            DesktopArtistBanner(artist.thumbnailUrl, name, palette)
-                        }
-                        if (artist.subscriberCountText != null || artist.monthlyListenerCount != null) {
-                            item(key = "artist-stats") {
-                                Row(
-                                    Modifier.fillMaxWidth().padding(horizontal = DesktopPageGutter, vertical = 12.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                ) {
-                                    // YouTube's own text already reads "1.2M subscribers" in full,
-                                    // so only the number is kept and the label re-said in the app's
-                                    // words.
-                                    artist.subscriberCountText?.let {
-                                        DesktopStatChip(Icons.Rounded.Person, "${it.substringBefore(' ')} subscribers")
-                                    }
-                                    artist.monthlyListenerCount?.let {
-                                        DesktopStatChip(Icons.Rounded.GraphicEq, "${it.substringBefore(' ')} monthly listeners")
-                                    }
-                                }
-                            }
-                        }
-                        item(key = "artist-actions") {
-                            // The phone's artist controls: subscribing first, where saving sits on a
-                            // release, then the labelled Play pill and Shuffle.
-                            Row(
-                                Modifier.fillMaxWidth().padding(horizontal = DesktopPageGutter, vertical = 6.dp),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                val subscription = artist.subscription
-                                if (subscription != null && onToggleSubscription != null) {
-                                    DesktopCircleButton(
-                                        if (subscription.subscribed) BitChordIcons.Check else BitChordIcons.Plus,
-                                        if (subscription.subscribed) {
-                                            DesktopStrings["unsubscribe", "Unsubscribe"]
-                                        } else {
-                                            DesktopStrings["subscribe", "Subscribe"]
-                                        },
-                                        onClick = { onToggleSubscription(subscription) },
-                                    )
-                                }
-                                DesktopPlayPill(
-                                    label = DesktopStrings["play", "Play"],
-                                    onClick = { if (top.isNotEmpty()) onPlaySongs(top, 0) },
-                                )
-                                DesktopCircleButton(BitChordIcons.Shuffle, DesktopStrings["shuffle", "Shuffle"], onClick = { onShuffle(top) })
-                            }
-                        }
-                        artist.description?.takeIf(String::isNotBlank)?.let { blurb ->
-                            item(key = "artist-about") {
-                                Column(Modifier.padding(top = 16.dp)) {
-                                    SectionTitle(DesktopStrings["d_about_artist", "About artist"])
-                                    Spacer(Modifier.height(8.dp))
-                                    Text(
-                                        blurb,
-                                        color = DesktopSecondary,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        modifier = Modifier.padding(horizontal = DesktopPageGutter),
-                                    )
-                                }
-                            }
-                        }
-                        if (top.isNotEmpty()) {
-                            // Paged sideways four to a column, the way Home lists Recents.
-                            item(key = "artist-top-songs") {
-                                Column(Modifier.padding(top = 20.dp, bottom = 6.dp)) {
-                                    SectionTitle(DesktopStrings["top_songs", "Top songs"])
-                                    Spacer(Modifier.height(8.dp))
-                                    BoxWithConstraints {
-                                        val columnWidth = trackColumnWidth(maxWidth)
-                                        ShelfRow(
-                                            contentPadding = PaddingValues(horizontal = DesktopPageGutter),
-                                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                        ) {
-                                            items(top.withIndex().chunked(ARTIST_SONGS_PER_COLUMN)) { column ->
-                                                Column(Modifier.width(columnWidth)) {
-                                                    column.forEach { (index, song) ->
-                                                        CompactTrackRow(
-                                                            title = song.title,
-                                                            subtitle = song.artist,
-                                                            thumbnailUrl = song.thumbnailUrl,
-                                                            onClick = { onPlaySongs(top, index) },
-                                                            onLongPress = { onOpenMenu(song) },
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        artist.sections.forEach { shelf ->
-                            item(key = "artist-shelf-${shelf.title}") {
-                                Box(Modifier.padding(top = 18.dp)) {
-                                    DesktopShelf(shelf, onItemClick = onShelfItemClick)
-                                }
-                            }
-                        }
-                        if (top.isEmpty() && artist.sections.isEmpty()) {
-                            item {
-                                DesktopEmptyPage(
-                                    Icons.Rounded.Person,
-                                    "Nothing to show for $name",
-                                    "YouTube Music has no songs or releases on this page.",
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-/** The photograph, and the name across the foot of it. */
-@Composable
-private fun DesktopArtistBanner(url: String?, name: String, palette: DesktopArtworkPalette) {
-    Box(Modifier.fillMaxWidth().height(ARTIST_BANNER_HEIGHT)) {
-        DesktopArtwork(url, Modifier.matchParentSize(), px = HEADER_ART_PX)
-        // Two washes rather than one.
-        Box(
-            Modifier.matchParentSize().background(
-                Brush.verticalGradient(
-                    0f to Color.Transparent,
-                    0.55f to palette.primary.copy(alpha = 0.18f),
-                    1f to DesktopSurface,
-                ),
-            ),
-        )
-        Box(
-            Modifier.matchParentSize().background(
-                Brush.verticalGradient(
-                    0f to Color.Black.copy(alpha = 0.35f),
-                    0.4f to Color.Transparent,
-                    1f to Color.Black.copy(alpha = 0.45f),
-                ),
-            ),
-        )
-        Text(
-            name,
-            style = MaterialTheme.typography.displaySmall,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(start = DesktopPageGutter, end = DesktopPageGutter, bottom = 18.dp),
-        )
-    }
-}
-
-@Composable
-private fun DesktopStatChip(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String) {
-    Row(
-        Modifier
-            .clip(CircleShape)
-            .background(DesktopGlass.copy(alpha = 0.55f))
-            .border(0.5.dp, Color.White.copy(alpha = 0.10f), CircleShape)
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(icon, null, tint = DesktopSecondary, modifier = Modifier.size(15.dp))
-        Spacer(Modifier.width(7.dp))
-        Text(text, style = MaterialTheme.typography.bodySmall, color = Color.White)
-    }
-}
-
-/** The artist page that is open, and the name to bill it under until it loads. */
-/** The page an artist's tracks were started from. */
-private fun artistSource(target: DesktopArtistTarget) =
-    DesktopQueueSource(target.name, PlaybackSourceType.BROWSE, target.browseId)
 
 /** The album or playlist a queue was started from. */
 private fun collectionSource(collection: DesktopCollection) =
@@ -4665,21 +3145,17 @@ private fun Song.withSource(source: DesktopQueueSource?): Song = when {
     )
 }
 
-private data class DesktopArtistTarget(val browseId: String, val name: String)
-
 /** One place the window has been: which page, and whatever was open on it. */
 private data class DesktopNavEntry(
     val destination: DesktopDestination,
-    val artist: DesktopArtistTarget?,
     val collection: DesktopCollection?,
-    val mood: MoodGenre?,
     val showAll: HomeShelf?,
     val replay: Boolean,
     val settings: DesktopSettingsPage?,
 ) {
-    /** What makes two entries the same place: an album that paged in more tracks has not moved. */
+    /** What makes two entries the same place: a playlist that gained a track has not moved. */
     val key: List<Any?>
-        get() = listOf(destination, artist?.browseId, collection?.browseId, mood?.browseId, mood?.params, showAll?.title, replay, settings)
+        get() = listOf(destination, collection?.browseId, showAll?.title, replay, settings)
 }
 
 /** Deep enough for any way back anyone takes; the oldest fall off. */
@@ -4689,59 +3165,100 @@ private const val NAV_HISTORY_LIMIT = 50
 private val SIDEBAR_CAPTION_HEIGHT = 34.dp
 
 
+/**
+ * The Playlists tab: every list kept here as a card, and the tile that makes the next one.
+ *
+ * There is no account behind these any more, so nothing on this page is fetched, synced or shared —
+ * a playlist is a few track ids in this computer's own preferences.
+ */
 @Composable
-private fun DesktopHistoryPage(
-    history: List<Song>,
-    onSongClick: (Song) -> Unit,
-    onDownload: (Song) -> Unit,
-    onAddToPlaylist: (Song) -> Unit,
-    downloadedIds: Set<String>,
-    downloadInProgress: Set<String>,
+private fun DesktopPlaylistsPage(
+    playlists: List<DesktopPlaylist>,
+    onOpen: (DesktopPlaylist) -> Unit,
+    onNewPlaylist: () -> Unit,
     contentPadding: PaddingValues,
-    menu: (@Composable (Song) -> Unit)? = null,
 ) {
     DesktopPageScaffold(contentPadding) {
-        LazyColumn(
-            contentPadding = pagePadding(start = DesktopPageGutter, end = DesktopPageGutter, bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+        LazyVerticalGrid(
+            columns = GridCells.Adaptive(minSize = 158.dp),
+            contentPadding = pagePadding(
+                start = DesktopPageGutter,
+                top = 8.dp,
+                end = DesktopPageGutter,
+                bottom = 32.dp,
+            ),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
-            if (history.isEmpty()) item { DesktopEmptyPage(BitChordIcons.Clock, "Nothing played yet", "Songs you play will show up here.") }
-            else items(history, key = Song::videoId) {
-                DesktopSongRow(
-                    song = it,
-                    liked = false,
-                    onClick = onSongClick,
-                    onToggleLike = null,
-                    onDownload = onDownload,
-                    onAddToPlaylist = onAddToPlaylist,
-                    downloaded = it.videoId in downloadedIds,
-                    downloadInProgress = it.videoId in downloadInProgress,
-                    menu = menu,
-                )
+            item(key = "new-playlist") {
+                NewPlaylistCard(onClick = onNewPlaylist)
+            }
+            gridItems(playlists, key = { it.id }) { playlist ->
+                DesktopShelfCard(playlist.asShelfItem()) { _ -> onOpen(playlist) }
             }
         }
     }
 }
 
+/** The tile that makes a playlist: no artwork to draw, so a glyph and a name. */
 @Composable
-private fun DesktopDownloadsPage(
-    downloads: List<Song>,
-    onSongClick: (Song) -> Unit,
+private fun NewPlaylistCard(onClick: () -> Unit) {
+    val width = 158.dp
+    val shape = RoundedCornerShape(10.dp)
+    Column(
+        Modifier
+            .width(width)
+            .desktopHoverLift(shape)
+            .clickable(onClick = onClick),
+    ) {
+        Box(
+            Modifier
+                .size(width)
+                .clip(shape)
+                .background(DesktopGlass)
+                .border(1.dp, Color.White.copy(alpha = 0.12f), shape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(BitChordIcons.Plus, null, tint = DesktopAccent, modifier = Modifier.size(38.dp))
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            DesktopStrings["new_playlist", "New playlist"],
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+/**
+ * One Library shelf's "Show all": the same cards as its row, as a grid rather than a carousel.
+ *
+ * The cards carry only a title, so the sort is the one the caller puts above this.
+ */
+@Composable
+private fun DesktopLibraryGridPage(
+    shelf: HomeShelf,
+    onItemClick: (ShelfItem) -> Unit,
     contentPadding: PaddingValues,
-    menu: (@Composable (Song) -> Unit)? = null,
+    modifier: Modifier = Modifier,
 ) {
-    DesktopLocalMusicPage(
-        songs = downloads,
-        onSongClick = onSongClick,
-        contentPadding = contentPadding,
-        menu = menu,
-        title = DesktopStrings["downloads", "Downloads"],
-        subtitle = DesktopStrings["d_available_offline", "Available offline"],
-        emptyIcon = BitChordIcons.Download,
-        emptyTitle = DesktopStrings["d_no_downloads", "No downloads"],
-        emptyDescription = DesktopStrings["d_downloaded_songs_will_appear_here", "Downloaded songs will appear here."],
-        persistenceKey = "downloaded",
-    )
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(minSize = 158.dp),
+        modifier = modifier.fillMaxSize(),
+        contentPadding = pagePadding(
+            start = DesktopPageGutter,
+            top = 8.dp,
+            end = DesktopPageGutter,
+            bottom = 32.dp,
+        ),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp),
+    ) {
+        gridItems(shelf.items, key = { it.videoId ?: it.browseId ?: it.title }) { item ->
+            DesktopShelfCard(item) { onItemClick(it) }
+        }
+    }
 }
 
 @Composable
@@ -4892,7 +3409,6 @@ private fun DesktopLibrarySongContent(
                     liked = false,
                     onClick = onSongClick,
                     onToggleLike = null,
-                    downloaded = song.localPath != null,
                     menu = menu,
                 )
             }
@@ -4951,9 +3467,6 @@ private fun DesktopLibraryGroupingContent(
 
 /** Mobile's section order, with desktop-only groups placed beside their closest mobile counterpart. */
 private enum class DesktopSettingsSection {
-    SOURCES,
-    AUDIO_QUALITY,
-    DOWNLOADS,
     OUTPUT_PRECISION,
     AUDIO_OUTPUT,
     PLAYBACK,
@@ -5027,32 +3540,12 @@ private fun DesktopSettingsScreen(
     outputPrecision: String,
     onOutputPrecisionChange: (String) -> Unit,
     outputSummary: String,
-    downloadQuality: String,
-    onDownloadQualityChange: (String) -> Unit,
-    audioQuality: DesktopAudioQuality,
-    onAudioQualityChange: (DesktopAudioQuality) -> Unit,
     sleepTimerMinutes: Int?,
     sleepAfterTrack: Boolean,
     sleepRemainingMs: Long?,
     onSleepTimerCycle: () -> Unit,
-    sourceConfigs: List<DesktopSourceConfig>,
-    sourceStatus: Map<String, String>,
-    onSourceEnabledChange: (DesktopSourceConfig, Boolean) -> Unit,
-    onSaveSource: (DesktopSourceConfig) -> Unit,
-    onRemoveSource: (DesktopSourceConfig) -> Unit,
-    onMoveSource: (DesktopSourceConfig, Int) -> Unit,
-    onTestSource: (DesktopSourceConfig) -> Unit,
     onOpenLicenses: () -> Unit,
 ) {
-    var editingSource by remember { mutableStateOf<DesktopSourceConfig?>(null) }
-    val sourceProbeKey = sourceConfigs
-        .filter { it.kind.needsServer && it.isComplete }
-        .joinToString { "${it.id}@${it.baseUrl}" }
-    LaunchedEffect(sourceProbeKey) {
-        sourceConfigs
-            .filter { it.kind.needsServer && it.isComplete }
-            .forEach(onTestSource)
-    }
     DesktopSettingsPageFrame {
             Column(Modifier.fillMaxSize()) {
                 val settingsQuery = query
@@ -5280,41 +3773,8 @@ private fun DesktopSettingsScreen(
             }
             if (section == DesktopSettingsSection.STORAGE) item {
                 SettingsGroup(DesktopStrings["storage", "Storage"]) {
-                    var limitMb by remember { mutableStateOf(DesktopMediaCache.limitMb()) }
-                    var cleared by remember { mutableStateOf<String?>(null) }
-                    if (settingsRowVisible(DesktopStrings["song_cache_limit", "Song cache limit"])) {
-                    Column(Modifier.fillMaxWidth().padding(vertical = 10.dp)) {
-                        Text(DesktopStrings["song_cache_limit", "Song cache limit"], style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            if (limitMb > DesktopMediaCache.WARNING_MB) {
-                                "Keeps up to ${formatCacheSize(limitMb)} of downloaded audio on disk. " +
-                                    "This can take a noticeable share of your free space."
-                            } else {
-                                "Keeps downloaded audio on disk for instant seeking and replays"
-                            },
-                            color = DesktopSecondary,
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                        DesktopBareSlider(
-                            value = limitMb.toFloat(),
-                            onValueChange = { limitMb = it.roundToInt() },
-                            onValueChangeFinished = { DesktopMediaCache.setLimitMb(limitMb) },
-                            valueRange = DesktopMediaCache.MIN_LIMIT_MB.toFloat()..
-                                DesktopMediaCache.MAX_LIMIT_MB.toFloat(),
-                            steps = 18,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                        Text(formatCacheSize(limitMb), color = DesktopSecondary, style = MaterialTheme.typography.bodySmall)
-                    }
-                    }
-                    SettingsRow(
-                        Icons.Rounded.DeleteSweep,
-                        "Clear song cache",
-                        cleared ?: "Frees space used by downloaded audio",
-                    ) {
-                        DesktopMediaCache.clear()
-                        cleared = "Song cache cleared"
-                    }
+                    // Nothing is cached for playback — the decoder reads the listener's own file —
+                    // so the only thing with anything to clear is the artwork.
                     var imagesCleared by remember { mutableStateOf(false) }
                     SettingsRow(
                         Icons.Rounded.DeleteSweep,
@@ -5495,32 +3955,6 @@ private fun DesktopSettingsScreen(
                     )
                 }
             }
-            if (section == DesktopSettingsSection.AUDIO_QUALITY) item {
-                SettingsGroup(DesktopStrings["audio_quality", "Audio quality"]) {
-                    if (settingsRowVisible(DesktopStrings["audio_quality", "Audio quality"])) {
-                    Column(Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            DesktopAudioQuality.entries.forEach { rung ->
-                                FilterChip(
-                                    colors = desktopChipColors(),
-                                    selected = audioQuality == rung,
-                                    onClick = { onAudioQualityChange(rung) },
-                                    label = { Text(rung.label) },
-                                )
-                            }
-                        }
-                        Spacer(Modifier.height(8.dp))
-                        // A rung is not a bitrate: it decides which kinds of source are allowed to
-                        // answer, so say which.
-                        Text(
-                            audioQuality.detail,
-                            color = DesktopSecondary,
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                    }
-                    }
-                }
-            }
             if (section == DesktopSettingsSection.AUDIO_OUTPUT) item {
                 SettingsGroup(DesktopStrings["audio_output", "Audio output"]) {
                     SettingsNavigationRow(
@@ -5556,69 +3990,6 @@ private fun DesktopSettingsScreen(
                     }
                 }
             }
-            if (section == DesktopSettingsSection.DOWNLOADS) item {
-                SettingsGroup(DesktopStrings["download_channel_name", "Downloads"]) {
-                    if (settingsRowVisible(DesktopStrings["download_channel_name", "Downloads"])) {
-                    Row(
-                        Modifier.fillMaxWidth().padding(vertical = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        listOf("STANDARD" to "Standard", "HIGH" to "High", "LOSSLESS" to "Lossless").forEach { (value, label) ->
-                            FilterChip(
-                                colors = desktopChipColors(),
-                                selected = downloadQuality == value,
-                                onClick = { onDownloadQualityChange(value) },
-                                label = { Text(label) },
-                            )
-                        }
-                    }
-                    }
-                }
-            }
-            if (section == DesktopSettingsSection.SOURCES) item {
-                SettingsGroup(DesktopStrings["sources_order_header", "Sources · tried in this order"]) {
-                    val sourcesHeading = DesktopStrings["sources_order_header", "Sources · tried in this order"]
-                    val userAddedIds = sourceConfigs.inSourceOrder()
-                        .filter(DesktopSourceConfig::isUserAdded)
-                        .map(DesktopSourceConfig::id)
-                    sourceConfigs.inSourceOrder().forEachIndexed { index, config ->
-                        if (!settingsRowVisible(sourcesHeading, config.displayName)) return@forEachIndexed
-                        DesktopSourceSettingsRow(
-                            position = index + 1,
-                            config = config,
-                            status = sourceStatus[config.id],
-                            skippedByQuality = config.enabled && !audioQuality.permits(config.kind),
-                            onEdit = if (config.kind.needsServer) {
-                                { editingSource = config }
-                            } else {
-                                null
-                            },
-                            onToggle = if (config.kind == DesktopSourceKind.YOUTUBE) {
-                                null
-                            } else {
-                                { onSourceEnabledChange(config, it) }
-                            },
-                            onMoveUp = if (userAddedIds.indexOf(config.id) > 0) {
-                                { onMoveSource(config, -1) }
-                            } else null,
-                            onMoveDown = if (userAddedIds.indexOf(config.id) in 0 until userAddedIds.lastIndex) {
-                                { onMoveSource(config, 1) }
-                            } else null,
-                        )
-                    }
-                    // One entry point, and it creates an addon.
-                    SettingsRow(
-                        BitChordIcons.Plus,
-                        "Add a source",
-                        DesktopSourceKind.ADDON.detail,
-                    ) {
-                        editingSource = DesktopSourceConfig(
-                            id = UUID.randomUUID().toString(),
-                            kind = DesktopSourceKind.ADDON,
-                        )
-                    }
-                }
-            }
             if (section == DesktopSettingsSection.ADVANCED) item {
                 SettingsGroup(DesktopStrings["advanced_options", "Advanced options"]) {
                     SettingsToggle(
@@ -5638,24 +4009,6 @@ private fun DesktopSettingsScreen(
             }
     }
 
-    editingSource?.let { config ->
-        DesktopSourceEditorDialog(
-            config = config,
-            configuredSources = sourceConfigs,
-            isNew = sourceConfigs.none { it.id == config.id },
-            status = sourceStatus[config.id],
-            onDismiss = { editingSource = null },
-            onSave = {
-                onSaveSource(it)
-                editingSource = null
-            },
-            onRemove = {
-                onRemoveSource(config)
-                editingSource = null
-            },
-            onTest = onTestSource,
-        )
-    }
 }
 
 /** The line at the foot of the settings sheet, as Android has it. */
@@ -5683,7 +4036,6 @@ private fun DesktopSettingsFooter(onLicenses: () -> Unit) {
             withLink(LinkAnnotation.Clickable("licenses", linkStyles) { onLicenses() }) {
                 append("Licenses")
             }
-            append("\n~YouTube Music Backend")
         },
         style = MaterialTheme.typography.labelSmall,
         color = DesktopSecondary,
@@ -5757,229 +4109,21 @@ private fun DesktopLicensesPage(onDismiss: () -> Unit) {
     }
 }
 
-@Composable
-private fun DesktopSourceSettingsRow(
-    position: Int,
-    config: DesktopSourceConfig,
-    status: String?,
-    skippedByQuality: Boolean = false,
-    onEdit: (() -> Unit)?,
-    onToggle: ((Boolean) -> Unit)?,
-    onMoveUp: (() -> Unit)? = null,
-    onMoveDown: (() -> Unit)? = null,
-) {
-    val enabledAlpha = if (config.enabled) 1f else 0.45f
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .desktopRowClickable(enabled = onEdit != null) { onEdit?.invoke() }
-            .padding(vertical = 11.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            "$position",
-            color = DesktopSecondary,
-            modifier = Modifier.width(20.dp).alpha(enabledAlpha),
-        )
-        Icon(
-            when (config.kind) {
-                DesktopSourceKind.ADDON -> Icons.Rounded.Extension
-                DesktopSourceKind.CUSTOM_MODULE, DesktopSourceKind.MODULE -> Icons.Rounded.Extension
-                DesktopSourceKind.YOUTUBE -> Icons.Rounded.PlayCircle
-            },
-            contentDescription = null,
-            tint = DesktopAccent,
-            modifier = Modifier.size(21.dp).alpha(enabledAlpha),
-        )
-        Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f).alpha(enabledAlpha)) {
-            Text(config.displayName, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(
-                when {
-                    // The ceiling in force, not the switch, is why this one is being passed over —
-                    // worth saying, or the row reads as enabled and silently unused.
-                    skippedByQuality -> "Skipped at this audio quality"
-                    status != null -> status
-                    !config.isComplete -> "Setup required"
-                    config.kind.needsServer -> "Checking…"
-                    else -> config.kind.detail
-                } + if (!config.allowDownloads) {
-                    " · " + DesktopStrings["source_downloads_off", "Streaming only"]
-                } else {
-                    ""
-                },
-                color = if (skippedByQuality) DesktopAccent else DesktopSecondary,
-                style = MaterialTheme.typography.bodySmall,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        Spacer(Modifier.width(8.dp))
-        if (onMoveUp != null) {
-            IconButton(onClick = onMoveUp, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Rounded.KeyboardArrowUp, "Move source earlier")
-            }
-        }
-        if (onMoveDown != null) {
-            IconButton(onClick = onMoveDown, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Rounded.KeyboardArrowDown, "Move source later")
-            }
-        }
-        if (onToggle == null) {
-            Text(DesktopStrings["always_on", "Always on"], color = DesktopSecondary, style = MaterialTheme.typography.bodySmall)
-        } else {
-            Switch(checked = config.enabled, onCheckedChange = onToggle, colors = desktopSwitchColors())
-        }
-    }
-}
-
-@Composable
-private fun DesktopSourceEditorDialog(
-    config: DesktopSourceConfig,
-    configuredSources: List<DesktopSourceConfig>,
-    isNew: Boolean,
-    status: String?,
-    onDismiss: () -> Unit,
-    onSave: (DesktopSourceConfig) -> Unit,
-    onRemove: () -> Unit,
-    onTest: (DesktopSourceConfig) -> Unit,
-) {
-    var label by remember(config.id) { mutableStateOf(config.label) }
-    var baseUrl by remember(config.id) { mutableStateOf(config.baseUrl) }
-    var checking by remember(config.id) { mutableStateOf(false) }
-    var message by remember(config.id) { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()
-    val candidate = config.copy(label = label.trim(), baseUrl = baseUrl.trim())
-
-    /** Works out what is actually on the end of the URL before storing it. */
-    fun identify(thenSave: Boolean) {
-        if (candidate.baseUrl.isBlank() || checking) return
-        checking = true
-        message = null
-        scope.launch {
-            val outcome = DesktopSourceFormats.identify(candidate.baseUrl)
-            checking = false
-            outcome.fold(
-                onSuccess = { detected ->
-                    when (detected) {
-                        is DesktopDetectedFormat.Addon -> {
-                            val named = candidate.copy(
-                                kind = DesktopSourceKind.ADDON,
-                                baseUrl = detected.baseUrl,
-                                label = candidate.label.ifBlank { detected.manifest.displayName },
-                                allowDownloads = detected.manifest.downloadsAllowed,
-                            )
-                            val duplicate = configuredSources.duplicateOf(named.baseUrl, exceptId = named.id)
-                            if (duplicate != null) {
-                                message = "Already added as ${duplicate.displayName}"
-                            } else {
-                                message = "Addon · ${detected.manifest.displayName}"
-                                if (thenSave) onSave(named)
-                            }
-                        }
-                        is DesktopDetectedFormat.ModuleIndex -> {
-                            val asIndex = candidate.copy(
-                                kind = DesktopSourceKind.CUSTOM_MODULE,
-                                baseUrl = detected.url.ifBlank { candidate.baseUrl },
-                            )
-                            message = "Module index · ${detected.moduleCount} modules"
-                            if (thenSave) onSave(asIndex)
-                        }
-                        is DesktopDetectedFormat.Unsupported -> message = detected.reason
-                    }
-                },
-                onFailure = { message = it.message ?: "Nothing answered at that address" },
-            )
-        }
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(if (isNew) "Add a source" else config.displayName) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = baseUrl,
-                    onValueChange = {
-                        baseUrl = it
-                        message = null
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(DesktopStrings["d_addon_url", "Addon URL"]) },
-                    placeholder = { Text("https://example.com/addon") },
-                    singleLine = true,
-                )
-                Text(
-                    DesktopStrings[
-                        "d_an_addon_server",
-                        "An addon server — BitChord asks it over plain HTTP and runs no code from it. " +
-                            "A compatible module index also works and is stored as one.",
-                    ],
-                    color = DesktopSecondary,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-                OutlinedTextField(
-                    value = label,
-                    onValueChange = { label = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(DesktopStrings["d_name_optional", "Name (optional)"]) },
-                    placeholder = { Text(DesktopStrings["d_my_music_source", "My music source"]) },
-                    singleLine = true,
-                )
-                (message ?: status)?.let {
-                    Text(it, color = DesktopSecondary, style = MaterialTheme.typography.bodySmall)
-                }
-            }
-        },
-        dismissButton = {
-            Row {
-                if (!isNew) TextButton(onClick = onRemove) { Text(DesktopStrings["remove", "Remove"]) }
-                TextButton(onClick = onDismiss) { Text(DesktopStrings["cancel", "Cancel"]) }
-            }
-        },
-        confirmButton = {
-            Row {
-                TextButton(
-                    onClick = {
-                        onTest(candidate)
-                        identify(thenSave = false)
-                    },
-                    enabled = candidate.baseUrl.isNotBlank() && !checking,
-                ) {
-                    Text(if (checking) "Checking…" else "Test")
-                }
-                TextButton(
-                    onClick = { identify(thenSave = true) },
-                    enabled = candidate.baseUrl.isNotBlank() && !checking,
-                ) {
-                    Text(DesktopStrings["save", "Save"])
-                }
-            }
-        },
-    )
-}
-
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun DesktopCollectionPage(
     collection: DesktopCollection,
-    loadingMore: Boolean,
-    onLoadMore: () -> Unit,
-    /** The three edits only a playlist's owner is offered. */
+    /** The two edits only a playlist kept here is offered. */
     onRename: (() -> Unit)?,
     onDelete: (() -> Unit)?,
-    /** Copies the release's own YouTube Music link; null for anything with no link to share. */
-    onShare: (() -> Unit)?,
     onRemoveFromPlaylist: ((Song) -> Unit)?,
     likedIds: Set<String>,
+    /** The row's own "…", so a track on a page offers what a track anywhere else does. */
+    menu: (@Composable (Song) -> Unit)?,
     onPlaySongs: (List<Song>, Int) -> Unit,
     onShuffle: (List<Song>) -> Unit,
-    onDownloadAll: (List<Song>) -> Unit,
     onToggleLike: (Song) -> Unit,
-    onDownload: (Song) -> Unit,
     onAddToPlaylist: (Song) -> Unit,
-    downloadedIds: Set<String>,
-    downloadInProgress: Set<String>,
     contentPadding: PaddingValues,
 ) {
     val songs = collection.songs
@@ -6093,26 +4237,12 @@ private fun DesktopCollectionPage(
                                 },
                             )
                             Box {
-                                DesktopCircleButton(Icons.Rounded.MoreHoriz, DesktopStrings["more", "More"], onClick = { moreOpen = true })
+                                // Only a playlist kept here can be renamed or deleted; an album
+                                // or an artist's page is the scan's own grouping and has no owner.
+                                if (onRename != null || onDelete != null) {
+                                    DesktopCircleButton(Icons.Rounded.MoreHoriz, DesktopStrings["more", "More"], onClick = { moreOpen = true })
+                                }
                                 DropdownMenu(expanded = moreOpen, onDismissRequest = { moreOpen = false }) {
-                                    DropdownMenuItem(
-                                        text = { Text(DesktopStrings["download_all", "Download all"]) },
-                                        leadingIcon = { Icon(BitChordIcons.Download, null) },
-                                        onClick = {
-                                            moreOpen = false
-                                            onDownloadAll(songs)
-                                        },
-                                    )
-                                    onShare?.let { share ->
-                                        DropdownMenuItem(
-                                            text = { Text(DesktopStrings["share", "Share"]) },
-                                            leadingIcon = { Icon(Icons.Rounded.Share, null) },
-                                            onClick = {
-                                                moreOpen = false
-                                                share()
-                                            },
-                                        )
-                                    }
                                     onRename?.let { rename ->
                                         DropdownMenuItem(
                                             text = { Text(DesktopStrings["rename", "Rename"]) },
@@ -6160,31 +4290,11 @@ private fun DesktopCollectionPage(
                     liked = song.videoId in likedIds,
                     onClick = { _ -> onPlaySongs(songs, index) },
                     onToggleLike = onToggleLike,
-                    onDownload = onDownload,
                     onAddToPlaylist = onAddToPlaylist,
-                    downloaded = song.videoId in downloadedIds,
-                    downloadInProgress = song.videoId in downloadInProgress,
                     number = index + 1,
-                    onRemove = onRemoveFromPlaylist?.takeIf { song.setVideoId != null },
+                    onRemove = onRemoveFromPlaylist?.takeIf { collection.owned },
+                    menu = menu,
                 )
-            }
-            if (collection.continuation != null) {
-                // Reaching this row is what asks for the next page, the way the home feed pages.
-                item(key = "collection-more") {
-                    LaunchedEffect(songs.size) { onLoadMore() }
-                    Box(
-                        Modifier.fillMaxWidth().height(72.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        if (loadingMore) {
-                            CircularProgressIndicator(
-                                color = DesktopAccent,
-                                strokeWidth = 2.dp,
-                                modifier = Modifier.size(22.dp),
-                            )
-                        }
-                    }
-                }
             }
         }
     }
@@ -6195,7 +4305,7 @@ private fun DesktopCollectionPage(
  * table whichever rows can be removed.
  */
 private fun collectionActionsWidth(hasRemove: Boolean): Dp =
-    if (hasRemove) 136.dp else 102.dp
+    if (hasRemove) 178.dp else 144.dp
 
 @Composable
 private fun DesktopCollectionSongRow(
@@ -6204,15 +4314,13 @@ private fun DesktopCollectionSongRow(
     liked: Boolean,
     onClick: (Song) -> Unit,
     onToggleLike: ((Song) -> Unit)?,
-    onDownload: ((Song) -> Unit)?,
     onAddToPlaylist: ((Song) -> Unit)?,
-    downloaded: Boolean,
-    downloadInProgress: Boolean,
     number: Int,
     /** Every other row is shaded, so a wide row can be followed across to its buttons. */
     striped: Boolean,
     /** Takes this row out of the playlist being read. */
     onRemove: ((Song) -> Unit)? = null,
+    menu: (@Composable (Song) -> Unit)? = null,
 ) {
     Row(
         Modifier
@@ -6294,25 +4402,14 @@ private fun DesktopCollectionSongRow(
                     )
                 }
             }
-            onDownload?.let { onSave ->
-                IconButton(onClick = { if (!downloaded) onSave(song) }, modifier = Modifier.size(34.dp)) {
-                    if (downloadInProgress) {
-                        CircularProgressIndicator(Modifier.size(16.dp), color = DesktopAccent, strokeWidth = 2.dp)
-                    } else {
-                        Icon(
-                            if (downloaded) BitChordIcons.Download else BitChordIcons.Download,
-                            if (downloaded) "Downloaded" else "Download",
-                            tint = if (downloaded) DesktopAccent else DesktopSecondary,
-                            modifier = Modifier.size(18.dp),
-                        )
-                    }
-                }
-            }
             onAddToPlaylist?.let { onAdd ->
                 IconButton(onClick = { onAdd(song) }, modifier = Modifier.size(34.dp)) {
                     Icon(BitChordIcons.Plus, DesktopStrings["add_to_playlist", "Add to playlist"], tint = DesktopSecondary, modifier = Modifier.size(18.dp))
                 }
             }
+            // The same menu every other surface opens, so a row on a page offers what a row
+            // anywhere else does.
+            menu?.invoke(song)
         }
     }
 }
@@ -6635,10 +4732,7 @@ private fun DesktopSongRow(
     liked: Boolean,
     onClick: (Song) -> Unit,
     onToggleLike: ((Song) -> Unit)?,
-    onDownload: ((Song) -> Unit)? = null,
     onAddToPlaylist: ((Song) -> Unit)? = null,
-    downloaded: Boolean = false,
-    downloadInProgress: Boolean = false,
     number: Int? = null,
     /** The row's own "…", when the page has a menu to give it. */
     menu: (@Composable (Song) -> Unit)? = null,
@@ -6678,41 +4772,8 @@ private fun DesktopSongRow(
             )
             Text(listOfNotNull(song.artist.takeIf(String::isNotBlank), song.durationText).joinToString(" · "), color = DesktopSecondary, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        song.sourceQuality?.let { quality ->
-            val badge = quality.uppercase().takeIf { value ->
-                value in setOf("LOSSLESS", "FLAC", "HI-RES", "HIRES", "HIGH", "320")
-            }
-            if (badge != null) {
-                Text(
-                    badge,
-                    color = DesktopAccent,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(horizontal = 8.dp),
-                )
-            }
-        }
         if (onToggleLike != null) {
             IconButton(onClick = { onToggleLike(song) }) { Icon(if (liked) BitChordIcons.HeartFilled else BitChordIcons.Heart, "Favorite", tint = if (liked) DesktopAccent else DesktopSecondary) }
-        }
-        if (onDownload != null) {
-            if (downloadInProgress) {
-                IconButton(onClick = { onDownload(song) }) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        color = DesktopAccent,
-                        strokeWidth = 2.dp,
-                    )
-                }
-            } else {
-                IconButton(onClick = { if (!downloaded) onDownload(song) }) {
-                    Icon(
-                        imageVector = if (downloaded) BitChordIcons.Download else BitChordIcons.Download,
-                        contentDescription = if (downloaded) "Downloaded" else "Download",
-                        tint = if (downloaded) DesktopAccent else DesktopSecondary,
-                    )
-                }
-            }
         }
         if (onAddToPlaylist != null) {
             IconButton(onClick = { onAddToPlaylist(song) }) {
@@ -6990,39 +5051,6 @@ private fun DesktopActionButton(
         Text(label, color = Color.Black, fontWeight = FontWeight.SemiBold)
     }
 }
-
-private fun SearchResult.key(): String = when (this) {
-    is SearchResult.TopTrack -> "track:${song.videoId}"
-    is SearchResult.Track -> "track:${song.videoId}"
-    is SearchResult.Browse -> "browse:${item.browseId}"
-}
-
-private fun ShelfItem.toSong(): Song {
-    val parts = subtitle.split(" • ", " · ", " | ").filter(String::isNotBlank)
-    // Android's InnertubeParser uses the first non-type/non-tally segment.
-    val artist = parts.firstOrNull {
-        !it.matches(SHELF_DURATION) &&
-            it.lowercase() !in SHELF_TYPE_WORDS &&
-            !it.matches(SHELF_TALLY)
-    } ?: "Unknown Artist"
-    return Song(
-        videoId = videoId.orEmpty(),
-        title = title,
-        artist = artist,
-        thumbnailUrl = thumbnailUrl,
-        durationText = parts.firstOrNull { it.matches(SHELF_DURATION) },
-    )
-}
-
-private fun String.isUnknownArtist(): Boolean =
-    trim().equals("unknown", ignoreCase = true) ||
-        trim().equals("unknown artist", ignoreCase = true) ||
-        trim().equals("unknown artist(s)", ignoreCase = true) ||
-        isBlank()
-
-private val SHELF_DURATION = Regex("""\d{1,2}:\d{2}(?::\d{2})?""")
-private val SHELF_TALLY = Regex("[0-9,.]+\\s*(?:views?|likes?|songs?)", RegexOption.IGNORE_CASE)
-private val SHELF_TYPE_WORDS = setOf("song", "video", "album", "ep", "single", "playlist", "mix")
 
 private fun formatTime(ms: Long): String {
     val totalSeconds = (ms / 1_000L).coerceAtLeast(0L)

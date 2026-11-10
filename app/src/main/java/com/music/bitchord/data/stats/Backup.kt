@@ -24,9 +24,8 @@ import java.time.format.DateTimeFormatter
  * ## What is in it
  *
  * Every preference except credentials (see [AppSettings.exportPrefs]), and every
- * month of listening. Not the audio cache, the downloads or the artwork: those
- * are megabytes that re-fetch themselves, and a backup that is mostly cache is
- * one nobody keeps.
+ * month of listening. Not the artwork cache: that is megabytes that re-fetch
+ * themselves, and a backup that is mostly cache is one nobody keeps.
  *
  * ## Typed values rather than a JSON object
  *

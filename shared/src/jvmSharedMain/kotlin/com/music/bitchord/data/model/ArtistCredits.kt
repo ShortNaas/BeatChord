@@ -36,8 +36,8 @@ private val REPEATED_SPACE = Regex("\\s+")
 /**
  * Whether a search result is the artist that was asked for, exactly.
  *
- * The rule [YtMusicRepository.findArtistPageId] applies, kept here so it can be
- * read and tested on its own rather than only through a network call.
+ * The rule an artist lookup applies, kept here so it can be read and tested on
+ * its own rather than only through a network call.
  *
  * A blank [wanted] is refused rather than folded, because both sides fold to
  * nothing and every blank would then match every other blank — which is the one

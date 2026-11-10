@@ -29,22 +29,14 @@ kotlin {
             dependencies {
                 // Compile-only: the two applications supply the runtime artifact themselves.
                 compileOnly("com.microsoft.onnxruntime:onnxruntime:1.20.0")
-                // The network stack the lyrics providers and the YouTube Music
-                // client run on, at the phone's versions — both applications
-                // now call the same code, so they resolve the same libraries.
-                api("io.ktor:ktor-client-core:3.5.2")
-                api("io.ktor:ktor-client-okhttp:3.5.2")
-                api("io.ktor:ktor-client-websockets:3.5.2")
-                api("io.ktor:ktor-client-content-negotiation:3.5.2")
-                api("io.ktor:ktor-serialization-kotlinx-json:3.5.2")
+                // The lyrics providers' network stack and JSON, at the phone's
+                // versions — both applications call the same code, so they
+                // resolve the same libraries. OkHttp is the one client: see
+                // [com.music.bitchord.data.Http].
+                api("com.squareup.okhttp3:okhttp:4.12.0")
                 api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
                 api("org.jsoup:jsoup:1.22.2")
-                // YouTube stream resolution, as the phone does it: InnerTubeX's
-                // client catalog and cipher tiers, NewPipe as the fallback. NewPipe
-                // is compile-only because the phone ships a trimmed jar of it.
-                api("com.github.MetrolistGroup.innertubex:innertubex:v0.7.0")
-                compileOnly("com.github.TeamNewPipe:NewPipeExtractor:v0.26.3")
             }
         }
         androidMain.get().dependsOn(jvmSharedMain)

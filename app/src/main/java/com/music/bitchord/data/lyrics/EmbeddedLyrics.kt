@@ -10,14 +10,17 @@ import java.io.File
 import java.io.InputStream
 
 /**
- * The lyrics already sitting inside a downloaded file.
+ * The lyrics already sitting inside a local audio file.
  *
- * The read side of what the download path wrote — see `MediaTagger`, and the
- * three taggers under it. A track that was downloaded had its lyrics fetched
- * once, at download time, and written into the file; asking four servers for
- * them again every time it is played is a network round trip to arrive at a
- * string that is already on disk, and it is the reason a downloaded song showed
- * nothing at all with the connection off.
+ * The read side of what the offline tag editor writes — see
+ * [FileTagEditor][com.music.bitchord.download.FileTagEditor], and
+ * [FlacTagger][com.music.bitchord.download.FlacTagger],
+ * [Mp4Tagger][com.music.bitchord.download.Mp4Tagger] and
+ * [WebmTagger][com.music.bitchord.download.WebmTagger] under it. A file's lyrics
+ * may already have been fetched once and written into the file, or placed beside
+ * it; asking four servers for them again every time it is played is a network
+ * round trip to arrive at a string that is already on disk, and it is the reason
+ * a song showed nothing at all with the connection off.
  *
  * Two fields are read, in this order:
  *
@@ -25,24 +28,23 @@ import java.io.InputStream
  *    word timings intact — see [toEnhancedLrc].
  *  - the container's standard lyrics field, holding plain `[mm:ss.xx]` LRC.
  *
- * The second is what every other player reads and what older downloads have,
- * so it is the fallback rather than the exception. Preferring the first is what
- * keeps a downloaded song lighting up word by word instead of a line at a time.
+ * The second is what every other player reads and what files from other tools
+ * carry, so it is the fallback rather than the exception. Preferring the first
+ * is what keeps a local song lighting up word by word instead of a line at a
+ * time.
  *
  * Never throws. A file that isn't one of the three containers, or is one and
  * has no lyrics in it, is a null — the caller falls back to the network, which
  * is exactly what it did before this existed.
  *
- * ### Offline packages
+ * ### Sidecars beside a playlist
  *
- * One kind of download has no container to have been written into: an HLS or
- * DASH stream is saved as a directory of fMP4 segments behind a playlist, and
- * its `localUri` points at that playlist. `OfflineHls` and `OfflineDash` write
- * the lyrics beside it as a `lyrics.lrc` sidecar for exactly that reason — so
- * [sidecar] is tried first, and a package's lyrics come back the same shape as
- * a tagged file's. Without it those tracks fetched their lyrics from the
- * network on every play and showed none at all offline, which is the failure
- * this whole object exists to prevent.
+ * A saved playlist package has no audio container to have been written into:
+ * its `localUri` points at the playlist file rather than at one audio file.
+ * Earlier builds wrote the lyrics beside it as a `lyrics.lrc` sidecar for
+ * exactly that reason — so [sidecar] is tried first, and a package's lyrics come
+ * back the same shape as a tagged file's. Without it those tracks would show
+ * none at all offline, which is the failure this whole object exists to prevent.
  */
 object EmbeddedLyrics {
 
@@ -54,8 +56,8 @@ object EmbeddedLyrics {
      * A cap rather than a size: this reads whatever region of the file holds
      * the metadata, and that region is small in all three containers — but its
      * length is stated *by the file*, so a corrupt or hostile one could claim
-     * any number at all. `LyricsTag` caps what it writes at 64k, so anything
-     * past this is not a tag this app produced.
+     * any number at all. No lyrics field this app writes is anywhere near this
+     * size, so anything past it is not a tag this app produced.
      */
     private const val MAX_TAG_BYTES = 8 * 1024 * 1024
 
@@ -71,8 +73,8 @@ object EmbeddedLyrics {
                 .onFailure { Log.d(TAG, "no embedded lyrics in $uriString: ${it.message}") }
                 .getOrNull()
                 ?: return@withContext null
-            // The same last pass the network sources get, so a downloaded track
-            // and a streamed one draw their backing vocals the same way.
+            // The same last pass the network sources get, so a local track and
+            // a fetched lyric draw their backing vocals the same way.
             LrcLib.parseLrc(raw).takeIf { lines -> lines.any { it.text.isNotBlank() } }
                 ?.withBackgroundVocals()
         }
@@ -83,14 +85,14 @@ object EmbeddedLyrics {
             ?: open(context, uri)?.use { fromBytes(it.readAtMost(MAX_TAG_BYTES)) }
 
     /**
-     * The `lyrics.lrc` written next to the offline package playlist at [path].
+     * The `lyrics.lrc` written next to the saved playlist at [path].
      *
      * Recognised by the playlist rather than by the directory it sits in: the
      * package lives under a path this module has no business knowing, and a
-     * local `.m3u8` is only ever one of these packages — nothing else in the
-     * app saves a playlist to disk. What the sidecar holds is the enhanced A2
-     * form where the download found one, which is why it is preferred over a
-     * container search rather than used as a fallback to it.
+     * local `.m3u8` beside a `.lrc` is how earlier builds left one. What the
+     * sidecar holds is the enhanced A2 form where a word-timed one was known,
+     * which is why it is preferred over a container search rather than used as
+     * a fallback to it.
      *
      * Takes the path rather than the `Uri` it came out of so the pairing with
      * the writers can be tested on a real directory, without a device.
@@ -278,8 +280,9 @@ object EmbeddedLyrics {
     /**
      * The `LYRICS` SimpleTag's string.
      *
-     * Scanned for rather than walked down to: the tags a download writes are
-     * appended after everything else (see `WebmTagger`), so reaching them
+     * Scanned for rather than walked down to: the tags the tag editor writes are
+     * appended after everything else (see
+     * [WebmTagger][com.music.bitchord.download.WebmTagger]), so reaching them
      * properly would mean parsing the whole Segment — every cluster of audio —
      * to arrive at the last few hundred bytes. The name is matched inside a
      * `TagName` element and the value read out of the `TagString` that follows,

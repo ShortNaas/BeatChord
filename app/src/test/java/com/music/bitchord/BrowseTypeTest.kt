@@ -1,34 +1,30 @@
 package com.music.bitchord
 
 import com.music.bitchord.data.model.BrowseType
-import com.music.bitchord.download.Downloads
 import com.music.bitchord.ui.MainViewModel
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
+/**
+ * Which kind of page a browse id names.
+ *
+ * The app's pages are the device's own now, so this is about the `local:` ids
+ * the library builds — a folder, an artist, an album, a playlist — and about
+ * leaving an id it does not recognise to whatever the caller already thought.
+ */
 class BrowseTypeTest {
 
     @Test
-    fun `resolves VLOLAK and OLAK album release IDs as BrowseType ALBUM`() {
-        assertEquals(BrowseType.ALBUM, MainViewModel.browseTypeOf("VLOLAK5uy_kX123456789"))
-        assertEquals(BrowseType.ALBUM, MainViewModel.browseTypeOf("OLAK5uy_kX123456789"))
+    fun `local artist, album and playlist ids resolve to their own kinds`() {
+        assertEquals(BrowseType.ARTIST, MainViewModel.browseTypeOf("local:artist:Radiohead"))
+        assertEquals(BrowseType.ALBUM, MainViewModel.browseTypeOf("local:album:In Rainbows"))
+        assertEquals(BrowseType.PLAYLIST, MainViewModel.browseTypeOf("local:playlist:favourites"))
     }
 
     @Test
-    fun `resolves standard MPREb album IDs as BrowseType ALBUM`() {
-        assertEquals(BrowseType.ALBUM, MainViewModel.browseTypeOf("MPREb_987654321"))
-    }
-
-    @Test
-    fun `resolves UC artist IDs as BrowseType ARTIST`() {
-        assertEquals(BrowseType.ARTIST, MainViewModel.browseTypeOf("UC1234567890abcdef"))
-    }
-
-    @Test
-    fun `resolves VLPL and PL playlist IDs as BrowseType PLAYLIST`() {
-        assertEquals(BrowseType.PLAYLIST, MainViewModel.browseTypeOf("VLPL1234567890"))
-        assertEquals(BrowseType.PLAYLIST, MainViewModel.browseTypeOf("PL1234567890"))
-        assertEquals(BrowseType.PLAYLIST, MainViewModel.browseTypeOf("${Downloads.PLAYLIST_PREFIX}local_downloads"))
+    fun `a local folder is not one of the collection pages`() {
+        assertEquals(BrowseType.OTHER, MainViewModel.browseTypeOf("local:folder:/storage/music"))
+        assertEquals(BrowseType.OTHER, MainViewModel.browseTypeOf("local:format:flac"))
     }
 
     @Test

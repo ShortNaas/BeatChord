@@ -448,8 +448,8 @@ data class LibraryPage(
     /**
      * The continuation token behind [likedSongs]' first page, when Liked Music
      * has more tracks than that one page held. Consumed by whoever owns the
-     * library's lifecycle to finish syncing the liked collection into
-     * [com.music.bitchord.data.LikeState]; never stored as page state.
+     * library's lifecycle to finish syncing the liked collection; never stored
+     * as page state.
      */
     val likedContinuation: String? = null,
 ) {
@@ -469,9 +469,8 @@ data class DetailPage(
     val sections: List<HomeShelf> = emptyList(),
     /**
      * Tracks YouTube offers to round out a playlist but that were never
-     * added — see [com.music.bitchord.data.innertube.InnertubeParser.parsePlaylistShelf].
-     * Shown as their own section with a button to actually add them, rather
-     * than folded into [songs] where they'd read as the user's own picks.
+     * added. Shown as their own section with a button to actually add them,
+     * rather than folded into [songs] where they'd read as the user's own picks.
      */
     val suggestedSongs: List<Song> = emptyList(),
     /**

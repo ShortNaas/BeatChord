@@ -1,7 +1,6 @@
 package com.music.bitchord.ui.components
 
 import com.music.bitchord.ui.LocalPullToRefreshEnabled
-import com.music.bitchord.ui.AppUiHost
 import com.music.bitchord.ui.AppUi
 import com.music.bitchord.sharedui.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -17,8 +16,6 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.DownloadDone
-import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -35,8 +32,8 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
@@ -77,7 +74,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -85,11 +81,7 @@ import coil3.compose.AsyncImage
 import com.music.bitchord.data.model.ROW_ART_PX
 import com.music.bitchord.data.model.Song
 import androidx.compose.ui.draw.alpha
-import androidx.compose.material3.CircularProgressIndicator
 import com.music.bitchord.data.model.artworkAt
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.ui.composed
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.foundation.border
 
 /**
@@ -210,9 +202,9 @@ data class LibraryGridSpec(val columns: Int, val cardWidth: Dp)
 /**
  * The narrowest a library grid card is let get before another column gives way.
  *
- * Deliberately the same 140.dp minimum the Local Music and Downloads grids pass
- * to `GridCells.Adaptive`, so a cover on a "Show all" page is the same size as
- * the same cover on those pages rather than noticeably smaller.
+ * Deliberately the same 140.dp minimum the Local Music grids pass to
+ * `GridCells.Adaptive`, so a cover on a "Show all" page is the same size as the
+ * same cover on those pages rather than noticeably smaller.
  */
 private val LIBRARY_GRID_MIN_CARD_WIDTH = 140.dp
 
@@ -231,8 +223,8 @@ private const val LIBRARY_GRID_MAX_COLUMNS = 5
  * Columns follow from [LIBRARY_GRID_MIN_CARD_WIDTH] — as many as fit — rather
  * than from a fixed count, so a phone settles on 2 and a tablet fills out
  * towards the 5-column ceiling. This is the same arithmetic `GridCells.Adaptive`
- * runs, at the same minimum, gutter and spacing the Local Music and Downloads
- * grids use, which is what keeps a card here the size of a card there. Every
+ * runs, at the same minimum, gutter and spacing the Local Music grids use,
+ * which is what keeps a card here the size of a card there. Every
  * width is already in dp, which is what
  * makes this "based on device width and dpi" rather than a raw pixel count: a
  * dp reads the same physical size on a 420ppi phone as on a 160ppi tablet, so
@@ -271,9 +263,7 @@ fun SongRow(
      * What the trailing ⋮ does, when it should differ from [onLongPress].
      *
      * Defaults to the long-press, since on most pages the two are the same
-     * menu. Downloads is the exception: holding a row there starts a
-     * multi-selection, and the ⋮ has to stay the actions sheet rather than
-     * silently tick a checkbox.
+     * menu.
      */
     onMore: (() -> Unit)? = null,
     onSwipeToQueue: (() -> Unit)? = null,
@@ -298,17 +288,6 @@ fun SongRow(
      * wash it stops being legible as a second line and starts disappearing.
      */
     subtitleColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
-    /**
-     * What the badge on an already-downloaded row is tinted, or null to leave
-     * those rows unmarked.
-     *
-     * Null is for the Downloads page itself, where every row qualifies and the
-     * badge would say nothing. The colour is a parameter for the same reason
-     * [subtitleColor] is: a page tinted from its artwork draws its accent from
-     * the sleeve, and the theme's primary against that wash is exactly the
-     * kind of thing that reads as pasted on.
-     */
-    downloadedTint: Color? = MaterialTheme.colorScheme.primary,
     /** Whether this row is the current item in the player's queue. */
     isCurrent: Boolean = false,
     /** Distinguishes active playback from the same current item while paused. */
@@ -317,8 +296,6 @@ fun SongRow(
     activeTint: Color = MaterialTheme.colorScheme.primary,
     /** Search results use artwork bars instead of the usual current-song icon. */
     searchPlayingStyle: Boolean = false,
-    /** True while a Downloads row belongs to the current multi-selection. */
-    selected: Boolean = false,
 ) {
     val haptics = rememberHaptics()
     val swipeStateHolder = remember { mutableStateOf<SwipeToDismissBoxState?>(null) }
@@ -351,12 +328,10 @@ fun SongRow(
             modifier = modifier,
             trackNumber = trackNumber,
             subtitleColor = subtitleColor,
-            downloadedTint = downloadedTint,
             isCurrent = isCurrent,
             isPlaying = isPlaying,
             activeTint = activeTint,
             searchPlayingStyle = searchPlayingStyle,
-            selected = selected,
         )
         return
     }
@@ -398,12 +373,10 @@ fun SongRow(
             modifier = Modifier.background(rowBackground),
             trackNumber = trackNumber,
             subtitleColor = subtitleColor,
-            downloadedTint = downloadedTint,
             isCurrent = isCurrent,
             isPlaying = isPlaying,
             activeTint = activeTint,
             searchPlayingStyle = searchPlayingStyle,
-            selected = selected,
         )
     }
 }
@@ -465,19 +438,17 @@ private fun SongRowContent(
     modifier: Modifier = Modifier,
     trackNumber: Int? = null,
     subtitleColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
-    downloadedTint: Color? = MaterialTheme.colorScheme.primary,
     isCurrent: Boolean = false,
     isPlaying: Boolean = false,
     activeTint: Color = MaterialTheme.colorScheme.primary,
     searchPlayingStyle: Boolean = false,
-    selected: Boolean = false,
 ) {
     val titleColor by animateColorAsState(
         targetValue = if (isCurrent) activeTint else MaterialTheme.colorScheme.onBackground,
         label = "song row title",
     )
     val activeBackground by animateColorAsState(
-        targetValue = if (isCurrent || selected) activeTint.copy(alpha = 0.14f) else Color.Transparent,
+        targetValue = if (isCurrent) activeTint.copy(alpha = 0.14f) else Color.Transparent,
         label = "song row background",
     )
     Row(
@@ -546,26 +517,11 @@ private fun SongRowContent(
             )
             Spacer(Modifier.height(2.dp))
             Text(
-                text = listOfNotNull(
-                    song.artist.takeIf { it.isNotBlank() },
-                    song.downloadFormat,
-                ).joinToString(" · "),
+                text = song.artist,
                 style = MaterialTheme.typography.bodyMedium,
                 color = subtitleColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-            )
-        }
-        if (downloadedTint != null) {
-            DownloadedBadge(song.videoId, downloadedTint)
-        }
-        if (selected) {
-            Spacer(Modifier.width(8.dp))
-            Icon(
-                Icons.Rounded.CheckCircle,
-                contentDescription = stringResource(Res.string.selected),
-                tint = activeTint,
-                modifier = Modifier.size(20.dp),
             )
         }
         if (isCurrent && trackNumber == null && !(searchPlayingStyle && isPlaying)) {
@@ -686,31 +642,6 @@ fun SearchPlayingBars(modifier: Modifier = Modifier) {
 }
 
 /**
- * The mark on a row whose track is already on disk.
- *
- * Sized under the row's "more" glyph on purpose: this is a statement about the
- * track, not something to press, and a status mark that matches an affordance
- * in weight invites a tap that does nothing.
- *
- * Reads the downloads the app keeps in memory ([AppUiHost.downloadedIds]) rather than touching the filesystem — a list cannot
- * afford a file check per row, and the map is kept honest by the disk check
- * every real read of a download goes through. The cost of that trade is a row
- * that can claim a file a file manager has since deleted, until something asks
- * for it and the record is pruned.
- */
-@Composable
-fun DownloadedBadge(videoId: String, tint: Color, modifier: Modifier = Modifier) {
-    if (videoId !in AppUi.host.downloadedIds()) return
-    Spacer(Modifier.width(8.dp))
-    Icon(
-        Icons.Rounded.DownloadDone,
-        contentDescription = stringResource(Res.string.downloaded),
-        tint = tint,
-        modifier = modifier.size(16.dp),
-    )
-}
-
-/**
  * Pull-to-refresh for the tab feeds, with the usual circular puck suppressed.
  *
  * The feeds sit under a frosted bar that already occupies the top 96dp, so a
@@ -740,38 +671,6 @@ fun PullToRefresh(
         indicator = {},
     ) {
         content()
-    }
-}
-
-/** Slim dismissible-looking prompt shown atop Home while signed out. */
-@Composable
-fun SignInBanner(onSignIn: () -> Unit, modifier: Modifier = Modifier) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = PAGE_GUTTER, vertical = 8.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .clickable(onClick = onSignIn)
-            .padding(horizontal = 14.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(
-                text = stringResource(Res.string.sign_in_youtube_music),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = stringResource(Res.string.personalized_recommendations),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        Spacer(Modifier.width(12.dp))
-        Button(onClick = onSignIn) { Text(stringResource(Res.string.sign_in)) }
     }
 }
 

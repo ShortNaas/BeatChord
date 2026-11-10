@@ -8,26 +8,25 @@ import com.music.bitchord.data.lyrics.toLrc
  * The tag edit behind the "Edit music tags" dialog, for a file the user
  * already has on the device.
  *
- * [MediaTagger] tags a file the moment it is downloaded, and its assumptions
- * are all about that moment: the file has no metadata, so every writer there
+ * Tagging a freshly written file is one job: it has no metadata, so a writer
  * rebuilds whatever it touches. This is the other situation. The file has been
  * on the device for years, its artwork and its genre and its track number are
  * the user's, and rewriting the metadata region has to leave everything it was
  * not asked to change exactly as it was. The taggers grew a `retag` entry point
  * for that ([FlacTagger.retag], [Mp4Tagger.retag]), and this object is what
- * picks between them and reads the file's own lyrics and cover back out.
+ * picks between them and reads the file's own lyrics back out.
  *
- * **No network access.** Not an incidental detail: `MediaTagger.artworkFor`
- * falls back to fetching the cover over HTTP, so reusing it here would make a
- * local tag edit reach the internet for an image that is already inside the
- * file — and fail offline, which is when editing a tag is most likely to be the
- * thing someone is doing. The cover is therefore never re-embedded. Passing
+ * **No network access.** Not an incidental detail: anything that fetched a
+ * cover would make a local tag edit reach the internet for an image that is
+ * already inside the file — and fail offline, which is when editing a tag is
+ * most likely to be the thing someone is doing. The cover is therefore never
+ * re-embedded. Passing
  * `cover = null` is what tells each tagger to carry the artwork it finds across
  * untouched, block for block, which is both cheaper and strictly better than
  * pulling one image out and writing it back as a new one.
  *
- * Deliberately narrower than [MediaTagger.carriesTags]. A `.webm` is written by
- * [WebmTagger] by appending a whole new `Tags`/`Attachments` pair after the
+ * Deliberately narrow about which containers it rewrites. A `.webm` is written
+ * by [WebmTagger] by appending a whole new `Tags`/`Attachments` pair after the
  * bytes already in the file, and Matroska has no cheap way to take the old ones
  * out again — removing an element from a `Segment` means moving every cluster
  * after it, and the `Cues`/`SeekHead` positions that point at them. Appending a
@@ -54,7 +53,7 @@ object FileTagEditor {
      * Everything the edit does not set is carried over from the file: its
      * artwork, its genre and track number, another tool's atoms, and its lyrics
      * in both forms — [lyricsIn] reads those back so that a title edit does not
-     * silently cost a downloaded track its lyrics.
+     * silently cost a local track its lyrics.
      */
     fun retag(
         bytes: ByteArray,
@@ -72,8 +71,7 @@ object FileTagEditor {
             }
         }.getOrNull() ?: return null
         // Every tagger hands back the array it was given when there is nothing
-        // safe to do with it — the same contract `MediaTagger` relies on to
-        // leave a file alone.
+        // safe to do with it, so a file with no safe rewrite is left alone.
         return tagged.takeIf { it !== bytes }
     }
 

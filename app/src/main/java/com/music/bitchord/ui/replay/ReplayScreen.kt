@@ -89,7 +89,7 @@ private fun isDarkMode(): Boolean =
 @Composable
 fun ReplayScreen(
     state: ReplayState,
-    /** The signed-in account name embossed on the Replay cards. */
+    /** The listener's own name, embossed on the Replay cards. */
     holder: String,
     onPeriodChange: (ReplayPeriod) -> Unit,
     onOpenStory: (ReplayStoryPage) -> Unit,

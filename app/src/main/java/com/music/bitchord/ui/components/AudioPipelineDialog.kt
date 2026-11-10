@@ -236,8 +236,7 @@ fun AudioPipelineDialog(
                 .onGloballyPositioned { columnCoordinates = it },
         ) {
             // 1. Track Info Stage
-            val sourceName = nerdStats?.sourceName ?: "—"
-            // DSD is the one source whose own rate is not the rate the
+            // DSD is the one format whose own rate is not the rate the
             // rest of the pipeline runs at: DsdExtractor hands the
             // renderer 176.4 kHz PCM, so every stage after this one has
             // to be told that rate instead of the DSD bit rate.
@@ -246,17 +245,13 @@ fun AudioPipelineDialog(
             val codec = NerdStats.codecLabel(nerdStats?.mimeType) ?: nerdStats?.mimeType ?: "—"
             val format = nerdStats?.container?.let { "$codec ($it)" } ?: codec
             // A lossy codec has no bit depth of its own; the decoder's PCM
-            // depth is not the source's, so it is only shown for lossless.
+            // depth is not the file's, so it is only shown for lossless.
             val bitDepth = if (nerdStats?.isLossless == true) {
-                nerdStats?.bitDepth?.let { "$it-bit" }
-                    ?: nerdStats?.claimed?.bitDepth?.let { "$it-bit" }
-                    ?: "—"
+                nerdStats?.bitDepth?.let { "$it-bit" } ?: "—"
             } else {
                 "—"
             }
-            val sampleRate = nerdStats?.sampleRateHz?.let(::rateText)
-                ?: nerdStats?.claimed?.sampleRateHz?.let(::rateText)
-                ?: "—"
+            val sampleRate = nerdStats?.sampleRateHz?.let(::rateText) ?: "—"
             val bitrate = nerdStats?.bitrateKbps?.let { "$it kbps" } ?: "—"
             val pcmDataRate = nerdStats?.pcmDataRateKbps?.let { "$it kbps" } ?: "—"
             val channels = when (nerdStats?.channels) {
@@ -275,7 +270,6 @@ fun AudioPipelineDialog(
                 stageActivationProvider = stageActivation,
                 onStageIconPositioned = onStageIconPositioned,
             ) {
-                PipelineRow(stringResource(R.string.pipeline_source), sourceName)
                 PipelineRow(stringResource(R.string.pipeline_format), format)
                 PipelineRow(stringResource(R.string.pipeline_bit_depth), bitDepth)
                 PipelineRow(stringResource(R.string.pipeline_sample_rate), sampleRate)

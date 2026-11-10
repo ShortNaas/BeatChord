@@ -224,40 +224,6 @@ kotlin {
     }
 }
 
-/*
- * NewPipeExtractor ships its own org.schabi.newpipe.extractor.utils.Utils, and
- * app/src/main/java carries a patched copy at the same package path (see that
- * file for why it exists). A debug build keeps project and library dex separate,
- * so the project copy simply wins at class-load time and the two coexist; a
- * release build merges every input into one dex set, where D8 rejects the
- * duplicate type outright ("Utils is defined multiple times"). So the library's
- * copy is stripped from its jar before it reaches dexing, leaving exactly one
- * definition of the class in the build.
- *
- * The artifact is resolved on its own and non-transitive purely to re-jar it;
- * the transitive dependencies it would otherwise have carried are declared by
- * hand in the dependencies block below, since dropping the module drops them too.
- */
-val newPipeExtractorRaw: Configuration by configurations.creating {
-    isTransitive = false
-    isCanBeConsumed = false
-}
-dependencies {
-    newPipeExtractorRaw("com.github.TeamNewPipe:NewPipeExtractor:v0.26.3")
-}
-val newPipeExtractorStripped = tasks.register<org.gradle.api.tasks.bundling.Jar>(
-    "stripNewPipeExtractorUtils"
-) {
-    archiveFileName.set("NewPipeExtractor-v0.26.3-noutils.jar")
-    destinationDirectory.set(layout.buildDirectory.dir("stripped-libs"))
-    from(provider { newPipeExtractorRaw.map { zipTree(it) } }) {
-        // The class itself, plus any nested or synthetic siblings the upstream
-        // compiler emitted alongside it, so nothing from the jar's Utils survives.
-        exclude("org/schabi/newpipe/extractor/utils/Utils.class")
-        exclude("org/schabi/newpipe/extractor/utils/Utils\$*.class")
-    }
-}
-
 dependencies {
     implementation(project(":shared"))
     implementation(project(":sharedUi"))
@@ -292,17 +258,6 @@ dependencies {
     implementation("androidx.media3:media3-session:1.11.0")
     implementation("androidx.media3:media3-common:1.11.0")
     implementation("androidx.media3:media3-datasource-okhttp:1.11.0")
-    // Audio is progressive, but Apple serves its motion artwork as HLS — this
-    // is what lets the animated sleeve play it. See CanvasArtworkPlayer.
-    implementation("androidx.media3:media3-exoplayer-hls:1.11.0")
-    // Source modules hand back manifests rather than files, and which kind is
-    // the backend's choice, not ours: the Tidal one served `.m3u8` until
-    // September 2026 and `.mpd` after it, for the same track and the same
-    // request. Without this artifact a DASH manifest is not merely unplayed —
-    // DefaultMediaSourceFactory cannot build a source for it, falls back to
-    // progressive, and the extractors try to sniff XML as audio
-    // (ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED). See withResolvedStreamType.
-    implementation("androidx.media3:media3-exoplayer-dash:1.11.0")
     // FFmpeg audio decoding for what the phone has no decoder of its own for:
     // ALAC on every phone, and AC-4, E-AC-3 / AC-3 (Dolby Atmos music),
     // TrueHD and DTS on phones without Dolby or DTS licensed in. Added as the
@@ -338,51 +293,8 @@ dependencies {
     implementation("com.halilibo.compose-richtext:richtext-ui-material3:0.20.0")
     implementation("com.halilibo.compose-richtext:richtext-commonmark:0.20.0")
 
-    // ---- Innertube (YouTube Music) client: Ktor + kotlinx.serialization ----
-    // Ktor and serialization are held at InnerTubeX's versions (below) so the
-    // upgrade it forces is explicit rather than resolved behind our backs.
-    implementation("io.ktor:ktor-client-core:3.5.2")
-    implementation("io.ktor:ktor-client-okhttp:3.5.2")
-    implementation("io.ktor:ktor-client-content-negotiation:3.5.2")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:3.5.2")
+    // ---- Lyrics: HTML scraping (jsoup) is shared's; serialization for its JSON ----
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
-
-    // ---- Discord Rich Presence: the gateway is a WebSocket, so Ktor needs the plugin ----
-    implementation("io.ktor:ktor-client-websockets:3.5.2")
-
-    // ---- YouTube stream extraction: live-benchmarked client catalog + cipher tiers ----
-    implementation("com.github.MetrolistGroup.innertubex:innertubex-android:v0.7.0")
-
-    // ---- Stream resolution: NewPipe solves YouTube's signature + `n` throttling ----
-    // Pinned to v0.26.3, not the newer v0.26.4: v0.26.4's player-JS parser fails with
-    // "Could not parse deobfuscation function" on the current player build, which blocks
-    // WEB_REMIX's ciphered formats entirely. v0.26.3 solves the same signatures cleanly
-    // against the same player JS — confirmed side by side against PixelMusic-ref, which
-    // pins v0.26.3 and doesn't hit the parse failure.
-    //
-    // Consumed as a stripped jar rather than as the module, so its own
-    // Utils.class does not reach dexing. See newPipeExtractorStripped above; the
-    // transitive dependencies the module would have brought are listed here
-    // because dropping its artifact drops them too. If the version changes,
-    // re-derive this list with
-    //   ./gradlew :app:dependencies --configuration prodReleaseRuntimeClasspath
-    implementation(files(newPipeExtractorStripped))
-    implementation("com.github.TeamNewPipe:nanojson:e9d656ddb49a412a5a0a5d5ef20ca7ef09549996")
-    implementation("org.jsoup:jsoup:1.22.2")
-    implementation("com.google.code.findbugs:jsr305:3.0.2")
-    implementation("com.google.protobuf:protobuf-javalite:4.35.0")
-    implementation("org.mozilla:rhino:1.8.1")
-    implementation("org.mozilla:rhino-engine:1.8.1")
-
-    // ---- Auth/session storage ----
-    implementation("androidx.security:security-crypto:1.1.0-alpha06")
-
-    // ---- JS module execution: QuickJS VM for style source plugins ----
-    // Held at InnerTubeX's version; the same VM runs QuickJsExecutor's module sources.
-    implementation("io.github.dokar3:quickjs-kt-android:1.0.14")
-
-    // ---- SMB file shares: pure-Java SMB2/3 client (listing + streaming) ----
-    implementation("com.hierynomus:smbj:0.15.0")
 
     // ---- Automix: on-device beat/downbeat model (Beat This!, MIT-licensed) ----
     // The full android artifact, not onnxruntime-mobile: mobile only loads .ort

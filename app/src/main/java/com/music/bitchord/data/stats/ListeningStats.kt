@@ -126,7 +126,7 @@ object ListeningStats {
      * minutes are what actually came out of the speaker and are added on every
      * sample; a *play* is a whole listen and is counted once, by whoever is
      * watching the track rather than here — see [ListeningRecorder], which holds
-     * the same threshold the scrobbler uses.
+     * the half-or-four-minutes threshold.
      */
     fun record(song: Song, playedMs: Long, countsAsPlay: Boolean) {
         if (!ready) return
@@ -720,8 +720,8 @@ object ListeningStats {
      * The people named on a track's credit.
      *
      * Split conservatively, and on punctuation rather than on words: `,`, `&`,
-     * `x` and the feature markers are how every catalogue this app reads joins
-     * two artists, while " and " and " with " are as often part of a band's
+     * `x` and the feature markers are how most catalogues join two artists,
+     * while " and " and " with " are as often part of a band's
      * actual name — "Florence and the Machine", "Nick Cave and the Bad Seeds" —
      * so they are left alone. A name is still split wrongly now and then
      * ("Simon & Garfunkel"), which costs one duplicated chart row; not splitting

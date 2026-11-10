@@ -47,11 +47,8 @@ private fun localProperty(name: String): String = rootProject.file("local.proper
     ?.takeIf { it.isNotBlank() }
     ?: System.getenv(name).orEmpty().trim()
 
-val desktopModuleIndexUrl = localProperty("MODULE_INDEX_URL")
-
 // Last.fm signs every request with these, so signing in from inside the app
 // needs them at hand. Supplied locally and never committed, as on Android.
-val listenTogetherServer = localProperty("LISTEN_TOGETHER_SERVER")
 val lastfmApiKey = localProperty("LASTFM_API_KEY")
 val lastfmSecret = localProperty("LASTFM_SECRET")
 
@@ -63,22 +60,11 @@ plugins {
 }
 
 dependencies {
-    // Already on the classpath through the NewPipe extractor.
+    // The shared lyrics layer reads the providers' pages with it.
     implementation("org.jsoup:jsoup:1.22.2")
-    implementation("com.google.zxing:core:3.5.3")
 
     implementation(project(":shared"))
     implementation(project(":sharedUi"))
-    // BotGuard, for the PoTokens YouTube's web clients need: the phone runs it in an Android
-    // WebView, the desktop in JavaFX's (WebKit). Per-platform jars carry the natives.
-    val javafxClassifier = when (targetOs) {
-        "windows" -> "win"
-        "macos" -> if (isArm64) "mac-aarch64" else "mac"
-        else -> "linux"
-    }
-    listOf("base", "graphics", "controls", "media", "web").forEach { module ->
-        implementation("org.openjfx:javafx-$module:21.0.10:$javafxClassifier")
-    }
 
     // The shared player loads artwork through Coil, as the phone does.
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.0.4")
@@ -113,34 +99,16 @@ dependencies {
         }
     )
 
-    implementation("io.ktor:ktor-client-core:3.0.3")
-    implementation("io.ktor:ktor-client-cio:3.0.3")
-    implementation("io.ktor:ktor-client-content-negotiation:3.0.3")
-    // Listen Together speaks over a WebSocket; the Discord gateway already uses the same engine.
-    implementation("io.ktor:ktor-client-websockets:3.0.3")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:3.0.3")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.9.0")
     implementation("org.slf4j:slf4j-nop:2.0.16")
 
-    // Browsers keep their cookies in SQLite, and importing a session from one is how this app signs
-    // in — see DesktopBrowserCookies.
-    implementation("org.xerial:sqlite-jdbc:3.47.1.0")
-    // Chromium protects its Windows master key with DPAPI. JNA's platform helpers let the app
-    // unwrap that key in the same Windows user session without invoking a shell or exposing it.
-    implementation("net.java.dev.jna:jna-platform:5.19.1")
+    // The Windows and macOS frame bridges call into the platform's own window APIs.
+    implementation("net.java.dev.jna:jna:5.19.1")
 
     // Linux desktop media controls use the standard session-bus MPRIS interfaces.
     implementation("com.github.hypfvieh:dbus-java-core:5.2.0")
     implementation("com.github.hypfvieh:dbus-java-transport-junixsocket:5.2.0")
-
-    // Same URL deobfuscation helper used by Android's StreamResolver.
-    implementation("com.github.TeamNewPipe:NewPipeExtractor:v0.26.3")
-
-    // JVM equivalent of Android's QuickJS module host.
-    implementation("org.graalvm.polyglot:polyglot:24.1.2")
-    implementation("org.graalvm.polyglot:js:24.1.2")
-    implementation("org.graalvm.js:js-language:24.1.2")
 
     testImplementation(kotlin("test"))
 }
@@ -392,7 +360,6 @@ val windowsPortableAssemble by tasks.registering {
     val appJar = tasks.named<Jar>("jar").flatMap { it.archiveFile }
     val runtime = configurations.named("runtimeClasspath")
     val version = appVersion
-    val moduleIndex = desktopModuleIndexUrl
     val lastfmKey = lastfmApiKey
     val lastfmSharedSecret = lastfmSecret
     val mainClass = composeMainClass
@@ -400,7 +367,6 @@ val windowsPortableAssemble by tasks.registering {
     inputs.file(appJar)
     inputs.files(runtime)
     inputs.property("version", version)
-    inputs.property("moduleIndex", moduleIndex)
     inputs.property("lastfm", lastfmKey.isNotBlank())
     inputs.property("mainClass", mainClass)
     outputs.dir(stage)
@@ -430,7 +396,6 @@ val windowsPortableAssemble by tasks.registering {
                 appendLine("set \"RUNNER=java\"")
                 appendLine("if defined JAVA_HOME set \"RUNNER=%JAVA_HOME%\\bin\\java\"")
                 append("\"%RUNNER%\" -Dbitchord.version=$version")
-                if (moduleIndex.isNotBlank()) append(" -Dbitchord.module.index=$moduleIndex")
                 if (lastfmKey.isNotBlank() && lastfmSharedSecret.isNotBlank()) {
                     append(" -Dbitchord.lastfm.key=$lastfmKey -Dbitchord.lastfm.secret=$lastfmSharedSecret")
                 }
@@ -505,14 +470,8 @@ compose.desktop {
         jvmArgs("-Xmx512m")
         jvmArgs("-XX:+UseG1GC", "-XX:G1PeriodicGCInterval=20000", "-XX:G1PeriodicGCSystemLoadThreshold=0")
         jvmArgs("-Dbitchord.version=$appVersion")
-        if (desktopModuleIndexUrl.isNotBlank()) {
-            jvmArgs("-Dbitchord.module.index=$desktopModuleIndexUrl")
-        }
         if (lastfmApiKey.isNotBlank() && lastfmSecret.isNotBlank()) {
             jvmArgs("-Dbitchord.lastfm.key=$lastfmApiKey", "-Dbitchord.lastfm.secret=$lastfmSecret")
-        }
-        if (listenTogetherServer.isNotBlank()) {
-            jvmArgs("-Dbitchord.listentogether.server=$listenTogetherServer")
         }
 
         buildTypes.release.proguard {
@@ -533,7 +492,7 @@ compose.desktop {
             )
             packageName = "BitChord"
             packageVersion = nativePackageVersion
-            description = if (targetOs == "windows") "BitChord" else "Aesthetic YouTube Music client"
+            description = "Offline music player"
             vendor = "BitChord contributors"
             copyright = "Copyright © 2026 BitChord contributors"
 
@@ -551,10 +510,6 @@ compose.desktop {
                 "java.xml",
                 "jdk.crypto.ec",
                 "jdk.dynalink",
-                // JavaFX WebEngine returns JavaScript objects through netscape.javascript.JSObject.
-                // Without this module the slim production runtime crashes in twkExecuteScript,
-                // while development runs work because the full JDK already contains it.
-                "jdk.jsobject",
                 "jdk.localedata",
                 "jdk.security.auth",
                 "jdk.unsupported",

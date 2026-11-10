@@ -2,6 +2,7 @@ package com.music.bitchord
 
 import android.app.Application
 import androidx.annotation.OptIn
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.media3.common.util.UnstableApi
 import coil3.ImageLoader
 import coil3.PlatformContext
@@ -10,27 +11,15 @@ import coil3.disk.DiskCache
 import coil3.disk.directory
 import coil3.memory.MemoryCache
 import coil3.request.crossfade
-import com.music.bitchord.auth.AuthStore
 import com.music.bitchord.data.DebugLog
 import com.music.bitchord.data.lyrics.LyricsTranslation
-import androidx.appcompat.app.AppCompatDelegate
-import com.music.bitchord.ui.player.AndroidPlayerHost
-import com.music.bitchord.ui.player.PlayerPlatform
-import com.music.bitchord.playback.AudioCache
-import com.music.bitchord.playback.LastPlayed
-import com.music.bitchord.playback.OriginalVersion
-import com.music.bitchord.data.innertube.Innertube
-import com.music.bitchord.data.innertube.AndroidStreamHooks
 import com.music.bitchord.data.settings.AppSettings
 import com.music.bitchord.data.settings.SearchHistory
-import com.music.bitchord.data.sources.SourceRegistry
 import com.music.bitchord.data.stats.ArtistFacts
 import com.music.bitchord.data.stats.ListeningStats
-import com.music.bitchord.download.Downloads
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlin.concurrent.thread
+import com.music.bitchord.playback.LastPlayed
+import com.music.bitchord.ui.player.AndroidPlayerHost
+import com.music.bitchord.ui.player.PlayerPlatform
 
 class BitChordApplication : Application(), SingletonImageLoader.Factory {
 
@@ -39,11 +28,10 @@ class BitChordApplication : Application(), SingletonImageLoader.Factory {
         super.onCreate()
         // The player is drawn by the shared UI module; this is what it reads
         // underneath — settings and outputs.
-        AndroidStreamHooks.installEarly()
         PlayerPlatform.install(AndroidPlayerHost(this))
         com.music.bitchord.ui.AppUi.install(com.music.bitchord.ui.AndroidAppUiHost)
-        // The shared data layer (lyrics, the YouTube Music client) logs to
-        // logcat on debug builds only, as the app's own DebugLog always has.
+        // The shared data layer (lyrics, artist facts) logs to logcat on debug
+        // builds only, as the app's own DebugLog always has.
         if (BuildConfig.DEBUG) {
             DebugLog.sink = DebugLog.Sink { level, tag, message, error ->
                 when (level) {
@@ -54,81 +42,34 @@ class BitChordApplication : Application(), SingletonImageLoader.Factory {
                 }
             }
         }
-        // The per-app language picker, which YouTube Music's `hl` follows.
-        // Full tag (zh-Hant / zh-Hans preserved); Innertube maps to hl/gl.
-        Innertube.appLanguage = { AppCompatDelegate.getApplicationLocales().get(0)?.toLanguageTag() }
+        // The per-app language picker. Full tag (zh-Hant / zh-Hans preserved)
+        // so the shared UI resolves the language the listener actually chose.
         migrateScriptOnlyAppLocale()
         LyricsTranslation.cacheDir = cacheDir
-        // PlaybackService shares this process, so seeding the cookie here means
-        // stream resolution is authenticated from the first play onwards.
-        authStore = AuthStore(this)
-        // Opened off the main thread, alongside everything below: none of these
-        // reads a setting or the session, and between them they are the slowest
-        // opens at startup — SourceRegistry's encrypted store most of all.
-        // Started only once [AuthStore] exists, because both encrypted stores
-        // share one keystore master key and a first launch must not have two
-        // threads racing to create it. Joined before onCreate returns, so
-        // nothing that runs after startup can see any of them half open.
-        val backgroundInit = thread(name = "startup-init") {
-            SourceRegistry.init(this)
-            AndroidStreamHooks.initInnerTubeX(this)
-        }
-        // Migration-safe: an old single cookie becomes the first encrypted
-        // session, while newer installs restore the profile the listener chose.
-        val restoredSession = authStore.activeSession
-        if (restoredSession != null && authStore.activeAccountId == null) {
-            authStore.select(restoredSession.accountId, restoredSession.activeProfileId)
-        }
-        authStore.cookie = restoredSession?.cookie
-        Innertube.cookie = restoredSession?.cookie
-        // Which account that cookie actually acts as. Read here rather than on
-        // demand so the answer is usually in hand before the first request needs
-        // it: a play registered under the wrong account is indistinguishable, to
-        // the listener, from one that was never registered at all. Fire and
-        // forget — every caller works without it, just less precisely.
-        if (restoredSession != null) {
-            // After the cookie, never before: setting the cookie clears any
-            // channel the last session was acting as, so restoring the choice
-            // first would restore it into the value about to be wiped.
-            restoredSession.profiles.firstOrNull { it.profileId == restoredSession.activeProfileId }
-                ?.let { Innertube.selectChannel(it.pageId, it.dataSyncId, it.authUser) }
-            CoroutineScope(Dispatchers.IO).launch { Innertube.ensureSessionScope() }
-        }
-        AppSettings.init(this, authStore)
-        // Before anything resolves a track: an addon with `checkValidLossless`
-        // is gated on this, and the gate reads "no" until it has looked.
+        AppSettings.init(this)
+        // Before anything plays a local file: an output that cannot be opened
+        // losslessly is gated on this, and the gate reads "no" until it has
+        // looked.
         com.music.bitchord.playback.audio.LosslessOutput.init(this)
         SearchHistory.init(this)
         LastPlayed.init(this)
-        // Which tracks the listener has reverted to YouTube's own upload. Read
-        // by [Song.toMediaItem], so it has to be open before the restart
-        // snapshot below is turned back into queue items.
-        OriginalVersion.init(this)
-        // What's already saved to Downloads, so the song menu can say so
-        // without a media-store query per row.
-        Downloads.init(this)
         // The device's own listening record. Opened here rather than in
         // PlaybackService because the Replay page reads it from the UI side and
         // both live in this process — one owner, one directory.
         ListeningStats.init(this)
         // After AppSettings, whose switch decides whether half of it runs.
         ArtistFacts.init(this)
-        // One cache directory can only be opened once per process, and
-        // PlaybackService shares this one — so it's opened here, not there.
-        AudioCache.init(this)
         // A sideloaded update is just a new APK over the old one, so app data —
-        // including whatever the old build left in these caches — survives it
-        // untouched. Wipe both on the first launch of a higher versionCode so a
+        // including whatever the old build left in the image cache — survives it
+        // untouched. Wipe it on the first launch of a higher versionCode so a
         // format or key change between builds can't serve stale or mismatched
         // bytes from a cache the new code didn't write.
         if (AppSettings.consumeVersionUpdate(BuildConfig.VERSION_CODE)) {
-            AudioCache.clear()
             SingletonImageLoader.get(this).let { loader ->
                 loader.memoryCache?.clear()
                 loader.diskCache?.clear()
             }
         }
-        backgroundInit.join()
     }
 
     /**
@@ -159,9 +100,6 @@ class BitChordApplication : Application(), SingletonImageLoader.Factory {
             .build()
 
     companion object {
-        lateinit var authStore: AuthStore
-            private set
-
         /**
          * One-time move from region-less script tags to regional ones.
          *

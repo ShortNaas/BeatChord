@@ -181,8 +181,7 @@ object LocalFileManager {
      * The artwork is *not* pulled out and passed back in. The taggers keep the
      * cover blocks they find when no new one is supplied, which preserves every
      * picture in the file — including the ones a single extracted cover would
-     * lose — and keeps this path free of the one thing in [MediaTagger] that
-     * fetches from the network.
+     * lose — and keeps this path free of any image decoding or fetching.
      */
     private fun rewriteFileTags(
         context: Context,

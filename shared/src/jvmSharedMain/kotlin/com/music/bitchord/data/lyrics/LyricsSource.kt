@@ -91,18 +91,6 @@ enum class LyricsSource(
         detail = "Contributed by listeners, so it has what nobody licensed",
         wordSynced = true,
     ),
-    YOUTUBE_TRANSCRIPT(
-        label = "YouTube captions",
-        detail = "Timed captions matched to the exact playing video",
-        wordSynced = false,
-        hidden = true,
-    ),
-    YOUTUBE_MUSIC(
-        label = "YouTube Music",
-        detail = "Plain lyrics from the playing video's Lyrics tab",
-        wordSynced = false,
-        hidden = true,
-    ),
     MEGALOBIZ(
         label = "Megalobiz",
         detail = "Community-made, whole-line LRC",

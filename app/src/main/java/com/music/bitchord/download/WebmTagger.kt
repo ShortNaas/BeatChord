@@ -4,11 +4,11 @@ import com.music.bitchord.data.lyrics.WORD_LYRICS_FIELD
 
 /**
  * Appends Matroska `Tags` and `Attachments` elements — title, artist, album,
- * lyrics, cover — to an already-downloaded WebM file, in place.
+ * lyrics, cover — to a WebM file, in place.
  *
  * The insertion is always a plain append at the end of the file, never a
  * splice in the middle, which is what makes this simpler than [Mp4Tagger]:
- * a downloaded track is one `EBML` header followed by one `Segment`, and
+ * such a file is one `EBML` header followed by one `Segment`, and
  * `Tags`/`Attachments` are ordinary children of that `Segment` with nothing
  * else addressing them by absolute offset (unlike MP4's `stco`/`co64`, an
  * optional `SeekHead` records where things are, but it is advisory — a
@@ -116,7 +116,7 @@ object WebmTagger {
         if (!wordLyrics.isNullOrBlank()) simple += simpleTag(WORD_LYRICS_FIELD, wordLyrics)
         if (simple.isNotEmpty()) {
             // An empty Targets applies the tag to the whole file — there is no
-            // track/chapter to single out in a lone-audio-stream download.
+            // track/chapter to single out in a file holding one audio stream.
             val targets = elem(ID_TARGETS, ByteArray(0))
             val tagPayload = simple.fold(targets) { acc, s -> acc + s }
             out += elem(ID_TAGS, elem(ID_TAG, tagPayload))

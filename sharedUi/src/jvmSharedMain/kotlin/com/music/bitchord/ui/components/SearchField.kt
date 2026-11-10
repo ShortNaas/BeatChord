@@ -95,7 +95,7 @@ fun SearchField(
                     text = placeholder,
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    // A narrow field (the phone's, beside the account photo)
+                    // A narrow field (the phone's, beside the top bar's controls)
                     // must cut the hint short, not wrap it out of the pill.
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

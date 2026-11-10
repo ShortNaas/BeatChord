@@ -5,8 +5,8 @@ import com.music.bitchord.data.lyrics.WORD_LYRICS_FIELD
 import java.io.ByteArrayOutputStream
 
 /**
- * Rewrites a downloaded FLAC's metadata blocks to carry title, artist, album,
- * lyrics and cover art.
+ * Rewrites a FLAC's metadata blocks to carry title, artist, album, lyrics and
+ * cover art.
  *
  * The simplest of the three taggers, and the reason is worth stating because it
  * is the opposite of what the other two are shaped by. A FLAC is `fLaC`, then a
@@ -26,17 +26,17 @@ import java.io.ByteArrayOutputStream
  * there for: it exists to be spent on exactly this.
  *
  * A `PICTURE` the file already carries is only dropped when a new cover
- * replaces it. That was not true while the only caller was the download path,
- * which always ran on a fresh file with no metadata at all — but [retag] runs on
- * files that have been on the device for years, and a cover is the one block
- * there that a listener would notice going missing. Multiple `PICTURE` blocks
- * are legal and every one of them is carried across; the front cover a rewrite
- * adds is merely the last of them.
+ * replaces it. That was not true in the shape this tagger was first written
+ * for, which always ran on a fresh file with no metadata at all — but [retag]
+ * runs on files that have been on the device for years, and a cover is the one
+ * block there that a listener would notice going missing. Multiple `PICTURE`
+ * blocks are legal and every one of them is carried across; the front cover a
+ * rewrite adds is merely the last of them.
  *
  * Anything that doesn't fit the shape above — a file that doesn't open with
  * `fLaC`, a block that claims more bytes than the file has, a first block that
  * isn't `STREAMINFO` — comes back as the input, unchanged and by reference, so
- * [MediaTagger] leaves the downloaded file alone.
+ * the caller leaves the file alone.
  */
 object FlacTagger {
 
@@ -57,7 +57,7 @@ object FlacTagger {
      *
      * The difference from [tag] is what happens to metadata this doesn't set: an
      * existing `VORBIS_COMMENT` carries fields like `GENRE`, `DATE` and
-     * `TRACKNUMBER` that a download never had, and rebuilding the block from
+     * `TRACKNUMBER` that this tagger does not set, and rebuilding the block from
      * scratch would spend every one of them to change a title. [EDITABLE_FIELDS]
      * names the five fields a retag owns, so clearing one of those — an album
      * field the user emptied — really does clear it instead of resurrecting the
@@ -110,7 +110,7 @@ object FlacTagger {
      * has to *think* about lives in the first few hundred kilobytes of the file,
      * and everything after that is a byte-for-byte copy. Handing a caller those
      * two answers lets it stream the copy rather than hold three versions of a
-     * 40MB track in memory to perform it — see [MediaTagger.tagFlacStreaming].
+     * 40MB track in memory to perform it.
      */
     class Rewrite(val metadata: ByteArray, val audioStart: Int)
 
@@ -187,8 +187,8 @@ object FlacTagger {
         )
             // A payload past what three bytes of length can describe costs that
             // one block and nothing else. Only a cover could realistically reach
-            // 16MB — `LyricsTag` caps what it hands over at a small fraction of
-            // it — and losing the cover is a better outcome than losing the tags.
+            // 16MB — a lyrics value is a small fraction of it — and losing the
+            // cover is a better outcome than losing the tags.
             .filter { it.second.size <= MAX_BLOCK_BYTES }
         if (additions.isEmpty()) return null
 

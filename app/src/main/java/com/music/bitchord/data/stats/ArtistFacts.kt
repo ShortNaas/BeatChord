@@ -5,9 +5,6 @@ import android.net.Uri
 import android.util.Log
 import com.music.bitchord.BuildConfig
 import com.music.bitchord.data.Http
-import com.music.bitchord.data.YtMusicRepository
-import com.music.bitchord.data.model.SearchFilter
-import com.music.bitchord.data.model.SearchResult
 import com.music.bitchord.data.settings.AppSettings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -30,38 +27,26 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
 /**
- * What the Replay knows about an artist beyond their name: their picture, their
- * page, and what kind of music they make.
+ * What the Replay knows about an artist beyond their name: what kind of music
+ * they make.
  *
- * ## Why any of this needs looking up
+ * ## Why the genre needs looking up
  *
  * Listening is counted per *name*, because a name is the only thing every track
  * carries — see [ListeningStats]. That is enough to rank artists and nothing
- * else. Three things the artist chart wants are simply not in the listening:
+ * else. A genre is simply not in the files: a tag may say one, but most
+ * libraries are inconsistent about it, and a chart built from tags would name
+ * whatever the last tagger typed.
  *
- *  - **A picture of the artist.** Every track carries its own sleeve, and using
- *    that gave an artist chart illustrated with album covers — the same cover as
- *    the song chart above it, which reads as the page having drawn the wrong
- *    list rather than as a deliberate choice.
- *  - **A page to open.** A browse id only rides along when the row that queued
- *    the track happened to have one, which for a home-feed card or an AutoPlay
- *    suggestion it does not.
- *  - **A genre.** Nothing this app already talks to states one. YouTube Music's
- *    browse responses carry none — an album page bills itself "Album • 2023" —
- *    and the source modules hand back audio, not taxonomy.
+ * So the genre comes from Last.fm's `artist.getTopTags`, which is a different
+ * service and *is* a setting ([AppSettings.replayGenres]): it sends an artist's
+ * name and nothing else — no track, no time, no id, no indication that anything
+ * was played — and turned off, the genre chart simply isn't drawn while every
+ * other chart is unaffected. This is the app's second and last network
+ * exception, beside lyrics.
  *
- * ## One store, two sources, two gates
- *
- * The picture and the page come from a YouTube Music artist search, which this
- * app is already talking to constantly and which is therefore not worth a
- * setting. The genre comes from Last.fm's `artist.getTopTags`, which is a
- * different service and *is* a setting ([AppSettings.replayGenres]): it sends an
- * artist's name and nothing else — no track, no time, no id, no indication that
- * anything was played — and turned off, the genre chart simply isn't drawn while
- * every other chart is unaffected.
- *
- * Both are asked once per artist and kept on this device for good, so the cost
- * is a couple of requests the first time somebody new turns up.
+ * It is asked once per artist and kept on this device for good, so the cost is
+ * a request the first time somebody new turns up.
  *
  * ## Why the tags are filtered rather than used
  *
@@ -94,7 +79,7 @@ object ArtistFacts {
      * Bumped whenever a lookup lands.
      *
      * The Replay reads these facts once, while it is building its charts, so a
-     * picture that arrives a second after the page opened would otherwise not
+     * genre that arrives a second after the page opened would otherwise not
      * appear until the page was opened again — which for a page opened a few
      * times a year means never. Watching this lets it rebuild.
      */
@@ -137,10 +122,17 @@ object ArtistFacts {
         return known[key(artist)]?.genres.orEmpty()
     }
 
-    /** A picture of the artist, or null to fall back to whatever the row has. */
+    /**
+     * A picture of the artist cached by an earlier build, or null to fall back
+     * to the track's own sleeve. Nothing fetches one any more: an artist is
+     * enriched with a genre and nothing else.
+     */
     fun imageFor(artist: String): String? = known[key(artist)]?.image
 
-    /** The artist's page, so a chart row opens it without searching first. */
+    /**
+     * The artist's page cached by an earlier build, or null. Same story as
+     * [imageFor]: this build never resolves one.
+     */
     fun browseIdFor(artist: String): String? = known[key(artist)]?.browseId
 
     /**
@@ -162,19 +154,11 @@ object ArtistFacts {
 
     /** What is still worth asking about for this artist. */
     private fun StoredArtist.wants(): Boolean {
-        // A miss is remembered too, or an artist neither service has heard of is
+        // A miss is remembered too, or an artist Last.fm has never heard of is
         // asked about on every play forever. It expires, because the reason for
         // a miss is as often a dropped connection as an unknown artist.
-        // The card is the artist's YouTube Music portrait, and the switch that
-        // decides whether this object may talk to anyone at all is the same one:
-        // a user who turned Replay enrichment off must not get an Innertube
-        // search on every new artist.
-        val wantsCard = AppSettings.replayGenres.value &&
-            browseId == null &&
-            System.currentTimeMillis() - cardAt > TimeUnit.DAYS.toMillis(RETRY_DAYS)
-        val wantsGenres = genresAvailable && genres.isEmpty() &&
+        return genresAvailable && genres.isEmpty() &&
             System.currentTimeMillis() - genresAt > TimeUnit.DAYS.toMillis(RETRY_DAYS)
-        return wantsCard || wantsGenres
     }
 
     // ── The lookups ─────────────────────────────────────────────────────────
@@ -183,17 +167,12 @@ object ArtistFacts {
      * One artist at a time, spaced out.
      *
      * Serial and slow on purpose: this is background enrichment for a page that
-     * may not be opened for months, and it shares [Http.client] and the Innertube
-     * session with playback. Nothing here is worth a millisecond of a stream's
-     * latency.
+     * may not be opened for months, and it shares [Http.client] with lyrics and
+     * playback. Nothing here is worth a millisecond of a track's latency.
      */
     private suspend fun worker() {
         for (name in requests) {
             val existing = known[key(name)]
-            if (existing?.browseId == null) {
-                runCatching { fetchCard(name) }
-                    .onFailure { Log.w(TAG, "Artist lookup failed for $name", it) }
-            }
             if (genresAvailable && existing?.genres.isNullOrEmpty()) {
                 runCatching { fetchGenres(name) }
                     .onFailure { Log.w(TAG, "Genre lookup failed for $name", it) }
@@ -203,34 +182,6 @@ object ArtistFacts {
             _revision.value++
             delay(REQUEST_SPACING_MS)
         }
-    }
-
-    /**
-     * The artist's picture and page, off a YouTube Music artist search.
-     *
-     * A search rather than a browse, because a browse needs the id and the id is
-     * half of what this is for. The top artist hit for a name is the artist:
-     * that is the same lookup the app already makes to find a video's catalogue
-     * release, and the same one a person would make.
-     */
-    private suspend fun fetchCard(name: String) {
-        val hit = YtMusicRepository.search(name, SearchFilter.ARTISTS).getOrNull()
-            ?.filterIsInstance<SearchResult.Browse>()
-            ?.firstOrNull()
-            ?.item
-        val entry = known[key(name)] ?: StoredArtist(key = key(name))
-        known[key(name)] = entry.copy(
-            // Only when the hit is actually this artist. A search for a name
-            // nobody has heard of still returns *something*, and filing a
-            // stranger's photograph under someone else's name is worse than
-            // keeping the sleeve.
-            image = hit?.thumbnailUrl?.takeIf { hit.title.equals(name, ignoreCase = true) }
-                ?: entry.image,
-            browseId = hit?.browseId?.takeIf { hit.title.equals(name, ignoreCase = true) }
-                ?: entry.browseId,
-            cardAt = System.currentTimeMillis(),
-        )
-        dirty = true
     }
 
     private fun fetchGenres(name: String) {

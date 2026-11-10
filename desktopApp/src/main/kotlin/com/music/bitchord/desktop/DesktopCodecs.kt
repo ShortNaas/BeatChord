@@ -15,12 +15,12 @@ internal object DesktopCodecs {
     /** Whether a Dolby Atmos rendition can be played. */
     val supportsDolbyAtmos: Boolean get() = canDecode("eac3")
 
-    /** Every codec the Android build can play, by FFmpeg's name for it. */
+    /** Every codec a local file is likely to hold, by FFmpeg's name for it. */
     val EXPECTED = listOf(
-        // YouTube serves these two and nothing else.
+        // The two a lossy download or a voice memos folder usually carries.
         "aac",
         "opus",
-        // Sources and local files.
+        // And the rest of a library.
         "flac",
         "alac",
         "mp3",

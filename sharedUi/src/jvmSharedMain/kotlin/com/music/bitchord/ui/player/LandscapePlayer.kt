@@ -33,9 +33,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Undo
 import androidx.compose.material.icons.rounded.MoreHoriz
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -382,10 +380,7 @@ internal fun LandscapeMainPane(
 @Composable
 internal fun LandscapeCredits(
     song: Song,
-    signedIn: Boolean,
     likeStatus: LikeStatus,
-    /** The menu glyph is briefly the undo arrow after a quality upgrade. */
-    showRevertCue: Boolean,
     onToggleLike: () -> Unit,
     onOpenMenu: () -> Unit,
     onOpenAlbum: (String) -> Unit,
@@ -430,24 +425,21 @@ internal fun LandscapeCredits(
             }
         }
         Spacer(Modifier.width(10.dp))
-        // Same gate as the portrait player's: no account to like against for a
-        // guest, and no YouTube identity to rate a local file or a finished
-        // download against either.
-        if (signedIn && song.localUri == null) {
-            val liked = likeStatus == LikeStatus.LIKE
-            CircleGlyph(
-                icon = if (liked) BitChordIcons.HeartFilled else BitChordIcons.Heart,
-                contentDescription = stringResource(
-                    if (liked) Res.string.remove_from_liked else Res.string.like,
-                ),
-                onClick = onToggleLike,
-                active = liked,
-                haptic = if (liked) Haptic.ToggleOff else Haptic.ToggleOn,
-            )
-            Spacer(Modifier.width(8.dp))
-        }
+        // The heart writes the local Favorites playlist, so it belongs on every
+        // track rather than only on one with an account behind it.
+        val liked = likeStatus == LikeStatus.LIKE
         CircleGlyph(
-            icon = if (showRevertCue) Icons.AutoMirrored.Rounded.Undo else Icons.Rounded.MoreHoriz,
+            icon = if (liked) BitChordIcons.HeartFilled else BitChordIcons.Heart,
+            contentDescription = stringResource(
+                if (liked) Res.string.remove_from_liked else Res.string.like,
+            ),
+            onClick = onToggleLike,
+            active = liked,
+            haptic = if (liked) Haptic.ToggleOff else Haptic.ToggleOn,
+        )
+        Spacer(Modifier.width(8.dp))
+        CircleGlyph(
+            icon = Icons.Rounded.MoreHoriz,
             contentDescription = stringResource(Res.string.more),
             onClick = onOpenMenu,
         )

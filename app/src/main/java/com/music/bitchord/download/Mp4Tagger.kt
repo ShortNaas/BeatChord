@@ -6,7 +6,7 @@ import java.io.ByteArrayOutputStream
 
 /**
  * Writes iTunes-style metadata atoms — title, artist, album, lyrics, cover —
- * into an already-downloaded M4A/MP4 file, in place.
+ * into an M4A/MP4 file, in place.
  *
  * There is no public Android API for this: [android.media.MediaMuxer] can
  * copy tracks into a fresh MP4 but has no way to declare a title or embed
@@ -24,11 +24,11 @@ import java.io.ByteArrayOutputStream
  * offset, so that one adjustment is sufficient regardless of whether `mdat`
  * sits before or after `moov`.
  *
- * That is right for a download, which lands on a file with no iTunes metadata
- * at all. [retag] runs on files that already have some — a track saved by
- * another tool, or this app's own earlier download — and appending a second
- * `udta` there would leave two sets of tags in one file, with the answer
- * depending on which one a given player reads. So [retag] rewrites the `udta`
+ * That is right for a fresh file with no iTunes metadata at all. [retag] runs
+ * on files that already have some — a track saved by another tool, or tagged by
+ * an earlier build — and appending a second `udta` there would leave two sets
+ * of tags in one file, with the answer depending on which one a given player
+ * reads. So [retag] rewrites the `udta`
  * the file already has instead, carrying across every `ilst` child it does not
  * set and — when no new cover is supplied — the existing `covr` with them. The
  * offset adjustment is the same, measured from the start of the replaced
@@ -36,8 +36,8 @@ import java.io.ByteArrayOutputStream
  *
  * Any layout this doesn't recognise — no `moov`, a box that doesn't fit its
  * parent — falls through to returning the input unchanged rather than
- * guessing: a download that plays untagged is a smaller loss than one a
- * bad rewrite has corrupted.
+ * guessing: a file that plays untagged is a smaller loss than one a bad rewrite
+ * has corrupted.
  */
 object Mp4Tagger {
 

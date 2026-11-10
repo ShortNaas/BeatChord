@@ -7,7 +7,6 @@ import android.util.Log
 import androidx.media3.common.util.UnstableApi
 import com.music.bitchord.data.TrackLog
 import com.music.bitchord.data.model.Song
-import com.music.bitchord.playback.AudioCache
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -25,8 +24,8 @@ import kotlin.system.measureTimeMillis
 
 /**
  * Analyzes audio waveforms/energy envelopes to find the exact time alignment
- * offset between two versions of the same track (e.g. YouTube music video with intro
- * skit vs studio catalogue audio release).
+ * offset between two versions of the same track (e.g. a film mix with an intro
+ * skit versus the studio release).
  */
 @UnstableApi
 object VersionAudioAligner {
@@ -253,40 +252,17 @@ object VersionAudioAligner {
     }
 
     /**
-     * Opens the copy of [song] worth measuring: the largest same-source
-     * opening on disk, and only a substitute (`#alt`) when nothing else is
-     * there at all.
+     * Opens the file [song] names, or null when it has none.
      *
-     * Ordered by bytes rather than by whichever URI answers first, because
-     * neither URI names a particular copy — the live one resolves to whatever
-     * rendition the player is streaming *now*, and the analysis copy under the
-     * plain id can be a stale stub while a sibling key holds the whole
-     * opening. A stub hands the decoder a second of audio, and a second of
-     * audio can only correlate to garbage, which is how every switch measured
-     * against one came out "failed". [AudioCache] asks the same question in
-     * the same order when it declares the head ready, so what the wait calls
-     * ready is what gets opened here.
+     * A version switch measures two local files against each other, so there is
+     * nothing to choose between and nothing to fetch: the song's own URI is the
+     * only copy.
      */
     private fun openDataSource(context: Context, song: Song): MediaDataSource? {
-        song.localUri?.let { local ->
-            val uri = Uri.parse(local)
-            if (LocalAudioSource.isLocal(uri)) {
-                return LocalAudioSource.open(context.contentResolver, uri)
-            }
-        }
-        val watch = Uri.parse("bitchord://watch?v=${song.videoId}")
-        val onDisk = AudioCache.renditionsOf(watch)
-        val sameSource = onDisk
-            .filter { !it.key.endsWith("#alt") }
-            .maxByOrNull { it.cachedPrefix }
-        val pick = if (sameSource != null &&
-            sameSource.cachedPrefix >= AudioCache.MIN_ALIGNMENT_PREFIX_BYTES
-        ) {
-            sameSource
-        } else {
-            onDisk.maxByOrNull { it.cachedPrefix }
-        } ?: return null
-        return AudioCache.renditionDataSource(watch, pick)
+        val local = song.localUri ?: return null
+        val uri = Uri.parse(local)
+        if (!LocalAudioSource.isLocal(uri)) return null
+        return LocalAudioSource.open(context.contentResolver, uri)
     }
 
     private fun safeClose(ds: MediaDataSource?) {

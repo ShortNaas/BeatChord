@@ -13,16 +13,12 @@ import org.jetbrains.compose.resources.stringResource
  * — so those get a label from here instead.
  */
 @Composable
-internal fun outputLabel(device: AudioOutputDevice, accountName: String?): String {
-    val firstName = accountName?.trim()?.split(Regex("\\s+"))?.firstOrNull()?.takeIf { it.isNotBlank() }
-    return when {
-        device.name.isNotBlank() -> device.name
-        device.kind == AudioOutputKind.WIRED -> stringResource(Res.string.wired_headphones)
-        device.kind == AudioOutputKind.USB -> stringResource(Res.string.usb_audio)
-        device.kind == AudioOutputKind.HDMI -> stringResource(Res.string.hdmi_output)
-        firstName != null -> stringResource(Res.string.personal_phone, firstName)
-        else -> stringResource(Res.string.this_phone)
-    }
+internal fun outputLabel(device: AudioOutputDevice): String = when {
+    device.name.isNotBlank() -> device.name
+    device.kind == AudioOutputKind.WIRED -> stringResource(Res.string.wired_headphones)
+    device.kind == AudioOutputKind.USB -> stringResource(Res.string.usb_audio)
+    device.kind == AudioOutputKind.HDMI -> stringResource(Res.string.hdmi_output)
+    else -> stringResource(Res.string.this_phone)
 }
 
 /**
@@ -33,16 +29,8 @@ internal fun outputLabel(device: AudioOutputDevice, accountName: String?): Strin
  * selected route and the picker read the audio devices.
  */
 @Composable
-internal fun rememberAudioOutputName(accountName: String?): String {
+internal fun rememberAudioOutputName(): String {
     val outputs = rememberAudioOutputs()
-    val active = outputs.firstOrNull { it.isActive }
-        ?: return if (accountName.isNullOrBlank()) {
-            stringResource(Res.string.this_phone)
-        } else {
-            stringResource(
-                Res.string.personal_phone,
-                accountName.trim().split(Regex("\\s+")).first(),
-            )
-        }
-    return outputLabel(active, accountName)
+    val active = outputs.firstOrNull { it.isActive } ?: return stringResource(Res.string.this_phone)
+    return outputLabel(active)
 }

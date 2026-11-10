@@ -2,14 +2,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!--
+      Lyrics (fetched on demand, then cached to disk) and the opt-in artist
+      genre lookup are the only things that may ever reach the network. See
+      AGENTS.md invariant 3.
+    -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Tells Wi-Fi from mobile data, so the matching quality ceiling applies. -->
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
-    <!-- Saving a track to Music outlives the screen it was asked from. -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- Touch feedback. The system's own haptics switch is honoured on top of
@@ -129,17 +130,6 @@
                 <category android:name="android.intent.category.APP_MUSIC" />
             </intent-filter>
 
-            <!--
-              "Play <something>" said out loud, and the search a media app is
-              handed when the assistant has words but no app in mind. An empty
-              query means "play music" with nothing said about what, which is
-              resumed rather than searched — see [MusicLink].
-            -->
-            <intent-filter>
-                <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-
         </activity>
 
         <service
@@ -160,15 +150,6 @@
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
             </intent-filter>
         </receiver>
-
-        <!--
-          Downloads. Not exported: it is started by the app and by its own
-          cancel action, and nothing outside has any business queueing work.
-        -->
-        <service
-            android:name=".download.DownloadService"
-            android:exported="false"
-            android:foregroundServiceType="dataSync" />
 
         <!--
           Home-screen widgets. Two providers so the picker lists a 2×2 and a 4×2,
@@ -233,9 +214,6 @@
           receiving app gets a read grant that arrives with the intent, covers
           one file (see @xml/file_paths) and expires with it.
 
-          Also serves the downloaded update APK to the system installer
-          without it needing broad storage access — its own cache-only scope,
-          nothing else shared through it.
         -->
         <provider
             android:name="androidx.core.content.FileProvider"

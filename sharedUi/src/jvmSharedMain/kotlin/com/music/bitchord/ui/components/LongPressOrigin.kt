@@ -49,8 +49,7 @@ class HeldItem internal constructor(
  * A single slot rather than state threaded through every list: only one item
  * can be held at a time, and the host reads it in the same call stack the hold
  * fired in. The timestamp is the guard against a hold whose host never asked —
- * Downloads' multi-select, or the desktop build — being claimed later by an
- * unrelated tap on a ⋮.
+ * the desktop build — being claimed later by an unrelated tap on a ⋮.
  */
 object LongPressOrigin {
     private var held: HeldItem? = null

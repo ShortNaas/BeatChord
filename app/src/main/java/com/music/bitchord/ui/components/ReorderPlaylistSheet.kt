@@ -57,16 +57,16 @@ import com.music.bitchord.data.model.artworkAt
 import androidx.compose.ui.res.painterResource
 
 /**
- * Rearranges one of the account's playlists: every entry with a handle to drag
- * it by, and nothing sent until Save.
+ * Rearranges one of this device's playlists: every entry with a handle to drag
+ * it by, and nothing written until Save.
  *
- * Held locally and saved as one edit, rather than sent a move at a time while
- * dragging, because a drag passes through a dozen positions on the way to the
- * one it was meant for, and each of those would otherwise be a request that
+ * Held locally and saved as one edit, rather than written a move at a time
+ * while dragging, because a drag passes through a dozen positions on the way to
+ * the one it was meant for, and each of those would otherwise be a write that
  * could land out of order with the next.
  *
- * [entries] is the playlist as YouTube has it now — loading, failed, or the
- * list to start from. [saving] holds the form while the edit is out.
+ * [entries] is the playlist as it stands now — loading, failed, or the list to
+ * start from. [saving] holds the form while the edit is being written.
  */
 @Composable
 fun ReorderPlaylistSheet(

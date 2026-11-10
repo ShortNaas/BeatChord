@@ -1,7 +1,6 @@
 package com.music.bitchord.ui.player
 
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.draw.drawWithContent
@@ -58,7 +57,6 @@ import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.automirrored.rounded.VolumeDown
 import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.Headphones
-import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -104,7 +102,6 @@ import com.music.bitchord.ui.icons.BitChordIcons
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.music.bitchord.data.NerdStats
 import com.music.bitchord.data.settings.TrackAnalysisState
-import com.music.bitchord.data.settings.AudioQuality
 import com.music.bitchord.data.model.Song
 import java.util.Locale
 import java.util.concurrent.TimeUnit
@@ -119,23 +116,14 @@ import kotlin.math.roundToInt
  * mean in that window, so the rest are dropped rather than queued behind it.
  */
 private const val SHUFFLE_TAP_WINDOW_MS = 400L
-/**
- * The same gate for AutoPlay, held longer because its work is heavier: the
- * toggle crosses to the playback service, tears down the in-flight suggestion
- * load, and then either strips AutoPlay's tracks out of the queue or goes back
- * to the network for a fresh set of them.
- */
-private const val AUTOPLAY_TAP_WINDOW_MS = 700L
 
 /**
- * "Playing from …", "Played by …" or the radio station — what the player is
- * playing *out of*, in the words the caption uses.
+ * "Playing from …" — what the player is playing *out of*, in the words the
+ * caption uses.
  */
 @Composable
 internal fun playbackOriginText(song: Song): String =
-    song.radioName?.let {
-        stringResource(Res.string.playing_radio, it)
-    } ?: stringResource(
+    stringResource(
         Res.string.playing_from,
         song.playbackSource ?: song.albumName ?: stringResource(Res.string.queue),
     )
@@ -277,38 +265,14 @@ private fun MixingLabel(pulse: MixPulse, modifier: Modifier = Modifier) {
 private const val MIXING_LABEL_REST = 0.5f
 
 /**
- * The quality badge between the timestamps — "Lossless", "Hi-Res", a loading
- * shimmer while a lossless source is still being looked for.
+ * The quality badge between the timestamps — "Lossless", "Hi-Res Lossless",
+ * "High Quality" — read straight off the decoder's own report, so it describes
+ * the file being played rather than what anything offered to send.
  */
 @Composable
-internal fun PlaybackQualityLabel(
-    song: Song,
-    isLoading: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    val wifiQuality by PlayerSettings.audioQualityWifi.collectAsStateWithLifecycle()
-    val cellularQuality by PlayerSettings.audioQualityCellular.collectAsStateWithLifecycle()
-    val metered by PlayerSettings.meteredConnection.collectAsStateWithLifecycle()
+internal fun PlaybackQualityLabel(modifier: Modifier = Modifier) {
     val nerdStats by NerdStats.current.collectAsStateWithLifecycle()
-    // Whether this playback session is even asking for a lossless stream — the
-    // same computation SourceResolver.requestForNow() makes, mirrored here so
-    // "Loading lossless" only appears when a lossless fetch is actually in
-    // flight, not on every buffering YouTube track.
-    val effectiveQuality = if (metered == true) cellularQuality else wifiQuality
-    // Whether a module is still racing YouTube for this exact track — see
-    // [NerdStats.racingLossless]. YouTube can win that race and already be
-    // playing while the module lookup is still running detached, and the badge
-    // should keep saying "loading" through that stretch rather than going
-    // blank only to possibly say "loading" again a moment later.
-    val racingLossless by NerdStats.racingLossless.collectAsStateWithLifecycle()
-    LosslessOrStats(
-        isLoading = isLoading,
-        stillRacing = song.videoId in racingLossless,
-        losslessRequested = effectiveQuality == AudioQuality.LOSSLESS,
-        effectiveQuality = effectiveQuality,
-        nerdStats = nerdStats,
-        modifier = modifier,
-    )
+    LosslessOrStats(nerdStats = nerdStats, modifier = modifier)
 }
 
 /**
@@ -316,7 +280,7 @@ internal fun PlaybackQualityLabel(
  * it what Automix's analysis is doing. Nothing at all while the setting is off.
  */
 @Composable
-internal fun SleeveNerdStats(song: Song, modifier: Modifier = Modifier) {
+internal fun SleeveNerdStats(modifier: Modifier = Modifier) {
     val showNerdStats by PlayerSettings.showNerdStats.collectAsStateWithLifecycle()
     if (!showNerdStats) return
     val nerdStats by NerdStats.current.collectAsStateWithLifecycle()
@@ -355,15 +319,11 @@ internal fun SleeveNerdStats(song: Song, modifier: Modifier = Modifier) {
                 // Both sides always named, even when they agree, so the line
                 // reads the same way every time and the eye can find the half
                 // it wants without re-parsing the sentence.
-                text = when {
-                    song.isVideoOrigin ->
-                        stringResource(Res.string.automix_not_supported_video)
-                    else -> stringResource(
-                        Res.string.automix_analysis_status,
-                        smartAnalysis.current.localizedLabel(),
-                        smartAnalysis.next.localizedLabel(),
-                    )
-                },
+                text = stringResource(
+                    Res.string.automix_analysis_status,
+                    smartAnalysis.current.localizedLabel(),
+                    smartAnalysis.next.localizedLabel(),
+                ),
                 style = nerdStyle,
                 // Dimmer than the measured line above it: that one describes
                 // the audio, this one describes the app, and the ranking
@@ -510,12 +470,10 @@ internal fun PlayerActionRow(
     queueOpen: Boolean,
     shuffleEnabled: Boolean,
     repeatMode: Int,
-    autoplayEnabled: Boolean,
     onToggleLyrics: () -> Unit,
     onToggleQueue: () -> Unit,
     onToggleShuffle: () -> Unit,
     onCycleRepeat: () -> Unit,
-    onToggleAutoplay: () -> Unit,
     onOpenOutput: () -> Unit,
     isFavorite: Boolean = false,
     onAddToPlaylist: () -> Unit = {},
@@ -734,7 +692,7 @@ private val BOTTOM_ACTION_SIZE = 44.dp
 private val PILL_SEGMENT_WIDTH = 64.dp
 
 /**
- * Segment width for the Shuffle/Repeat/Autoplay capsule, which is always
+ * Segment width for the Shuffle/Repeat/Playlist capsule, which is always
  * three icons: the two-up spacing left each glyph with room the eye read as
  * empty even at two, and a third icon at the same width just multiplied that
  * empty space instead of tightening it.
@@ -928,10 +886,9 @@ private fun PillSegment(
 /** The line under the transport: the output the sound is leaving by. */
 @Composable
 internal fun OutputCaption(
-    accountName: String?,
     onOpenOutput: () -> Unit,
 ) {
-    val outputName = rememberAudioOutputName(accountName)
+    val outputName = rememberAudioOutputName()
     val outputFormat by PlayerPlatform.host.outputFormat.collectAsStateWithLifecycle()
     val nerdStats by NerdStats.current.collectAsStateWithLifecycle()
     // What the route is *capable* of, read off the negotiated AudioTrack —
@@ -1373,77 +1330,26 @@ private fun formatTime(ms: Long): String {
 }
 
 /**
- * The gap between the two timestamps under the seek bar: just the "Lossless"
- * badge when one applies, and nothing otherwise. The stats line that used to
- * fall back to lives inside the sleeve now (see the bottom-centre overlay on
- * the artwork Box above), so there is no tap here to swap it in — the two say
- * the same thing at different resolutions, both read off the stream being
- * decoded rather than off what a source offered to send.
+ * The gap between the two timestamps under the seek bar: just the quality badge
+ * when one applies, and nothing otherwise. The stats line that used to fall
+ * back to lives inside the sleeve now (see the bottom-centre overlay on the
+ * artwork Box above), so there is no tap here to swap it in — the two say the
+ * same thing at different resolutions, both read off the file being decoded
+ * rather than off what anything offered to send.
  */
 @Composable
 private fun LosslessOrStats(
-    isLoading: Boolean,
-    stillRacing: Boolean,
-    losslessRequested: Boolean,
-    effectiveQuality: AudioQuality,
     nerdStats: NerdStats.Snapshot?,
     modifier: Modifier = Modifier,
 ) {
     when {
-        // Still resolving — either the player itself is buffering, or a
-        // module is still racing YouTube for this track in the background
-        // (see [NerdStats.racingLossless]) even though YouTube already won
-        // and is audible. Either way nothing measured yet to confirm with,
-        // so this is a statement of intent, not a result — no shimmer, so
-        // it never reads as "confirmed" before it is.
-        // [stillRacing] on its own, not gated on the lossless preference: a
-        // module outranks YouTube on the strength of the source order alone,
-        // so the lookup runs — and can come back lossless — with that switch
-        // off. Gating this on it left the badge blank through the wait and
-        // then jumped straight to "Hi-Res Lossless".
-        // The [isLoading] half is gated on `nerdStats == null` rather than
-        // `nerdStats?.isLossless != true`: `isLoading` is just
-        // `STATE_BUFFERING`, which a seek trips for a track whose quality
-        // question was already settled — swallowing back into cache still
-        // rebuffers. Gating on `!= true` read that rebuffer as "resolving"
-        // again and flashed "Upgrading Quality" over a track already known
-        // to be, say, Hi-Quality with no lossless copy anywhere. Once
-        // [nerdStats] exists there is something measured to show instead, so
-        // only a genuinely unmeasured track — or a real race via
-        // [stillRacing] — earns this label.
-        (stillRacing && nerdStats?.isLossless != true) ||
-            (isLoading && losslessRequested && nerdStats == null) -> LosslessLabel(
-            // What is already true, ahead of what is still being looked for.
-            // A race running over JioSaavn's 320kbps AAC and one running over
-            // YouTube's 160kbps Opus were both drawn as a bare "Upgrading
-            // Quality", which reads as "this is not good yet" — wrong on the
-            // first, where the track is already at the top of what lossy gets
-            // and the search is only chasing a lossless copy that may not
-            // exist. Naming the floor first makes the label describe a track
-            // rather than a wait.
-            //
-            // Decided on [NerdStats.Snapshot.isHiQuality] rather than on which
-            // source won, for the reason that property already gives: a
-            // 320kbps stream is a 320kbps stream wherever it came from. It is
-            // read off the stream rather than off what the module offered, so
-            // a JioSaavn AAC qualifies once its container has stated its rate;
-            // YouTube's Opus sits under the threshold and keeps the plain
-            // label it had.
-            text = if (nerdStats?.isHiQuality == true) {
-                stringResource(Res.string.high_quality_upgrading)
-            } else {
-                stringResource(Res.string.upgrading_quality)
-            },
-            animated = false,
-            modifier = modifier,
-        )
         nerdStats?.isLossless == true -> LosslessLabel(
             // Same line Tidal, Qobuz and Apple Music draw it at — see
             // [NerdStats.Snapshot.isHiRes].
             text = stringResource(if (nerdStats.isHiRes) Res.string.hi_res_lossless else Res.string.lossless),
-            // Shimmer is reserved for the thing that was asked for and
+            // Shimmer is reserved for the thing that was measured and
             // confirmed. It is what makes the badge read as an achievement
-            // rather than a label, which only one of these two is.
+            // rather than a label, which only some of these are.
             animated = true,
             modifier = modifier,
         )
@@ -1453,21 +1359,11 @@ private fun LosslessOrStats(
             iconPainter = painterResource(Res.drawable.ic_dolby_atmos),
             modifier = modifier,
         )
-        // Lossy, but the good end of lossy — a module's 320kbps tier, which
-        // for a great many tracks is the best copy that exists anywhere the
-        // app can reach. See [NerdStats.Snapshot.isHiQuality].
+        // Lossy, but the good end of lossy — a 320kbps file, which for a great
+        // many libraries is the best copy that exists anywhere. See
+        // [NerdStats.Snapshot.isHiQuality].
         nerdStats?.isHiQuality == true -> LosslessLabel(
             text = stringResource(Res.string.high_quality),
-            animated = false,
-            modifier = modifier,
-        )
-        effectiveQuality == AudioQuality.LOW && nerdStats?.isLowQuality == true -> LosslessLabel(
-            text = stringResource(Res.string.data_saver),
-            animated = false,
-            modifier = modifier,
-        )
-        effectiveQuality == AudioQuality.MEDIUM && nerdStats?.isMediumQuality == true -> LosslessLabel(
-            text = stringResource(Res.string.medium_quality),
             animated = false,
             modifier = modifier,
         )

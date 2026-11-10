@@ -8,7 +8,6 @@ import com.music.bitchord.data.lyrics.LyricLine
 import com.music.bitchord.data.lyrics.LyricsSource
 import com.music.bitchord.data.lyrics.LyricsTranslation
 import com.music.bitchord.data.model.Song
-import com.music.bitchord.data.settings.AudioQuality
 import com.music.bitchord.data.settings.LastPlayerScreen
 import com.music.bitchord.data.settings.MixBlend
 import com.music.bitchord.data.settings.SmartAnalysis
@@ -154,8 +153,6 @@ internal object DesktopPlayerHost : PlayerHost {
 internal object DesktopPlayerSettings : PlayerSettingsSource {
     private val persistence by lazy { DesktopPersistence() }
 
-    override val audioQualityCellular = MutableStateFlow(AudioQuality.LOSSLESS)
-    override val audioQualityWifi = MutableStateFlow(AudioQuality.LOSSLESS)
     override val fullBleedArtwork = MutableStateFlow(false)
     override val hideSongStatus = MutableStateFlow(false)
     override val hideVolumeBar = MutableStateFlow(false)
@@ -170,8 +167,7 @@ internal object DesktopPlayerSettings : PlayerSettingsSource {
     )
     override val lyricsSourceOrder = MutableStateFlow<List<LyricsSource>>(LyricsSource.offered)
 
-    // A desktop is never on a metered link as far as this app can tell.
-    override val meteredConnection = MutableStateFlow<Boolean?>(false)
+    // A file on this computer needs no permission to be read at full rate, so this is never asked.
     override val preferUsbDac = MutableStateFlow(false)
     override val reduceAnimation = MutableStateFlow(false)
     override val reduceDynamicBlur = MutableStateFlow(false)
@@ -183,7 +179,6 @@ internal object DesktopPlayerSettings : PlayerSettingsSource {
     override val smartTransitionWindow = MutableStateFlow<TransitionWindow?>(null)
     override val syncedLyrics = MutableStateFlow(true)
     override val translationLanguage = MutableStateFlow("")
-    override val versionAlignmentInProgress = MutableStateFlow(false)
 
     override fun setLastPlayerScreen(value: LastPlayerScreen) {
         lastPlayerScreen.value = value

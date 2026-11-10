@@ -5,7 +5,6 @@ import com.music.bitchord.ui.AppUi
 import com.music.bitchord.sharedui.resources.*
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.DrawableResource
-import androidx.compose.foundation.Image
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -55,11 +54,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Cached
-import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.LibraryMusic
-import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material.icons.rounded.Storage
 import com.music.bitchord.ui.icons.BitChordIcons
 import coil3.compose.AsyncImage
 import com.music.bitchord.data.model.CARD_ART_PX
@@ -80,7 +75,6 @@ import com.music.bitchord.ui.components.PlayingAccent
 import com.music.bitchord.ui.components.PullToRefresh
 import com.music.bitchord.ui.components.SHELF_CARD_WIDTH
 import com.music.bitchord.ui.components.SearchPlayingBars
-import com.music.bitchord.ui.components.SignInBanner
 import com.music.bitchord.ui.components.feedMoreSkeleton
 import com.music.bitchord.ui.components.feedSkeleton
 import com.music.bitchord.ui.components.recentlyPlayedSkeleton
@@ -117,8 +111,6 @@ fun HomeScreen(
     contentPadding: PaddingValues,
     /** The page's heading, or null for none — the desktop's pages carry no heading. */
     title: String?,
-    signedIn: Boolean = true,
-    onSignIn: (() -> Unit)? = null,
     /**
      * Holding a card rather than tapping it. Every card on the feed answers,
      * whichever kind it is: the caller reads the item the same way it does for
@@ -126,7 +118,7 @@ fun HomeScreen(
      * collection opens the album / playlist one.
      */
     onItemLongPress: ((ShelfItem) -> Unit)? = null,
-    // Explore doesn't page — only Home has a continuation worth following.
+    // Only Home has a feed long enough to have a continuation worth following.
     onLoadMore: (() -> Unit)? = null,
     loadingMore: Boolean = false,
     recentlyPlayedLoading: Boolean = false,
@@ -163,11 +155,6 @@ fun HomeScreen(
         ) {
             if (title != null) {
                 item { HomeTitle(title) }
-            }
-            if (!signedIn && onSignIn != null) {
-                item {
-                    SignInBanner(onSignIn = onSignIn, modifier = Modifier.padding(bottom = 8.dp))
-                }
             }
             when (state) {
                 is UiState.Loading -> {
@@ -522,11 +509,11 @@ private const val LOGO_TO_FONT = 0.9f
 private const val LOGO_ASPECT = 730f / 484f
 
 /**
- * Shared by the home feed, Explore and Library so headings line up across tabs.
+ * Shared by the home feed and Library so headings line up across tabs.
  *
  * [onShowAll] is only ever set on Library, whose rows stop at five cards
  * rather than running the shelf's whole length — see [LibraryGridShelf].
- * Home and Explore never pass it, so their heading is unchanged.
+ * Home never passes it, so its heading is unchanged.
  */
 @Composable
 internal fun SectionHeader(title: String, subtitle: String = "", onShowAll: (() -> Unit)? = null) {
@@ -985,38 +972,10 @@ internal fun ShelfCard(
             .contextClick(onLongPress),
     ) {
         when (item.browseId) {
-            "local:downloads" -> {
-                val palette = remember { MeshPalette(listOf(Color(0xFF1E3C72), Color(0xFF2A5298))) }
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f)
-                        .clip(RoundedCornerShape(12.dp)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    MeshGradientBackground(
-                        palette = palette,
-                        trackKey = "local:downloads",
-                        continuous = true,
-                        blurRadius = 24.dp,
-                    )
-                    Icon(
-                        imageVector = BitChordIcons.Download,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(40.dp),
-                    )
-                }
-            }
             "local:all" -> ServiceCard(
                 colors = listOf(Color(0xFF134E5E), Color(0xFF71B280)),
                 trackKey = "local:all",
                 icon = Icons.Rounded.LibraryMusic,
-            )
-            "local:cache" -> ServiceCard(
-                colors = listOf(Color(0xFF42275A), Color(0xFF734B6D)),
-                trackKey = "local:cache",
-                icon = Icons.Rounded.Cached,
             )
             else -> {
                 Box(

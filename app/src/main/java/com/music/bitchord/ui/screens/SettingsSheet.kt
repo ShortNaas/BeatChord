@@ -23,27 +23,20 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.ScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.automirrored.rounded.VolumeOff
-import androidx.compose.material.icons.rounded.Animation
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.BlurOff
 import androidx.compose.material.icons.rounded.BlurOn
 import androidx.compose.material.icons.rounded.Brightness4
-import androidx.compose.material.icons.rounded.Cached
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material.icons.rounded.Cloud
 import androidx.compose.material.icons.rounded.DeleteSweep
-import androidx.compose.material.icons.rounded.Dns
-import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.FileDownload
 import androidx.compose.material.icons.rounded.FileUpload
 import androidx.compose.material.icons.rounded.FilterAlt
@@ -51,8 +44,6 @@ import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Fullscreen
 import androidx.compose.material.icons.rounded.Gradient
 import androidx.compose.material.icons.rounded.GraphicEq
-import androidx.compose.material.icons.rounded.Groups
-import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material.icons.rounded.VisibilityOff
@@ -60,18 +51,12 @@ import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.LocalOffer
 import androidx.compose.material.icons.rounded.MusicOff
 import androidx.compose.material.icons.rounded.MotionPhotosOff
-import androidx.compose.material.icons.rounded.Extension
-import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PlaylistPlay
-import androidx.compose.material.icons.rounded.SignalCellularAlt
-import androidx.compose.material.icons.rounded.SmartDisplay
-import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material.icons.rounded.SurroundSound
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.VolumeOff
 import androidx.compose.material.icons.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.Waves
-import androidx.compose.material.icons.rounded.Wifi
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
@@ -82,7 +67,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
@@ -105,11 +89,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -123,29 +105,21 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.SingletonImageLoader
-import coil3.compose.AsyncImage
 import com.music.bitchord.ui.components.isGlassSupported
 import com.music.bitchord.ui.components.languageDisplayNameRes
 import com.music.bitchord.ui.components.MessageState
 import com.music.bitchord.ui.components.SearchField
-import com.music.bitchord.ui.components.thumbnailBorder
 import com.music.bitchord.ui.icons.BitChordIcons
 import com.music.bitchord.ui.performance.resolvePerformanceRefreshRate
 import com.music.bitchord.ui.performance.supportedPerformanceRefreshRates
-import com.music.bitchord.data.model.Account
 import com.music.bitchord.data.LocalMediaRepository
-import com.music.bitchord.data.NerdStats
 import com.music.bitchord.data.settings.AppSettings
 import com.music.bitchord.data.settings.OutputPcmMode
 import com.music.bitchord.playback.AudioOutputStatus
 import com.music.bitchord.data.settings.AutomixPerformanceMode
 import com.music.bitchord.R
-import com.music.bitchord.data.sources.DeviceCodecs
-import com.music.bitchord.data.settings.AudioQuality
-import com.music.bitchord.data.settings.DownloadQuality
 import com.music.bitchord.data.settings.ThemeMode
 import com.music.bitchord.data.stats.Backup
-import com.music.bitchord.playback.AudioCache
 import com.music.bitchord.ui.player.fullBleedArtworkAvailable
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -163,11 +137,6 @@ import java.util.Locale
 fun SettingsScreen(
     /** The window's width, for the gates that depend on it. */
     windowWidth: Dp,
-    signedIn: Boolean,
-    account: Account?,
-    onSignIn: () -> Unit,
-    onSignOut: () -> Unit,
-    onAccountScrobbling: () -> Unit,
     onEqualizer: () -> Unit,
     onOpenReplay: () -> Unit,
     onLyricsSources: () -> Unit,
@@ -178,18 +147,10 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
 
-    val wifiQuality by AppSettings.audioQualityWifi.collectAsStateWithLifecycle()
-    val cellularQuality by AppSettings.audioQualityCellular.collectAsStateWithLifecycle()
-    val metered by AppSettings.meteredConnection.collectAsStateWithLifecycle()
     val crossfade by AppSettings.crossfadeSeconds.collectAsStateWithLifecycle()
     val smartFade by AppSettings.smartFadeEnabled.collectAsStateWithLifecycle()
     val automixPerformance by AppSettings.automixPerformanceMode.collectAsStateWithLifecycle()
     val skipSilence by AppSettings.skipSilence.collectAsStateWithLifecycle()
-    val dolbyAtmos by AppSettings.dolbyAtmos.collectAsStateWithLifecycle()
-    // A property of the hardware, so it is read once rather than remembered
-    // against a key that can never change — see [DeviceCodecs.playsDolbyAtmos],
-    // which caches the codec-list walk for the life of the process.
-    val dolbyAtmosSupported = DeviceCodecs.playsDolbyAtmos
     val spatialAudio by AppSettings.spatialAudio.collectAsStateWithLifecycle()
     val nerdStats by AppSettings.showNerdStats.collectAsStateWithLifecycle()
     val reduceAnimation by AppSettings.reduceAnimation.collectAsStateWithLifecycle()
@@ -209,20 +170,10 @@ fun SettingsScreen(
     val loudnessNormalization by AppSettings.loudnessNormalization.collectAsStateWithLifecycle()
     val loudnessOffOnSpeaker by AppSettings.loudnessOffOnSpeaker.collectAsStateWithLifecycle()
     val outputStatus by AudioOutputStatus.current.collectAsStateWithLifecycle()
-    val playingFormat by NerdStats.current.collectAsStateWithLifecycle()
-    val playingDolbyAtmos = playingFormat?.isDolbyAtmos == true
-    val cacheLimitBytes by AppSettings.audioCacheLimitBytes.collectAsStateWithLifecycle()
-    val showCacheFolder by AppSettings.showCacheFolder.collectAsStateWithLifecycle()
-    val downloadQuality by AppSettings.downloadQuality.collectAsStateWithLifecycle()
-    val wifiOnlyDownloads by AppSettings.wifiOnlyDownloads.collectAsStateWithLifecycle()
-    val exportDownloads by AppSettings.exportDownloads.collectAsStateWithLifecycle()
     val stopOnTaskRemoved by AppSettings.stopOnTaskRemoved.collectAsStateWithLifecycle()
     val hideVolumeBar by AppSettings.hideVolumeBar.collectAsStateWithLifecycle()
     val hideSongStatus by AppSettings.hideSongStatus.collectAsStateWithLifecycle()
     val swipeToPlayNext by AppSettings.swipeToPlayNext.collectAsStateWithLifecycle()
-    val dontRepeatSuggestions by AppSettings.dontRepeatSuggestions.collectAsStateWithLifecycle()
-    val preferMusicOnly by AppSettings.preferMusicOnly.collectAsStateWithLifecycle()
-    val smartVersionAlignment by AppSettings.smartVersionAlignment.collectAsStateWithLifecycle()
     val filterNonMusicAudio by AppSettings.filterNonMusicAudio.collectAsStateWithLifecycle()
     val localMusicFolderUri by AppSettings.localMusicFolderUri.collectAsStateWithLifecycle()
     val highPerformanceMode by AppSettings.highPerformanceMode.collectAsStateWithLifecycle()
@@ -241,15 +192,11 @@ fun SettingsScreen(
         }
     }
 
-    val listenBrainzEnabled by AppSettings.listenBrainzEnabled.collectAsStateWithLifecycle()
-
     val replayGenres by AppSettings.replayGenres.collectAsStateWithLifecycle()
 
     // Filters the rows below — see [SettingsSearch]. Blank shows everything,
     // exactly as if the field weren't there.
     var searchQuery by remember { mutableStateOf("") }
-    var picking by remember { mutableStateOf<QualityTarget?>(null) }
-    var pickingDownloadQuality by remember { mutableStateOf(false) }
     var pickingAutomixPerformance by remember { mutableStateOf(false) }
     // What the last export or import did, shown on the row that did it rather
     // than as a toast: a backup is the one action here whose outcome nobody can
@@ -258,7 +205,6 @@ fun SettingsScreen(
     var exportStatus by remember { mutableStateOf<String?>(null) }
     var importStatus by remember { mutableStateOf<String?>(null) }
     var confirmImport by remember { mutableStateOf(false) }
-    var confirmClearSongCache by remember { mutableStateOf(false) }
     var showPerformanceWarning by remember { mutableStateOf(false) }
     var showPerformanceConfirmation by remember { mutableStateOf(false) }
     val backupScope = rememberCoroutineScope()
@@ -528,19 +474,7 @@ fun SettingsScreen(
                 SettingsRow(
                     icon = Icons.Rounded.SurroundSound,
                     title = spatialAudioTitle,
-                    // Widening a JOC stream would fight the object-based mix
-                    // Dolby has already spatialized, so the service holds this
-                    // off for the duration of an Atmos track — see
-                    // `PlaybackService.applySpatialAudioEnabled`. Said on the
-                    // row because the switch stays where the listener left it,
-                    // and a switch reading "on" over an effect that is not
-                    // running is the same silent lie the equaliser screen used
-                    // to tell.
-                    subtitle = if (playingDolbyAtmos) {
-                        stringResource(R.string.spatial_audio_atmos_subtitle)
-                    } else {
-                        stringResource(R.string.spatial_audio_subtitle)
-                    },
+                    subtitle = stringResource(R.string.spatial_audio_subtitle),
                     trailing = {
                         Switch(
                             checked = spatialAudio,
@@ -552,37 +486,6 @@ fun SettingsScreen(
                         )
                     },
                     onClick = { AppSettings.setSpatialAudio(!spatialAudio) },
-                )
-            }
-            // The system panel is not listed here as well. A device with a
-            // Dolby or Dirac panel has something BitChord cannot reproduce and
-            // keeps its row — but one level in, at the foot of the equaliser
-            // screen, rather than as a second equaliser entry alongside ours.
-            val dolbyAtmosTitle = stringResource(R.string.dolby_atmos)
-            row(dolbyAtmosTitle, "surround", "e-ac-3") {
-                SettingsRow(
-                    iconPainter = painterResource(R.drawable.ic_dolby_atmos),
-                    title = dolbyAtmosTitle,
-                    subtitle = stringResource(
-                        if (dolbyAtmosSupported) {
-                            R.string.dolby_atmos_subtitle
-                        } else {
-                            R.string.dolby_atmos_unavailable
-                        },
-                    ),
-                    enabled = dolbyAtmosSupported,
-                    trailing = {
-                        Switch(
-                            checked = dolbyAtmos && dolbyAtmosSupported,
-                            onCheckedChange = AppSettings::setDolbyAtmos,
-                            enabled = dolbyAtmosSupported,
-                            colors = SwitchDefaults.colors(
-                                checkedTrackColor = MaterialTheme.colorScheme.primary,
-                                checkedBorderColor = MaterialTheme.colorScheme.primary,
-                            ),
-                        )
-                    },
-                    onClick = { AppSettings.setDolbyAtmos(!dolbyAtmos) },
                 )
             }
             val equalizerTitle = stringResource(R.string.equalizer)
@@ -895,12 +798,6 @@ fun SettingsScreen(
             }
         }
 
-        val cacheUnlimited = cacheLimitBytes == AppSettings.UNLIMITED_CACHE_LIMIT_BYTES
-        // The slider's last stop, one step past the largest fixed size, is
-        // "Unlimited" — see [AppSettings.setAudioCacheLimitBytes].
-        val cacheLimitMb = if (cacheUnlimited) CACHE_UNLIMITED_STOP_MB else (cacheLimitBytes / (1024 * 1024)).toInt()
-        val unlimitedLabel = stringResource(R.string.song_cache_unlimited)
-        val cacheLimitLabel = if (cacheUnlimited) unlimitedLabel else formatCacheSize(cacheLimitMb)
         SearchableSettingsGroup(search, header = stringResource(R.string.storage)) {
             val clearImageCacheTitle = stringResource(R.string.clear_image_cache)
             row(clearImageCacheTitle, "cache", "artwork", "free space") {
@@ -1142,51 +1039,6 @@ fun SettingsScreen(
         }
     }
 
-    picking?.let { target ->
-        ModalBottomSheet(
-            onDismissRequest = { picking = null },
-            containerColor = MaterialTheme.colorScheme.background,
-        ) {
-            QualitySheet(
-                target = target,
-                selected = when (target) {
-                    QualityTarget.WIFI -> wifiQuality
-                    QualityTarget.CELLULAR -> cellularQuality
-                },
-                // Writes the one ceiling that was being edited and nothing
-                // else. There used to be a `SourceRegistry.applyQualityPreset`
-                // call here that flipped the module switch to match — which
-                // meant budgeting *mobile data* switched that source off while
-                // sitting on Wi-Fi, and coming back to Wi-Fi never switched it
-                // on again. Which sources a rung consults is now read per
-                // stream off the connection in force; see
-                // [AudioQuality.permits].
-                onSelect = { quality ->
-                    when (target) {
-                        QualityTarget.WIFI -> AppSettings.setAudioQualityWifi(quality)
-                        QualityTarget.CELLULAR -> AppSettings.setAudioQualityCellular(quality)
-                    }
-                    picking = null
-                },
-            )
-        }
-    }
-
-    if (pickingDownloadQuality) {
-        ModalBottomSheet(
-            onDismissRequest = { pickingDownloadQuality = false },
-            containerColor = MaterialTheme.colorScheme.background,
-        ) {
-            DownloadQualitySheet(
-                selected = downloadQuality,
-                onSelect = { quality ->
-                    AppSettings.setDownloadQuality(quality)
-                    pickingDownloadQuality = false
-                },
-            )
-        }
-    }
-
     if (pickingAutomixPerformance) {
         ModalBottomSheet(
             onDismissRequest = { pickingAutomixPerformance = false },
@@ -1200,30 +1052,6 @@ fun SettingsScreen(
                 },
             )
         }
-    }
-
-    // Everything in the Cached songs folder goes with it, so say so first.
-    if (confirmClearSongCache) {
-        AlertDialog(
-            onDismissRequest = { confirmClearSongCache = false },
-            title = { Text(stringResource(R.string.clear_song_cache_title)) },
-            text = { Text(stringResource(R.string.clear_song_cache_warning)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirmClearSongCache = false
-                    AudioCache.clear {
-                        Toast.makeText(context, context.getString(R.string.song_cache_cleared), Toast.LENGTH_SHORT).show()
-                    }
-                }) {
-                    Text(stringResource(R.string.clear))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmClearSongCache = false }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            },
-        )
     }
 
     // Asked before the picker opens rather than after a file is chosen: the
@@ -1315,36 +1143,6 @@ private fun Context.countOfMonths(months: Int): String = if (months == 0) {
     resources.getQuantityString(R.plurals.listening_month_count, months, months)
 }
 
-/** Which ceiling the open picker is editing. */
-private enum class QualityTarget(val icon: ImageVector) {
-    WIFI(Icons.Rounded.Wifi),
-    CELLULAR(Icons.Rounded.SignalCellularAlt),
-}
-
-@Composable
-private fun QualityTarget.localizedTitle(): String = stringResource(
-    if (this == QualityTarget.WIFI) R.string.wifi else R.string.mobile_data,
-)
-
-@Composable
-private fun AudioQuality.localizedLabel(): String = stringResource(
-    when (this) {
-        AudioQuality.LOW -> R.string.low
-        AudioQuality.MEDIUM -> R.string.medium
-        AudioQuality.HIGH -> R.string.high
-        AudioQuality.LOSSLESS -> R.string.lossless
-    },
-)
-
-@Composable
-private fun DownloadQuality.localizedLabel(): String = stringResource(
-    when (this) {
-        DownloadQuality.STANDARD -> R.string.standard
-        DownloadQuality.HIGH -> R.string.high
-        DownloadQuality.LOSSLESS -> R.string.lossless
-    },
-)
-
 @Composable
 private fun ThemeMode.localizedLabel(): String = stringResource(
     when (this) {
@@ -1380,186 +1178,6 @@ internal fun openEqualizer(context: Context, sessionId: Int) {
     }
 }
 
-/** Above this, the cache limit slider's subtitle warns rather than reassures. */
-private const val CACHE_WARNING_MB = 2048
-
-/**
- * Where the cache limit slider's "Unlimited" stop sits: one 512MB step past
- * [AppSettings.MAX_CACHE_LIMIT_BYTES], so the fixed sizes keep their positions.
- */
-private const val CACHE_UNLIMITED_STOP_MB = 10 * 1024 + 512
-
-/** "512 MB", "2 GB", "2.5 GB" — whichever reads more naturally at that size. */
-private fun formatCacheSize(mb: Int): String {
-    if (mb < 1024) return "$mb MB"
-    val gb = mb / 1024f
-    return if (gb == gb.toInt().toFloat()) "${gb.toInt()} GB" else "%.1f GB".format(Locale.ROOT, gb)
-}
-
-/** Who you're signed in as, straight from YouTube Music's account menu. */
-@Composable
-internal fun AccountCard(
-    signedIn: Boolean,
-    account: Account?,
-    onSignIn: () -> Unit,
-    onClick: (() -> Unit)? = null,
-    /** Sits inside a [SettingsGroup] that already supplies the card, so draws none of its own. */
-    grouped: Boolean = false,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(
-                if (grouped) {
-                    Modifier
-                } else {
-                    Modifier
-                        .padding(horizontal = GROUP_INSET)
-                        .clip(GroupShape)
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                },
-            )
-            .then(
-                when {
-                    signedIn && onClick != null -> Modifier.clickable(onClick = onClick)
-                    !signedIn -> Modifier.clickable(onClick = onSignIn)
-                    else -> Modifier
-                },
-            )
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (account?.thumbnailUrl != null) {
-            AsyncImage(
-                error = painterResource(R.drawable.ic_logo),
-                fallback = painterResource(R.drawable.ic_logo),
-                model = account.thumbnailUrl,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.size(52.dp).clip(CircleShape).thumbnailBorder(CircleShape),
-            )
-        } else {
-            Box(
-                modifier = Modifier
-                    .size(52.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.outline),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    Icons.Rounded.Person,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        Spacer(Modifier.width(14.dp))
-        Column(Modifier.weight(1f)) {
-            Text(
-                text = account?.name
-                    ?: stringResource(if (signedIn) R.string.signed_in else R.string.not_signed_in),
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onBackground,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Spacer(Modifier.height(2.dp))
-            Text(
-                text = account?.email?.takeIf { it.isNotBlank() }
-                    ?: stringResource(
-                        if (signedIn) R.string.youtube_music_account else R.string.tap_to_sign_in_google,
-                    ),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        if (!signedIn) {
-            Spacer(Modifier.width(8.dp))
-            Chevron()
-        }
-    }
-}
-
-/** The quality options for one connection, with what each costs in data. */
-@Composable
-private fun QualitySheet(
-    target: QualityTarget,
-    selected: AudioQuality,
-    onSelect: (AudioQuality) -> Unit,
-) {
-    val haptics = LocalHapticFeedback.current
-    Column(Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
-        Row(
-            modifier = Modifier.padding(start = 22.dp, end = 22.dp, bottom = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = target.icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.size(22.dp),
-            )
-            Spacer(Modifier.width(14.dp))
-            Column {
-                Text(
-                    text = stringResource(R.string.audio_quality),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-                Text(
-                    text = stringResource(
-                        R.string.audio_quality_connection,
-                        target.localizedTitle().lowercase(Locale.getDefault()),
-                    ),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outline)
-
-        // Best first — the option most people want shouldn't be last.
-        AudioQuality.entries.reversed().forEach { quality ->
-            val chosen = quality == selected
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        onSelect(quality)
-                    }
-                    .padding(horizontal = 22.dp, vertical = 14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        text = quality.localizedLabel(),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onBackground,
-                    )
-                    Text(
-                        text = stringResource(R.string.quality_hourly, quality.detail, quality.hourly),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                if (chosen) {
-                    Spacer(Modifier.width(12.dp))
-                    Icon(
-                        Icons.Rounded.Check,
-                        contentDescription = stringResource(R.string.selected),
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(22.dp),
-                    )
-                }
-            }
-        }
-    }
-}
-
-/** CPU budget picker for the background models that prepare Automix. */
 @Composable
 private fun AutomixPerformanceSheet(
     selected: AutomixPerformanceMode,
@@ -1636,109 +1254,6 @@ private fun AutomixPerformanceSheet(
     }
 }
 
-/**
- * What to keep when a track is saved, with what each rung costs on disk.
- *
- * Priced per track rather than per hour, the way [QualitySheet] is. That sheet
- * is answering "what will listening cost me this hour", because a stream is
- * spent again on every replay; this one is answering "what will keeping this
- * cost me", and the answer is charged once. Same widget, different question, so
- * the numbers beside the options are in different units on purpose.
- */
-@Composable
-private fun DownloadQualitySheet(
-    selected: DownloadQuality,
-    onSelect: (DownloadQuality) -> Unit,
-) {
-    val haptics = LocalHapticFeedback.current
-    Column(Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
-        Row(
-            modifier = Modifier.padding(start = 22.dp, end = 22.dp, bottom = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.Download,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.size(22.dp),
-            )
-            Spacer(Modifier.width(14.dp))
-            Column {
-                Text(
-                    text = stringResource(R.string.download_quality),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-                Text(
-                    text = stringResource(R.string.download_quality_dialog_subtitle),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outline)
-
-        // Best first, matching [QualitySheet] — and here the best rung is also
-        // the default, so the checkmark starts where the eye does.
-        DownloadQuality.entries.reversed().forEach { quality ->
-            val chosen = quality == selected
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        onSelect(quality)
-                    }
-                    .padding(horizontal = 22.dp, vertical = 14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        text = quality.localizedLabel(),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onBackground,
-                    )
-                    Text(
-                        text = stringResource(R.string.quality_per_track, quality.detail, quality.perTrack),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                if (chosen) {
-                    Spacer(Modifier.width(12.dp))
-                    Icon(
-                        Icons.Rounded.Check,
-                        contentDescription = stringResource(R.string.selected),
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(22.dp),
-                    )
-                }
-            }
-        }
-    }
-}
-
-// ---- Building blocks --------------------------------------------------------
-
-internal val GroupShape = RoundedCornerShape(14.dp)
-internal val GROUP_INSET = 16.dp
-internal val ROW_INSET = 16.dp
-internal val ICON_SIZE = 22.dp
-internal val ICON_GAP = 14.dp
-
-/** Where a row's text starts — dividers are inset to match, as on iOS. */
-internal val TEXT_INSET = ROW_INSET + ICON_SIZE + ICON_GAP
-
-/**
- * What is typed into the field under the Settings title, and whether anything
- * on the screen has answered to it.
- *
- * A blank query matches everything, so the screen with the field untouched is
- * the screen as it was before there was a field. Rows ask [matches] as they
- * are composed; the empty state at the foot of the list reads [anyMatch] after
- * every group has had its turn, which is why this is made fresh on each pass
- * rather than remembered.
- */
 private class SettingsSearch(query: String) {
     // Trimmed, because a trailing space is a typo rather than a search for
     // something ending in one — and on a phone keyboard it is one keystroke
@@ -2200,3 +1715,14 @@ internal fun SegmentedControl(
         }
     }
 }
+
+// ---- Building blocks --------------------------------------------------------
+
+internal val GroupShape = RoundedCornerShape(14.dp)
+internal val GROUP_INSET = 16.dp
+internal val ROW_INSET = 16.dp
+internal val ICON_SIZE = 22.dp
+internal val ICON_GAP = 14.dp
+
+/** Where a row's text starts — dividers are inset to match, as on iOS. */
+internal val TEXT_INSET = ROW_INSET + ICON_SIZE + ICON_GAP

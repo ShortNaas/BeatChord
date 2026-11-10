@@ -102,7 +102,7 @@ class DesktopAutomixTest {
         val file = clickTrackFile(120.0, seconds)
         val id = "cache-probe-${file.name}"
         val first = DesktopTrackAnalyzer()
-        first.request(Song(id, id, "Artist", null), DesktopStream(url = file.absolutePath), seconds)
+        first.request(Song(id, id, "Artist", null), file.absolutePath, seconds)
         var waited = 0
         while (!first.isAnalysed(id) && waited < 600) {
             kotlinx.coroutines.delay(100)
@@ -129,7 +129,7 @@ class DesktopAutomixTest {
         val file = clickTrackFile(bpm, seconds)
         analyzer.request(
             song = Song(id, id, "Artist", null),
-            stream = DesktopStream(url = file.absolutePath),
+            path = file.absolutePath,
             durationSeconds = seconds,
         )
         // Analysis is deliberately off the caller's thread; wait for it the way the engine does not

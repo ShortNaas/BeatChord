@@ -2,13 +2,13 @@ package com.music.bitchord.desktop
 
 /**
  * The playback signal chain as it stands right now — what the engine can say about each stage
- * between the stream arriving and the samples reaching the device.
+ * between the file being opened and the samples reaching the device.
  *
  * Every field is nullable because the chain is only partly built until something is playing.
  */
 internal data class DesktopAudioPipeline(
     /** What the engine is actually playing, which the screen's own copy can lag behind. */
-    val sourceFormat: DesktopStreamFormat? = null,
+    val sourceFormat: DesktopAudioFormat? = null,
     val decoderName: String? = null,
     val decodedSampleRateHz: Int? = null,
     val decodedChannels: Int? = null,
@@ -23,7 +23,7 @@ internal data class DesktopAudioPipeline(
 ) {
     /** The decoder under its usual name, the same one the quality badge shows. */
     val decoderLabel: String?
-        get() = decoderName?.let { DesktopStreamFormat(codec = it).codecLabel }
+        get() = decoderName?.let { DesktopAudioFormat(codec = it).codecLabel }
 
     /** Whether the decoder's rate had to be converted to reach the device. */
     val resampling: Boolean

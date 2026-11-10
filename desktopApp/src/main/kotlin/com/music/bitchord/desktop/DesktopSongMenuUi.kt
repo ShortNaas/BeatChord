@@ -25,18 +25,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.automirrored.rounded.PlaylistPlay
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
-import androidx.compose.material.icons.automirrored.rounded.Undo
 import androidx.compose.material.icons.rounded.Album
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Bedtime
-import androidx.compose.material.icons.rounded.DownloadDone
-import androidx.compose.material.icons.rounded.HighQuality
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Radio
-import androidx.compose.material.icons.rounded.Share
-import androidx.compose.material.icons.rounded.ThumbDown
-import androidx.compose.material.icons.rounded.ThumbDownOffAlt
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -61,41 +54,33 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
-import com.music.bitchord.data.model.LikeStatus
 import com.music.bitchord.data.model.Song
 import com.music.bitchord.ui.icons.BitChordIcons
 
 /** The verbs the song menu needs that the player does not otherwise know about. */
 internal data class DesktopSongActions(
-    val signedIn: Boolean,
-    val disliked: Boolean,
-    val downloaded: Boolean,
-    val downloadInProgress: Boolean,
+    /** Whether the heart is already on this track. */
+    val liked: Boolean,
     val sleepTimerMinutes: Int?,
     val sleepAfterTrack: Boolean,
-    val onToggleDislike: (Song) -> Unit,
     val onAddToPlaylist: (Song) -> Unit,
-    val onDownload: (Song) -> Unit,
-    val onRemoveDownload: (Song) -> Unit,
     val onStartRadio: (Song) -> Unit,
     val onPlayNext: (Song) -> Unit,
     val onAddToQueue: (Song) -> Unit,
+    /** Opens the page of everything filed under this album's name. */
     val onOpenAlbum: (String) -> Unit,
+    /** Opens the page of everything filed under this artist's name. */
     val onOpenArtist: (String) -> Unit,
     val onSleepTimer: (Int?) -> Unit,
     val onSleepAfterTrack: () -> Unit,
-    val onShare: (Song) -> Unit,
 )
 
 /** The "…" beside the player's heart, and the menu it opens. */
 @Composable
 internal fun DesktopSongMenuAnchor(
     song: Song,
-    liked: Boolean,
     actions: DesktopSongActions,
     onToggleLike: () -> Unit,
-    onRevertToOriginal: (() -> Unit)?,
-    onUpgradeQuality: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     var open by remember(song.videoId) { mutableStateOf(false) }
@@ -104,11 +89,8 @@ internal fun DesktopSongMenuAnchor(
         if (open) {
             DesktopSongMenuFor(
                 song = song,
-                liked = liked,
                 actions = actions,
                 onToggleLike = onToggleLike,
-                onRevertToOriginal = onRevertToOriginal,
-                onUpgradeQuality = onUpgradeQuality,
                 onDismiss = { open = false },
             )
         }
@@ -119,43 +101,27 @@ internal fun DesktopSongMenuAnchor(
 @Composable
 internal fun DesktopSongMenuFor(
     song: Song,
-    liked: Boolean,
     actions: DesktopSongActions,
     onToggleLike: () -> Unit,
-    onRevertToOriginal: (() -> Unit)?,
-    onUpgradeQuality: (() -> Unit)?,
     onDismiss: () -> Unit,
 ) {
     val close = onDismiss
     DesktopSongMenu(
         song = song,
-        signedIn = actions.signedIn,
-        likeStatus = when {
-            liked -> LikeStatus.LIKE
-            actions.disliked -> LikeStatus.DISLIKE
-            else -> LikeStatus.INDIFFERENT
-        },
-        downloaded = actions.downloaded,
-        downloadInProgress = actions.downloadInProgress,
+        liked = actions.liked,
         sleepTimerMinutes = actions.sleepTimerMinutes,
         sleepAfterTrack = actions.sleepAfterTrack,
-        onRevertToOriginal = onRevertToOriginal?.let { { it(); close() } },
-        onUpgradeQuality = onUpgradeQuality?.let { { it(); close() } },
-        // Rating stays open: the menu says what the rating now is, and closing it is the
-        // one way to not see that it worked.
+        // Rating stays open: the menu says what the heart is now, and closing it is the one way
+        // to not see that it worked.
         onToggleLike = onToggleLike,
-        onToggleDislike = { actions.onToggleDislike(song) },
         onAddToPlaylist = { actions.onAddToPlaylist(song); close() },
-        onDownload = { actions.onDownload(song); close() },
-        onRemoveDownload = { actions.onRemoveDownload(song); close() },
         onStartRadio = { actions.onStartRadio(song); close() },
         onPlayNext = { actions.onPlayNext(song); close() },
         onAddToQueue = { actions.onAddToQueue(song); close() },
-        onOpenAlbum = { id -> actions.onOpenAlbum(id); close() },
-        onOpenArtist = { id -> actions.onOpenArtist(id); close() },
+        onOpenAlbum = { name -> actions.onOpenAlbum(name); close() },
+        onOpenArtist = { name -> actions.onOpenArtist(name); close() },
         onSleepTimer = { actions.onSleepTimer(it); close() },
         onSleepAfterTrack = { actions.onSleepAfterTrack(); close() },
-        onShare = { actions.onShare(song); close() },
         onDismiss = close,
     )
 }
@@ -164,21 +130,11 @@ internal fun DesktopSongMenuFor(
 @Composable
 internal fun DesktopSongMenu(
     song: Song,
-    signedIn: Boolean,
-    likeStatus: LikeStatus,
-    downloaded: Boolean,
-    downloadInProgress: Boolean,
-    onRemoveDownload: () -> Unit,
+    liked: Boolean,
     sleepTimerMinutes: Int?,
     sleepAfterTrack: Boolean,
-    /** Sends the playing track back to YouTube's own upload and keeps it there. */
-    onRevertToOriginal: (() -> Unit)?,
-    /** The way back from a revert, for a track pinned to YouTube's own upload. */
-    onUpgradeQuality: (() -> Unit)?,
     onToggleLike: () -> Unit,
-    onToggleDislike: () -> Unit,
     onAddToPlaylist: () -> Unit,
-    onDownload: () -> Unit,
     onStartRadio: () -> Unit,
     onPlayNext: () -> Unit,
     onAddToQueue: () -> Unit,
@@ -186,15 +142,9 @@ internal fun DesktopSongMenu(
     onOpenArtist: ((String) -> Unit)?,
     onSleepTimer: (Int?) -> Unit,
     onSleepAfterTrack: () -> Unit,
-    onShare: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     var pickingSleepTimer by remember { mutableStateOf(false) }
-    val liked = likeStatus == LikeStatus.LIKE
-    val disliked = likeStatus == LikeStatus.DISLIKE
-    // A local file or a finished download has no YouTube identity behind it to rate, queue into a
-    // playlist, fetch again, or share a link for.
-    val isOffline = song.localUri != null
 
     DesktopMenuSurface(onDismiss = onDismiss) {
         if (pickingSleepTimer) {
@@ -220,71 +170,30 @@ internal fun DesktopSongMenu(
             return@DesktopMenuSurface
         }
 
-        // The two are never both offered.
-        (onRevertToOriginal ?: onUpgradeQuality)?.let { action ->
-            DesktopMenuRow(
-                icon = if (onRevertToOriginal != null) Icons.AutoMirrored.Rounded.Undo else Icons.Rounded.HighQuality,
-                label = if (onRevertToOriginal != null) "Revert to original" else "Upgrade quality",
-                onClick = action,
-            )
-            DesktopMenuDivider()
-        }
+        DesktopMenuRow(
+            icon = if (liked) BitChordIcons.HeartFilled else BitChordIcons.Heart,
+            label = if (liked) "Remove from liked" else "Like",
+            tint = if (liked) DesktopAccent else null,
+            onClick = onToggleLike,
+        )
+        DesktopMenuRow(Icons.AutoMirrored.Rounded.PlaylistAdd, DesktopStrings["add_to_playlist", "Add to playlist"], onClick = onAddToPlaylist)
+        DesktopMenuDivider()
 
-        if (signedIn && !isOffline) {
-            DesktopMenuRow(
-                icon = if (liked) BitChordIcons.HeartFilled else BitChordIcons.Heart,
-                label = if (liked) "Remove from liked" else "Like",
-                tint = if (liked) DesktopAccent else null,
-                onClick = onToggleLike,
-            )
-            DesktopMenuRow(
-                icon = if (disliked) Icons.Rounded.ThumbDown else Icons.Rounded.ThumbDownOffAlt,
-                label = if (disliked) "Undo dislike" else "Dislike",
-                tint = if (disliked) DesktopAccent else null,
-                onClick = onToggleDislike,
-            )
-        }
-        if (!isOffline) {
-            DesktopMenuRow(Icons.AutoMirrored.Rounded.PlaylistAdd, DesktopStrings["add_to_playlist", "Add to playlist"], onClick = onAddToPlaylist)
-        }
-        if (signedIn || !isOffline) DesktopMenuDivider()
-
-        // A saved copy is offered its own way out whatever the track is playing from — a download
-        // being played *is* a local file, and hiding the row there left no way to remove it.
-        // Only starting a new download needs a YouTube identity behind it.
-        when {
-            downloadInProgress -> DesktopMenuRow(
-                icon = BitChordIcons.Download,
-                label = DesktopStrings["cancel_download", "Cancel download"],
-                busy = true,
-                onClick = onDownload,
-            )
-            downloaded -> DesktopMenuRow(
-                icon = Icons.Rounded.DownloadDone,
-                label = DesktopStrings["saved_to_downloads", "Saved to Downloads"],
-                tint = DesktopAccent,
-                value = DesktopStrings["delete", "Delete"],
-                onClick = onRemoveDownload,
-            )
-            !isOffline -> DesktopMenuRow(
-                icon = BitChordIcons.Download,
-                label = DesktopStrings["download", "Download"],
-                onClick = onDownload,
-            )
-        }
         DesktopMenuRow(Icons.Rounded.Radio, DesktopStrings["start_radio", "Start radio"], onClick = onStartRadio)
         DesktopMenuRow(Icons.AutoMirrored.Rounded.PlaylistPlay, DesktopStrings["play_next", "Play next"], onClick = onPlayNext)
         DesktopMenuRow(Icons.AutoMirrored.Rounded.QueueMusic, DesktopStrings["add_to_queue", "Add to queue"], onClick = onAddToQueue)
 
-        val albumId = song.albumId
-        val artistId = song.artistId
-        if ((albumId != null && onOpenAlbum != null) || (artistId != null && onOpenArtist != null)) {
+        // Both pages are this computer's own grouping of its files, so either is only offered
+        // when there is a name to group them under.
+        val albumName = song.albumName?.takeIf(String::isNotBlank)
+        val artistName = song.artist.takeIf(String::isNotBlank)
+        if ((albumName != null && onOpenAlbum != null) || (artistName != null && onOpenArtist != null)) {
             DesktopMenuDivider()
-            if (albumId != null && onOpenAlbum != null) {
-                DesktopMenuRow(Icons.Rounded.Album, DesktopStrings["open_album", "Open album"]) { onOpenAlbum(albumId) }
+            if (albumName != null && onOpenAlbum != null) {
+                DesktopMenuRow(Icons.Rounded.Album, DesktopStrings["open_album", "Open album"]) { onOpenAlbum(albumName) }
             }
-            if (artistId != null && onOpenArtist != null) {
-                DesktopMenuRow(Icons.Rounded.Person, DesktopStrings["open_artist", "Open artist"]) { onOpenArtist(artistId) }
+            if (artistName != null && onOpenArtist != null) {
+                DesktopMenuRow(Icons.Rounded.Person, DesktopStrings["open_artist", "Open artist"]) { onOpenArtist(artistName) }
             }
         }
 
@@ -294,9 +203,6 @@ internal fun DesktopSongMenu(
             label = DesktopStrings["sleep_timer", "Sleep timer"],
             value = sleepTimerLabel(sleepTimerMinutes, sleepAfterTrack),
         ) { pickingSleepTimer = true }
-        if (!isOffline) {
-            DesktopMenuRow(Icons.Rounded.Share, DesktopStrings["share", "Share"], onClick = onShare)
-        }
     }
 }
 
@@ -407,7 +313,6 @@ private fun DesktopMenuRow(
     value: String = "",
     selected: Boolean = false,
     enabled: Boolean = true,
-    busy: Boolean = false,
     onClick: () -> Unit,
 ) {
     val interaction = remember { MutableInteractionSource() }
@@ -424,16 +329,12 @@ private fun DesktopMenuRow(
             .padding(horizontal = 9.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (busy) {
-            CircularProgressIndicator(Modifier.size(15.dp), color = DesktopAccent, strokeWidth = 2.dp)
-        } else {
-            Icon(
-                icon,
-                null,
-                tint = tint ?: if (enabled) Color.White.copy(alpha = 0.82f) else DesktopSecondary,
-                modifier = Modifier.size(16.dp),
-            )
-        }
+        Icon(
+            icon,
+            null,
+            tint = tint ?: if (enabled) Color.White.copy(alpha = 0.82f) else DesktopSecondary,
+            modifier = Modifier.size(16.dp),
+        )
         Spacer(Modifier.width(11.dp))
         Text(
             label,

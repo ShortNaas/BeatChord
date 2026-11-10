@@ -65,11 +65,6 @@ object LocalPlaylistStore {
                 list.add(0, LocalPlaylist(FAVORITES_ID, FAVORITES_TITLE, emptyList()))
             }
             _playlists.value = list
-            val favs = list.firstOrNull { it.id == FAVORITES_ID }
-            if (favs != null) {
-                val keys = favs.songs.flatMap { listOfNotNull(it.videoId, it.localUri) }.toSet()
-                com.music.bitchord.data.LikeState.seedLiked(keys)
-            }
         }
     }
 
@@ -113,9 +108,6 @@ object LocalPlaylistStore {
         val updated = listOf(updatedFav) + remaining
         _playlists.value = updated
         persist(updated)
-        val newStatus = if (!exists) com.music.bitchord.data.model.LikeStatus.LIKE else com.music.bitchord.data.model.LikeStatus.INDIFFERENT
-        com.music.bitchord.data.LikeState.set(song.videoId, newStatus)
-        song.localUri?.let { com.music.bitchord.data.LikeState.set(it, newStatus) }
         return !exists
     }
 

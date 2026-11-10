@@ -13,7 +13,12 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Alignment
+import bitchord.desktopapp.generated.resources.Res
+import bitchord.desktopapp.generated.resources.logo_mark
 import kotlinx.coroutines.Dispatchers
+import org.jetbrains.compose.resources.painterResource
 import kotlinx.coroutines.withContext
 import androidx.compose.ui.graphics.decodeToImageBitmap
 import java.net.URI
@@ -73,7 +78,16 @@ fun DesktopArtwork(
         }
     }
     if (bitmap == null) {
-        Box(modifier.background(Color(0xFF2B2B35)))
+        // No artwork, or none that would load: the app's own mark, never a blank box. A local file
+        // has no cover to offer at all, so this is the usual state of most of a library.
+        Box(modifier.background(Color(0xFF2B2B35)), contentAlignment = Alignment.Center) {
+            Image(
+                painter = painterResource(Res.drawable.logo_mark),
+                contentDescription = contentDescription,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxSize(0.42f),
+            )
+        }
     } else {
         Image(
             painter = BitmapPainter(bitmap!!),

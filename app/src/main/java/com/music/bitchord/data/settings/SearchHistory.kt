@@ -12,10 +12,10 @@ import com.music.bitchord.data.model.SearchHistoryEntity
 /**
  * What's been searched for lately, kept on this device only.
  *
- * YouTube Music has an account-level search history, but reading it back needs
- * a separate signed-in call on every keystroke's worth of empty query — and it
- * would be wrong for a signed-out user. A local list is instant, works either
- * way, and is what Spotify and Apple Music show in the same spot.
+ * A remote history would need a signed-in call on every keystroke's worth of
+ * empty query, and would be empty for anyone with no account. A local list is
+ * instant, works offline, and is the same affordance other players show in the
+ * search box.
  *
  * Stored as JSON rather than a delimited string: a query can contain any
  * character, separators included.

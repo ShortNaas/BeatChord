@@ -13,14 +13,14 @@ import kotlin.test.assertTrue
 class DesktopSpatialGuardTest {
 
     @Test
-    fun `a stream that declares Atmos is recognised, an ordinary one is not`() {
+    fun `a file that decodes as Atmos is recognised, an ordinary one is not`() {
         assertTrue(
-            DesktopStream(url = "x", isDolbyAtmos = true).isDolbyAtmos,
+            DesktopAudioFormat(codec = "eac3").isDolbyAtmos,
             "an Atmos rendition did not report itself",
         )
         assertTrue(
-            !DesktopStream(url = "x", format = DesktopStreamFormat(codec = "mp4a", kbps = 320)).isDolbyAtmos,
-            "an ordinary AAC stream claimed to be Atmos",
+            !DesktopAudioFormat(codec = "mp4a", kbps = 320).isDolbyAtmos,
+            "an ordinary AAC file claimed to be Atmos",
         )
     }
 

@@ -2,7 +2,6 @@ package com.music.bitchord.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,9 +24,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.Link
-import androidx.compose.material.icons.rounded.Lock
-import androidx.compose.material.icons.rounded.Public
 import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -50,7 +46,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -68,7 +63,7 @@ import java.util.Locale
 import androidx.compose.ui.res.painterResource
 
 /**
- * Where a track goes: one of the account's playlists, or a new one.
+ * Where a track goes: one of this device's playlists, or a new one.
  *
  * Two panels in one sheet rather than a sheet that opens a dialog. Creating a
  * playlist here is nearly always in service of adding the track that opened
@@ -240,8 +235,9 @@ private fun PlaylistRow(playlist: UserPlaylist, selected: Boolean, onClick: () -
 }
 
 /**
- * Name and visibility, and nothing else. YouTube also takes a description,
- * which nobody fills in from a phone at the moment of saving a song.
+ * A name, and nothing else. A playlist here is its rows on this device, so
+ * there is nothing else to ask for: no description anyone would write from a
+ * phone, and no visibility that would mean anything without a server.
  */
 @Composable
 private fun NewPlaylistForm(
@@ -250,7 +246,6 @@ private fun NewPlaylistForm(
     modifier: Modifier = Modifier,
 ) {
     var name by remember { mutableStateOf("") }
-    var privacy by remember { mutableStateOf(PlaylistPrivacy.PRIVATE) }
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
 
@@ -261,7 +256,8 @@ private fun NewPlaylistForm(
     val submit: () -> Unit = {
         if (name.isNotBlank()) {
             focusManager.clearFocus()
-            onCreate(name, privacy)
+            // A local playlist has no audience to choose; see the KDoc above.
+            onCreate(name, PlaylistPrivacy.PRIVATE)
         }
     }
 
@@ -292,11 +288,6 @@ private fun NewPlaylistForm(
                     text = stringResource(R.string.new_playlist),
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onBackground,
-                )
-                Text(
-                    text = stringResource(R.string.saved_to_youtube_music_account),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -348,23 +339,6 @@ private fun NewPlaylistForm(
                         modifier = Modifier.size(18.dp),
                     )
                 }
-            }
-        }
-
-        SheetHeading(stringResource(R.string.who_can_see_it).uppercase(Locale.getDefault()))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 22.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            PlaylistPrivacy.entries.forEach { option ->
-                PrivacyPill(
-                    icon = option.icon,
-                    label = option.label,
-                    selected = option == privacy,
-                    onClick = { privacy = option },
-                )
             }
         }
 
@@ -469,59 +443,5 @@ internal fun RenamePlaylistForm(
             Text(stringResource(R.string.save_name))
         }
         Spacer(Modifier.height(28.dp))
-    }
-}
-
-/**
- * The glyph that says what a visibility actually means — a padlock, a shared
- * link, a globe. Three words that all sound like degrees of the same thing
- * read much faster as three different shapes.
- */
-private val PlaylistPrivacy.icon: ImageVector
-    get() = when (this) {
-        PlaylistPrivacy.PRIVATE -> Icons.Rounded.Lock
-        PlaylistPrivacy.UNLISTED -> Icons.Rounded.Link
-        PlaylistPrivacy.PUBLIC -> Icons.Rounded.Public
-    }
-
-/** The search filters' pill, carrying an icon ahead of its label. */
-@Composable
-private fun PrivacyPill(
-    icon: ImageVector,
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
-    val content = if (selected) {
-        MaterialTheme.colorScheme.onPrimary
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    }
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(percent = 50))
-            .background(
-                if (selected) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.surfaceVariant
-                },
-            )
-            .clickable(onClick = onClick)
-            .padding(start = 11.dp, end = 14.dp, top = 7.dp, bottom = 7.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = content,
-            modifier = Modifier.size(16.dp),
-        )
-        Spacer(Modifier.width(6.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.titleMedium,
-            color = content,
-        )
     }
 }

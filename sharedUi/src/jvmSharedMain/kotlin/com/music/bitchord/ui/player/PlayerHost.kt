@@ -114,8 +114,6 @@ object PlayerPlatform {
 
 /** The settings the player reads, named and typed as the phone's AppSettings has them. */
 interface PlayerSettingsSource {
-    val audioQualityCellular: StateFlow<AudioQuality>
-    val audioQualityWifi: StateFlow<AudioQuality>
     val fullBleedArtwork: StateFlow<Boolean>
     val hideSongStatus: StateFlow<Boolean>
     val hideVolumeBar: StateFlow<Boolean>
@@ -124,7 +122,6 @@ interface PlayerSettingsSource {
     val lyricsBlur: StateFlow<Boolean>
     val lyricsOffsetMs: StateFlow<Int>
     val lyricsSourceOrder: StateFlow<List<LyricsSource>>
-    val meteredConnection: StateFlow<Boolean?>
     val preferUsbDac: StateFlow<Boolean>
     val reduceAnimation: StateFlow<Boolean>
     val reduceDynamicBlur: StateFlow<Boolean>
@@ -138,7 +135,6 @@ interface PlayerSettingsSource {
     val smartTransitionWindow: StateFlow<TransitionWindow?>
     val syncedLyrics: StateFlow<Boolean>
     val translationLanguage: StateFlow<String>
-    val versionAlignmentInProgress: StateFlow<Boolean>
 
     fun setLastPlayerScreen(value: LastPlayerScreen)
     fun setLyricsOffsetMs(value: Int)

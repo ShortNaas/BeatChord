@@ -19,9 +19,8 @@ internal interface DesktopSampleSource {
 /**
  * Decodes a track a few seconds ahead of the speakers, on a thread of its own.
  *
- * The audio thread used to call the decoder directly, and the decoder reads straight from the
- * network: a YouTube stream stops for a whole 512 KiB range request every half-minute or so, and a
- * lossless stream waits on its socket whenever the connection hiccups. WASAPI holds only a fifth
+ * The audio thread used to call the decoder directly, and a decoder's read can stall: a FLAC on a
+ * spinning disk, a file on a network mount, a slow mount's first touch. WASAPI holds only a fifth
  * of a second, so any read slower than that was heard as a gap of a few milliseconds. Here those
  * waits land on this thread while the audio thread plays what was decoded earlier.
  *
@@ -32,7 +31,7 @@ internal class DesktopDecodeAhead(
     private val source: DesktopSampleSource,
     val outputFormat: DesktopPcmFormat,
     val durationUs: Long?,
-    val measuredFormat: DesktopStreamFormat?,
+    val measuredFormat: DesktopAudioFormat?,
     /** How far ahead to decode, in samples across all channels. */
     private val aheadSamples: Int = outputFormat.sampleRate * outputFormat.channels * AHEAD_SECONDS,
     name: String = "BitChord-Decode",

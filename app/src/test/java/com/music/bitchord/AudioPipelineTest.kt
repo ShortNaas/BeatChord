@@ -2,7 +2,6 @@ package com.music.bitchord
 
 import android.media.AudioFormat
 import com.music.bitchord.data.NerdStats
-import com.music.bitchord.data.sources.StreamFormat
 import com.music.bitchord.playback.AudioOutputStatus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -150,110 +149,6 @@ class AudioPipelineTest {
         assertNull(NerdStats.codecLabel(null))
     }
 
-    // ── Authoritative Source Tracking ──────────────────────────────────────
-
-    @Test
-    fun `authoritative sources are recorded and retrieved across track identifiers`() {
-        NerdStats.recordSource("track-123", "YouTube")
-        assertEquals("YouTube", NerdStats.sourceFor("track-123"))
-
-        NerdStats.onSourceStream("track-456", StreamFormat(codec = "flac"), source = "Unified Addon")
-        assertEquals("Unified Addon", NerdStats.sourceFor("track-456"))
-
-        NerdStats.onStreamPicked("track-789", 320, source = "Addon A")
-        assertEquals("Addon A", NerdStats.sourceFor("track-789"))
-    }
-
-    @Test
-    fun `source lookup unwraps prefixed source track keys`() {
-        NerdStats.recordSource("inner-id-abc", "Qobuz FLAC")
-        val fullMediaId = "src:config-uuid-123::inner-id-abc"
-        assertEquals("Qobuz FLAC", NerdStats.sourceFor(fullMediaId))
-    }
-
-    @Test
-    fun `clearDeclared drops the recorded source for that track`() {
-        NerdStats.recordSource("track-abandoned", "Tidal HiFi")
-        assertEquals("Tidal HiFi", NerdStats.sourceFor("track-abandoned"))
-
-        NerdStats.clearDeclared("track-abandoned")
-        assertNull(NerdStats.sourceFor("track-abandoned"))
-    }
-
-    @Test
-    fun `forgetLastSession clears all recorded sources and snapshots`() {
-        NerdStats.recordSource("track-1", "YouTube")
-        NerdStats.recordSource("track-2", "Addon A")
-        NerdStats.current.value = NerdStats.Snapshot(
-            mimeType = "audio/flac",
-            bitrateKbps = 1411,
-            sampleRateHz = 44100,
-            channels = 2,
-            sourceName = "Addon A",
-        )
-
-        NerdStats.forgetLastSession()
-
-        assertNull(NerdStats.current.value)
-        assertNull(NerdStats.sourceFor("track-1"))
-        assertNull(NerdStats.sourceFor("track-2"))
-    }
-
-    // ── Dynamic Source Transition & Leak Prevention ────────────────────────
-
-    @Test
-    fun `stale provider must never leak across tracks sharing same inner identifier`() {
-        // Track 1 played from Addon A with inner track id "101"
-        NerdStats.recordSource("101", "Addon A")
-        assertEquals("Addon A", NerdStats.exactSourceFor("101"))
-
-        // Track 2 is an Addon track with the exact same inner id "101" under an addon prefix
-        val addonMediaId = "src:addon-uuid-xyz::101"
-        // Before Addon resolves or records itself, exactSourceFor must NOT leak Addon A
-        assertNull(NerdStats.exactSourceFor(addonMediaId))
-
-        // Once Addon stream is recorded for the exact mediaId, it strictly returns the Addon
-        NerdStats.recordSource(addonMediaId, "Unified Addon")
-        assertEquals("Unified Addon", NerdStats.exactSourceFor(addonMediaId))
-        // And track 1 remains Addon A without being mutated
-        assertEquals("Addon A", NerdStats.exactSourceFor("101"))
-    }
-
-    @Test
-    fun `playback source transitions maintain correct sequence without stale bleed`() {
-        val addonAId = "src:addon-a-uuid::track-a"
-        val addonId = "src:addon-uuid::track-addon"
-        val localId = "local-storage-track-uri"
-
-        // 1. Addon A playback
-        NerdStats.recordSource(addonAId, "Addon A")
-        assertEquals("Addon A", NerdStats.exactSourceFor(addonAId))
-
-        // 2. Transition Addon A -> Addon B
-        NerdStats.recordSource(addonId, "Tidal Addon")
-        assertEquals("Tidal Addon", NerdStats.exactSourceFor(addonId))
-
-        // 3. Transition Addon -> Local Storage (Local Storage does not rely on streaming source)
-        assertNull(NerdStats.exactSourceFor(localId))
-
-        // 4. Transition Local -> Addon A
-        assertEquals("Addon A", NerdStats.exactSourceFor(addonAId))
-
-        // 5. Transition Local -> Addon
-        assertEquals("Tidal Addon", NerdStats.exactSourceFor(addonId))
-
-        // 6. Transition Addon B -> Addon A
-        assertEquals("Addon A", NerdStats.exactSourceFor(addonAId))
-    }
-
-    @Test
-    fun `unknown provider and missing metadata remain null in exact lookup`() {
-        assertNull(NerdStats.exactSourceFor(null))
-        assertNull(NerdStats.exactSourceFor(""))
-        assertNull(NerdStats.exactSourceFor("src:unknown-provider-uuid::track-999"))
-    }
-
-    // ── AudioOutputStatus Model ────────────────────────────────────────────
 
     @Test
     fun `AudioOutputStatus tracks decoder name and buffer size`() {

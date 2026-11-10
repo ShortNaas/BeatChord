@@ -148,6 +148,23 @@ object DesktopLocalMusic {
     private data class ParsedName(val title: String, val artist: String)
 }
 
+/**
+ * The file a row plays from, when it has one on this computer.
+ *
+ * The decoder is handed the plain path rather than a `file://` URI: FFmpeg does not percent-decode
+ * what it is given, so a URI for "Justin Bieber - Peaches (feat. …).m4a" sent it looking for a file
+ * literally named "Justin%20Bieber%20-%20…" and answered ENOENT for a file that was sitting right
+ * there. A row whose file has gone plays as nothing at all rather than being streamed from
+ * somewhere else — there is nowhere else any more.
+ */
+internal fun localFileOf(song: Song): String? {
+    val path = song.localPath?.takeIf(String::isNotBlank)
+        ?: song.localUri?.takeIf(String::isNotBlank)?.let { uri ->
+            runCatching { Paths.get(java.net.URI(uri)).toString() }.getOrNull()
+        }
+    return path?.takeIf { runCatching { java.io.File(it).isFile }.getOrDefault(false) }
+}
+
 enum class DesktopLibrarySort {
     TITLE_ASC,
     TITLE_DESC,

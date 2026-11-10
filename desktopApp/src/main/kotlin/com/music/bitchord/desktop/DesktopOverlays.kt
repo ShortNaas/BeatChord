@@ -21,8 +21,6 @@ internal class DesktopOverlays {
     /** Which device playback is sent to. */
     var audioOutput by mutableStateOf(false)
 
-    var songMenu by mutableStateOf(false)
-    var downloadManager by mutableStateOf(false)
     var replay by mutableStateOf(false)
     var playlistDialog by mutableStateOf(false)
     var rename by mutableStateOf(false)
@@ -35,8 +33,6 @@ internal class DesktopOverlays {
      * wherever it was opened from.
      */
     var settingsPage by mutableStateOf<DesktopSettingsPage?>(null)
-    var accounts by mutableStateOf(false)
-    var signIn by mutableStateOf(false)
 
     /** The column beside the page with the lyrics or the queue in it, or none. */
     var sidePanel by mutableStateOf<DesktopSidePanel?>(null)
@@ -49,7 +45,7 @@ internal class DesktopOverlays {
 
 /**
  * Settings and the pages its rows lead to. Only the screens are here; the short prompts behind them
- * — a sign-in, a token, a source's address — stay cards over the page, as Android's alerts do.
+ * — a playlist's name, a delete's confirmation — stay cards over the page, as Android's alerts do.
  */
 internal enum class DesktopSettingsPage {
     MAIN,

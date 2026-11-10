@@ -32,11 +32,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -55,8 +53,6 @@ import com.music.bitchord.ui.haptics.Haptic
 import com.music.bitchord.ui.haptics.rememberHaptics
 import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.delay
-import java.util.Locale
-import kotlin.math.roundToInt
 
 /**
  * Where the music is coming out, and how loud.
@@ -80,7 +76,6 @@ import kotlin.math.roundToInt
 @Composable
 internal fun AudioOutputSheet(
     hazeState: HazeState,
-    accountName: String?,
     onDismiss: () -> Unit,
     onOpenPipeline: () -> Unit,
     onOpenCast: () -> Unit,
@@ -106,7 +101,6 @@ internal fun AudioOutputSheet(
             outputs.forEach { device ->
                 OutputRow(
                     device = device,
-                    accountName = accountName,
                     onSelect = { PlayerPlatform.host.selectAudioOutput(device.id) },
                 )
             }
@@ -272,7 +266,6 @@ private fun CastRow(cast: CastUi, onClick: () -> Unit) {
 @Composable
 private fun OutputRow(
     device: AudioOutputDevice,
-    accountName: String?,
     onSelect: () -> Unit,
 ) {
     val haptics = rememberHaptics()
@@ -310,7 +303,7 @@ private fun OutputRow(
         Spacer(Modifier.width(13.dp))
         Column(Modifier.weight(1f)) {
             Text(
-                text = outputLabel(device, accountName),
+                text = outputLabel(device),
                 style = MaterialTheme.typography.bodyLarge.copy(
                     fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
                 ),

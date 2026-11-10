@@ -1,9 +1,10 @@
 package com.music.bitchord.download
 
 /**
- * The box walking [Mp4Sidx] and [ManifestFile] share: read-only, bounds-checked,
- * and quiet about anything malformed — a box that does not fit its parent ends
- * the list rather than throwing, so each caller decides what a short list means.
+ * A read-only, bounds-checked MP4 box walker kept beside the offline tag
+ * editor: quiet about anything malformed, so a box that does not fit its parent
+ * ends the list rather than throwing and each caller decides what a short list
+ * means.
  */
 internal object Mp4Boxes {
 

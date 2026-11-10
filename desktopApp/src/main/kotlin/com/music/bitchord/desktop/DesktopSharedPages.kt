@@ -51,10 +51,10 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import kotlin.math.roundToInt
 
-// What the phone's pages — Home, Explore, Library, Search, shared from :sharedUi —
-// read from the app around them, answered from this computer's own stores.
+// What the phone's pages — Home, Library and Search, shared from :sharedUi — read from the
+// app around them, answered from this computer's own stores.
 
-/** The shared pages' settings and downloads, from the desktop's preferences. */
+/** The shared pages' settings, from the desktop's preferences. */
 internal object DesktopAppUiHost : AppUiHost {
 
     private val persistence = DesktopPersistence()
@@ -85,15 +85,6 @@ internal object DesktopAppUiHost : AppUiHost {
     fun setLibrarySort(value: LibrarySort) {
         persistence.saveString(KEY_LIBRARY_SORT, value.name)
         _librarySort.value = value
-    }
-
-    /** Kept current by the app, which owns the download list — see `BitChordDesktopApp`. */
-    val downloaded = MutableStateFlow<Set<String>>(emptySet())
-
-    @Composable
-    override fun downloadedIds(): Set<String> {
-        val ids by downloaded.collectAsState()
-        return ids
     }
 
     private const val KEY_SWIPE_PLAY_NEXT = "swipe_play_next"

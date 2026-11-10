@@ -338,8 +338,8 @@ internal suspend fun cacheForSharing(
  * Through MediaStore, which from API 29 needs no permission at all for a row the
  * app created. Below that it writes into the public Pictures folder directly,
  * which is why the legacy branch exists — and why saving is offered rather than
- * assumed: on an older device it can fail on a permission this app doesn't ask
- * for until a download is started.
+ * assumed: on an older device it can fail on a storage permission this app does
+ * not hold.
  */
 internal suspend fun saveToGallery(
     context: Context,

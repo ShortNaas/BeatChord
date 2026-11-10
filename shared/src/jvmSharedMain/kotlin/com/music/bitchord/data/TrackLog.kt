@@ -14,11 +14,10 @@ import kotlin.coroutines.CoroutineContext
  * The app's own record of how each track came to be playing, as text you can
  * paste somewhere.
  *
- * Diagnosing why a track played from the wrong source, at the wrong bitrate,
- * or not at all has meant plugging the phone in and reading `adb logcat` — and
- * the answer is usually in a stretch lasting a few seconds that has already
- * scrolled past by the time anyone notices something sounded wrong. This keeps
- * that stretch.
+ * Diagnosing why a track played at the wrong bitrate, or not at all, has meant
+ * plugging the phone in and reading `adb logcat` — and the answer is usually in
+ * a stretch lasting a few seconds that has already scrolled past by the time
+ * anyone notices something sounded wrong. This keeps that stretch.
  *
  * ### Why not read logcat
  *
@@ -35,19 +34,18 @@ import kotlin.coroutines.CoroutineContext
  *
  * ### What gets kept
  *
- * Only the paths that decide how a track plays: the resolver, the module
- * sandbox, the source ladder, the cache and the player. Deliberately not the
- * feeds, the artwork, the lyrics or the library — a paste that includes
- * everything is one nobody reads to the end of, and none of it has ever been
- * the answer to "why did this song sound wrong".
+ * Only the paths that decide how a track plays: the file lookup, the cache and
+ * the player. Deliberately not the feeds, the artwork, the lyrics or the
+ * library — a paste that includes everything is one nobody reads to the end of,
+ * and none of it has ever been the answer to "why did this song sound wrong".
  *
  * ### Which lines are whose
  *
  * Every line is filed against the track it is about, and reading the log back
  * is a question about a track rather than about a stretch of time — see
  * [about] and [forTrack]. This app does most of a track's work nowhere near
- * the moment that track is playing: it is resolved while the one before it
- * plays, and the first seconds of every track are spent resolving the *next*
+ * the moment that track is playing: it is prepared while the one before it
+ * plays, and the first seconds of every track are spent preparing the *next*
  * one. So "the last thirty seconds of log" is never the same thing as "this
  * song's story", and asking for one by way of the other pastes the wrong
  * song's log almost every time.
@@ -62,10 +60,6 @@ object TrackLog {
      */
     @Volatile
     var echo: ((level: Char, tag: String, message: String, error: Throwable?) -> Unit)? = null
-
-    /** The exported header's line on which sources may stand in for YouTube, where there is one. */
-    @Volatile
-    var sourcesLine: () -> String? = { null }
 
     /** The platform's own closing lines for an exported log's header — the build, the device. */
     @Volatile
@@ -120,10 +114,10 @@ object TrackLog {
      *
      * The alternative is passing an id down to every call that logs, and the
      * lines worth having are exactly the ones furthest from anyone who knows
-     * which track they are for: a fetch inside a QuickJS export inside a module
-     * search inside a source ladder. None of those layers has any other use for
-     * a track id, and threading one through all of them to serve a debug button
-     * would be a worse trade than the button is worth.
+     * which track they are for: a decode inside a read-ahead inside a queue
+     * advance. None of those layers has any other use for a track id, and
+     * threading one through all of them to serve a debug button would be a
+     * worse trade than the button is worth.
      *
      * Carried as a [kotlinx.coroutines.ThreadContextElement] rather than a bare
      * thread local because that work hops threads constantly —
@@ -166,8 +160,8 @@ object TrackLog {
      * Wall-clock times at which each track became the current one.
      *
      * Only a floor for tracks with no lines of their own, now that lines say
-     * which track they are about: a track served whole from the disk cache is
-     * resolved by nobody and would otherwise have no start at all.
+     * which track they are about: a track with nothing left to prepare would
+     * otherwise have no start at all.
      */
     private val startedAt = ConcurrentHashMap<String, Long>()
 
@@ -183,20 +177,20 @@ object TrackLog {
      * Both halves of that are the fix for the same bug, and a plain time window
      * gets both of them wrong:
      *
-     *  - **Where it starts.** A track is resolved while the track *before* it
-     *    is still playing — that is what read-ahead is — so the resolve that
-     *    decides its source, its bitrate and whether it plays at all sits
-     *    minutes earlier than the moment the queue reached it. No window
-     *    measured back from the selection reaches that.
+     *  - **Where it starts.** A track is prepared while the track *before* it
+     *    is still playing — that is what read-ahead is — so the work that
+     *    decides its bitrate and whether it plays at all sits minutes earlier
+     *    than the moment the queue reached it. No window measured back from
+     *    the selection reaches that.
      *  - **What is in it.** The first seconds of every track are spent
-     *    resolving the next one, so a window running from the selection to now
-     *    is largely the *following* song's story: its ladder, its client walk,
-     *    its read-ahead. That is what a paste taken a few seconds into a track
-     *    was almost entirely made of.
+     *    preparing the next one, so a window running from the selection to now
+     *    is largely the *following* song's story: its decode, its read-ahead.
+     *    That is what a paste taken a few seconds into a track was almost
+     *    entirely made of.
      *
      * Falling back to everything held is still the right way to be wrong for a
-     * track nothing was ever filed against — one served whole from the disk
-     * cache, or the track a cold start resumes on.
+     * track nothing was ever filed against — one already open when the queue
+     * reached it, or the track a cold start resumes on.
      */
     suspend fun forTrack(song: Song, stats: NerdStats.Snapshot?): String = withContext(Dispatchers.Default) {
         val held = synchronized(lines) { lines.toList() }
@@ -232,7 +226,6 @@ object TrackLog {
         appendLine("BitChord log — ${song.title} — ${song.artist}")
         appendLine("id=${song.videoId} duration=${song.durationText ?: "?"} album=${song.albumName ?: "?"}")
         appendLine("playing: ${stats.describe()}")
-        sourcesLine()?.let(::appendLine)
         appendLine(
             "window: ${from?.let { CLOCK.format(Date(it)) } ?: "everything held"} → " +
                 "${CLOCK.format(Date())} ($count lines" +
@@ -250,14 +243,13 @@ object TrackLog {
             sampleRateHz?.let { "$it Hz" },
             channels?.let { "${it}ch" },
         ).joinToString(" · ").ifEmpty { "nothing reported" }
-        val promised = claimed?.summary?.let { " (source said: $it)" }.orEmpty()
         val tier = when {
             isHiRes -> " [Hi-Res Lossless]"
             isLossless -> " [Lossless]"
             isHiQuality -> " [Hi-Quality]"
             else -> ""
         }
-        return measured + promised + tier
+        return measured + tier
     }
 
     private val CLOCK = SimpleDateFormat("HH:mm:ss.SSS", Locale.US)
@@ -267,8 +259,8 @@ object TrackLog {
      * against it — see [startedAt].
      *
      * Only a fallback now. It used to be the whole of the window, on the
-     * reasoning that the resolve runs a moment before the player reports the
-     * item as current; what it actually reaches back into is the *previous*
+     * reasoning that the preparation runs a moment before the player reports
+     * the item as current; what it actually reaches back into is the *previous*
      * track's playback, and what the track being asked about spent it doing is
      * usually nothing.
      */

@@ -21,15 +21,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 /**
- * The signal chain behind what is playing, stage by stage: the stream that arrived, the decoder,
+ * The signal chain behind what is playing, stage by stage: the file that was opened, the decoder,
  * whether anything is being resampled, the processing on top, and the device it lands on.
  *
  * Android opens the same readout from the quality badge — see its `AudioPipelineDialog`.
  */
 @Composable
 internal fun DesktopAudioPipelineDialog(
-    format: DesktopStreamFormat?,
-    sourceName: String?,
+    format: DesktopAudioFormat?,
     pipeline: DesktopAudioPipeline,
     onDismiss: () -> Unit,
 ) {
@@ -40,7 +39,7 @@ internal fun DesktopAudioPipelineDialog(
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
             )
-            // The engine's own copy, so Source and Decoder cannot disagree while an upgrade lands.
+            // The engine's own copy, so a measurement and the row that shows it cannot disagree.
             val source = pipeline.sourceFormat ?: format
             PipelineStage(DesktopStrings["pipeline_source", "Source"]) {
                 PipelineRow(DesktopStrings["pipeline_format", "Format"], source?.codecLabel)
@@ -51,7 +50,6 @@ internal fun DesktopAudioPipelineDialog(
                 )
                 PipelineRow(DesktopStrings["pipeline_bit_depth", "Bit depth"], source?.bitDepth?.let { "$it-bit" })
                 PipelineRow(DesktopStrings["pipeline_channels", "Channels"], channelLabel(source?.channels))
-                PipelineRow(DesktopStrings["source", "Source"], sourceName)
             }
             PipelineStage(DesktopStrings["pipeline_decoder", "Decoder"]) {
                 PipelineRow(DesktopStrings["pipeline_decoder_name", "Decoder"], pipeline.decoderLabel)

@@ -15,34 +15,21 @@ import java.util.Locale
  *
  * ## Why this exists
  *
- * Everything else the analyzer reads comes out of
- * [com.music.bitchord.playback.AudioCache], because that is where *streamed*
- * audio lands. A track playing off the device never goes there:
- * [com.music.bitchord.playback.AudioCache.playbackFactory] routes `file://` and
- * `content://` straight past the disk cache rather than writing a second copy
- * of a file the user already has.
- *
- * So the whole rendition apparatus the analyzer is built on answered "nothing
- * cached" for a track that was entirely present, and
- * [com.music.bitchord.playback.AudioCache.requestAnalysisHead] — the fallback
- * for that answer — is a no-op for anything without a YouTube id. Between them,
- * a local file was never queued for analysis at all: it sat at "waiting" for as
- * long as it stayed queued, both tracks of every transition read as no
- * evidence, and the policy ladder answered that the only way it can, with a
- * plain crossfade. Which is exactly what Automix over a local library sounded
- * like.
+ * Everything the analyzer measures is a file on this device: a `content://` row
+ * from MediaStore or a `file://` path. There is no stream and no cache in front
+ * of it, so this is the only reader the analyzer needs.
  *
  * ## Shape
  *
- * A local file needs none of the machinery a cached rendition does, and the
+ * A local file has none of the machinery a streamed copy does, and the
  * differences are not cosmetic:
  *
- *  - **There is one copy.** No lightest-complete-rendition to choose between,
- *    and no sibling to cross-check a borrowed beat grid against.
- *  - **It is complete the moment it exists.** The head-then-whole-track
- *    escalation exists to get ahead of a download; there is no download.
+ *  - **There is one copy.** No lightest-complete copy to choose between, and no
+ *    sibling to cross-check a borrowed beat grid against.
+ *  - **It is complete the moment it exists.** There is nothing to wait for and
+ *    nothing to fetch ahead of.
  *  - **It is the user's file.** Nothing here may delete it when a decode
- *    disappoints, which is the one thing the cache path is allowed to do.
+ *    disappoints.
  *
  * Reads go through `pread` rather than seek-then-read, so the descriptor
  * carries no shared position: [android.media.MediaExtractor] jumps around a

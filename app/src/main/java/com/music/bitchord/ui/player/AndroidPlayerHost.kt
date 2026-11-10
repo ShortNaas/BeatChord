@@ -44,8 +44,6 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
     private val main = Handler(Looper.getMainLooper())
 
     override val settings: PlayerSettingsSource = object : PlayerSettingsSource {
-        override val audioQualityCellular get() = AppSettings.audioQualityCellular
-        override val audioQualityWifi get() = AppSettings.audioQualityWifi
         override val fullBleedArtwork get() = AppSettings.fullBleedArtwork
         override val hideSongStatus get() = AppSettings.hideSongStatus
         override val hideVolumeBar get() = AppSettings.hideVolumeBar
@@ -54,7 +52,6 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
         override val lyricsBlur get() = AppSettings.lyricsBlur
         override val lyricsOffsetMs get() = AppSettings.lyricsOffsetMs
         override val lyricsSourceOrder get() = AppSettings.lyricsSourceOrder
-        override val meteredConnection get() = AppSettings.meteredConnection
         override val preferUsbDac get() = AppSettings.preferUsbDac
         override val reduceAnimation get() = AppSettings.reduceAnimation
         override val reduceDynamicBlur get() = AppSettings.reduceDynamicBlur
@@ -66,7 +63,6 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
         override val smartTransitionWindow get() = AppSettings.smartTransitionWindow
         override val syncedLyrics get() = AppSettings.syncedLyrics
         override val translationLanguage get() = AppSettings.translationLanguage
-        override val versionAlignmentInProgress get() = AppSettings.versionAlignmentInProgress
 
         override fun setLastPlayerScreen(value: LastPlayerScreen) = AppSettings.setLastPlayerScreen(value)
         override fun setLyricsOffsetMs(value: Int) = AppSettings.setLyricsOffsetMs(value)

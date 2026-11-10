@@ -3,7 +3,6 @@ package com.music.bitchord.desktop
 import org.bytedeco.ffmpeg.avcodec.AVCodecContext
 import org.bytedeco.ffmpeg.avcodec.AVPacket
 import org.bytedeco.ffmpeg.avformat.AVFormatContext
-import org.bytedeco.ffmpeg.avformat.AVInputFormat
 import org.bytedeco.ffmpeg.avutil.AVChannelLayout
 import org.bytedeco.ffmpeg.avutil.AVDictionary
 import org.bytedeco.ffmpeg.avutil.AVFrame
@@ -22,12 +21,10 @@ import org.bytedeco.ffmpeg.global.avcodec.avcodec_receive_frame
 import org.bytedeco.ffmpeg.global.avcodec.avcodec_send_packet
 import org.bytedeco.ffmpeg.global.avformat.AVSEEK_FLAG_BACKWARD
 import org.bytedeco.ffmpeg.global.avformat.av_find_best_stream
-import org.bytedeco.ffmpeg.global.avformat.av_find_input_format
 import org.bytedeco.ffmpeg.global.avformat.av_read_frame
 import org.bytedeco.ffmpeg.global.avformat.av_seek_frame
 import org.bytedeco.ffmpeg.global.avformat.avformat_close_input
 import org.bytedeco.ffmpeg.global.avformat.avformat_find_stream_info
-import org.bytedeco.ffmpeg.global.avformat.avformat_network_init
 import org.bytedeco.ffmpeg.global.avformat.avformat_open_input
 import org.bytedeco.ffmpeg.global.avutil.AVERROR_EOF
 import org.bytedeco.ffmpeg.global.avutil.AVMEDIA_TYPE_AUDIO
@@ -38,20 +35,9 @@ import org.bytedeco.ffmpeg.global.avutil.AV_SAMPLE_FMT_S16
 import org.bytedeco.ffmpeg.global.avutil.AV_SAMPLE_FMT_S32
 import org.bytedeco.ffmpeg.global.avutil.av_channel_layout_default
 import org.bytedeco.ffmpeg.global.avutil.av_dict_get
-import org.bytedeco.ffmpeg.global.avutil.av_dict_set
 import org.bytedeco.ffmpeg.global.avutil.av_frame_alloc
 import org.bytedeco.ffmpeg.global.avutil.av_get_bytes_per_sample
 import org.bytedeco.ffmpeg.global.avutil.av_strerror
-import org.bytedeco.ffmpeg.global.avutil.av_malloc
-import org.bytedeco.ffmpeg.global.avutil.av_free
-import org.bytedeco.ffmpeg.avformat.AVIOContext
-import org.bytedeco.ffmpeg.avformat.Read_packet_Pointer_BytePointer_int
-import org.bytedeco.ffmpeg.avformat.Seek_Pointer_long_int
-import org.bytedeco.ffmpeg.global.avformat.AVSEEK_SIZE
-import org.bytedeco.ffmpeg.global.avformat.avformat_alloc_context
-import org.bytedeco.ffmpeg.global.avformat.avio_alloc_context
-import org.bytedeco.ffmpeg.global.avformat.avio_context_free
-import org.bytedeco.javacpp.Pointer
 import org.bytedeco.ffmpeg.global.avutil.av_frame_free
 import org.bytedeco.ffmpeg.global.avutil.av_log_set_level
 import org.bytedeco.ffmpeg.global.swresample.swr_alloc_set_opts2
@@ -99,12 +85,6 @@ internal class DesktopAudioDecoder : DesktopSampleSource {
     /** Set once the container is exhausted, so the drain runs exactly once. */
     private var drained = false
 
-    /** Live only while this decoder reads through windowed HTTP; see [open]. */
-    private var rangeSource: DesktopRangeStream? = null
-    private var avio: AVIOContext? = null
-    private var readPacket: Read_packet_Pointer_BytePointer_int? = null
-    private var seekPacket: Seek_Pointer_long_int? = null
-
     /** The format samples arrive in, once [open] has succeeded. */
     var outputFormat: DesktopPcmFormat = DesktopPcmFormat(44_100, 2, 2)
         private set
@@ -117,55 +97,27 @@ internal class DesktopAudioDecoder : DesktopSampleSource {
     var positionUs: Long = 0L
         private set
 
-    /** The stream's first timestamp: song position 0, which an HLS or MPEG-TS stream puts well past 0. */
+    /** The stream's first timestamp: song position 0, where a container does not start at it. */
     private var streamStartUs = 0L
 
     /** After a seek, decoded audio before this song position is dropped; see [seek]. */
     private var trimBeforeUs: Long? = null
 
     /** What is actually being decoded, once [open] has succeeded. */
-    var measuredFormat: DesktopStreamFormat? = null
+    var measuredFormat: DesktopAudioFormat? = null
         private set
 
-    /** Opens [url] and prepares to decode it as [requested]. */
+    /** Opens the file at [path] and prepares to decode it as [requested]. */
     fun open(
-        url: String,
-        headers: Map<String, String> = emptyMap(),
+        path: String,
         requested: DesktopPcmFormat,
-        /**
-         * Whether this server refuses to hand over a whole file at once and has to be asked for it
-         * a window at a time — see [DesktopRangeStream].
-         */
-        windowed: Boolean = false,
-        /** Explicit demuxer for an extensionless add-on manifest. */
-        transport: String? = null,
     ): Result<Unit> = runCatching {
         av_log_set_level(AV_LOG_ERROR)
-        ensureNetwork()
 
-        val options = AVDictionary(null)
-        if (headers.isNotEmpty()) {
-            // FFmpeg wants one blob with CRLF between fields, not a dictionary.
-            val block = headers.entries.joinToString("") { (name, value) -> "$name: $value\r\n" }
-            av_dict_set(options, "headers", block, 0)
-            headers["User-Agent"]?.let { av_dict_set(options, "user_agent", it, 0) }
-        }
-        // A stream that stalls mid-track should be retried rather than ending the song, which is
-        // what a bare read error would look like upstream.
-        av_dict_set(options, "reconnect", "1", 0)
-        av_dict_set(options, "reconnect_streamed", "1", 0)
-        av_dict_set(options, "reconnect_on_network_error", "1", 0)
-        av_dict_set(options, "reconnect_delay_max", "5", 0)
-        av_dict_set(options, "rw_timeout", "15000000", 0)
-
-        val opened = if (windowed) windowedContext(url, headers) else AVFormatContext(null)
-        // The code matters.
-        val inputFormat: AVInputFormat? = when (transport?.lowercase()) {
-            DesktopAddonStream.HLS -> av_find_input_format("hls")
-            DesktopAddonStream.DASH -> av_find_input_format("dash")
-            else -> null
-        }
-        val status = avformat_open_input(opened, if (windowed) null as String? else url, inputFormat, options)
+        val opened = AVFormatContext(null)
+        // A file on this machine: no headers, no reconnect options, and no demuxer to name —
+        // FFmpeg reads the container's own signature.
+        val status = avformat_open_input(opened, path, null, null as AVDictionary?)
         check(status >= 0) { "could not open stream (${describe(status)})" }
         format = opened
         check(avformat_find_stream_info(opened, null as AVDictionary?) >= 0) { "no stream info" }
@@ -173,8 +125,7 @@ internal class DesktopAudioDecoder : DesktopSampleSource {
         streamIndex = bestRendition(opened)
             ?: av_find_best_stream(opened, AVMEDIA_TYPE_AUDIO, -1, -1, null as org.bytedeco.ffmpeg.avcodec.AVCodec?, 0)
         check(streamIndex >= 0) { "no audio stream" }
-        // The rest of a manifest's renditions are not fetched: FFmpeg's DASH and HLS demuxers
-        // only download segments for streams that are not discarded.
+        // The container's other streams are not read at all.
         for (i in 0 until opened.nb_streams()) {
             if (i != streamIndex) opened.streams(i).discard(AVDISCARD_ALL)
         }
@@ -212,13 +163,12 @@ internal class DesktopAudioDecoder : DesktopSampleSource {
     }.onFailure { close() }
 
     /**
-     * The rendition to play when a container offers more than one audio stream — lossless first,
-     * then the highest bitrate — or null when there is nothing to choose between.
+     * The rendition to play when a file offers more than one audio stream — lossless first, then
+     * the highest bitrate — or null when there is nothing to choose between.
      *
-     * A Tidal DASH manifest, which addons pass straight through, lists HE-AAC (~97kbps), AAC-LC
-     * (~320kbps) and FLAC as separate streams, and `av_find_best_stream` has no notion of
-     * lossless: it chose AAC-LC, so a track the addon served as FLAC played at 320kbps. The phone
-     * never had this problem because Media3 makes the choice itself.
+     * `av_find_best_stream` has no notion of lossless: given a container that holds both an AAC
+     * commentary track and the album's FLAC, it picks whichever it likes the look of. A local file
+     * can hold more than one stream as easily as anything served does, so the choice is made here.
      */
     private fun bestRendition(container: AVFormatContext): Int? {
         val audio = (0 until container.nb_streams()).filter { i ->
@@ -229,12 +179,12 @@ internal class DesktopAudioDecoder : DesktopSampleSource {
         return audio.maxWithOrNull(
             compareBy<Int> { i ->
                 val name = avcodec_get_name(container.streams(i).codecpar().codec_id())?.string
-                DesktopStreamFormat(codec = name).isLossless
+                DesktopAudioFormat(codec = name).isLossless
             }.thenBy { i -> renditionBitrate(container, i) },
         )
     }
 
-    /** A stream's bitrate, from its parameters or, in a manifest, the bandwidth it advertises. */
+    /** A stream's bitrate, from its parameters or, failing those, the bandwidth it advertises. */
     private fun renditionBitrate(container: AVFormatContext, index: Int): Long {
         val stream = container.streams(index)
         stream.codecpar().bit_rate().takeIf { it > 0 }?.let { return it }
@@ -247,62 +197,20 @@ internal class DesktopAudioDecoder : DesktopSampleSource {
         codecName: String?,
         context: AVCodecContext,
         container: AVFormatContext,
-    ): DesktopStreamFormat {
+    ): DesktopAudioFormat {
         val channels = context.ch_layout().nb_channels().takeIf { it > 0 }
-        val lossless = DesktopStreamFormat(codec = codecName).isLossless
+        val lossless = DesktopAudioFormat(codec = codecName).isLossless
         val depth = context.bits_per_raw_sample()
             .takeIf { it > 0 }
             ?: av_get_bytes_per_sample(context.sample_fmt()).takeIf { it > 0 }?.times(8)
         val bits = context.bit_rate().takeIf { it > 0 } ?: container.bit_rate().takeIf { it > 0 }
-        return DesktopStreamFormat(
+        return DesktopAudioFormat(
             codec = codecName,
             kbps = bits?.let { (it / 1_000).toInt() }?.takeIf { it > 0 },
             sampleRateHz = context.sample_rate().takeIf { it > 0 },
             bitDepth = depth?.takeIf { lossless },
             channels = channels,
         )
-    }
-
-    /**
-     * A format context reading through [DesktopRangeStream] rather than through FFmpeg's own HTTP
-     * client.
-     */
-    private fun windowedContext(url: String, headers: Map<String, String>): AVFormatContext {
-        val source = DesktopRangeStream(url, headers)
-        val scratch = ByteArray(IO_BUFFER_BYTES)
-        val read = object : Read_packet_Pointer_BytePointer_int() {
-            override fun call(opaque: Pointer?, buffer: BytePointer?, size: Int): Int {
-                if (buffer == null) return AVERROR_EOF
-                val taken = source.read(scratch, minOf(size, scratch.size))
-                if (taken <= 0) return AVERROR_EOF
-                buffer.put(scratch, 0, taken)
-                return taken
-            }
-        }
-        val seek = object : Seek_Pointer_long_int() {
-            override fun call(opaque: Pointer?, offset: Long, whence: Int): Long {
-                // FFmpeg asks for the length this way rather than with a seek.
-                if (whence == AVSEEK_SIZE) return source.length
-                val target = when (whence) {
-                    SEEK_CUR -> source.position() + offset
-                    SEEK_END -> source.length + offset
-                    else -> offset
-                }
-                source.seek(target)
-                return target
-            }
-        }
-        val buffer = BytePointer(av_malloc(IO_BUFFER_BYTES.toLong()))
-        val io = avio_alloc_context(buffer, IO_BUFFER_BYTES, 0, null, read, null, seek)
-        val context = avformat_alloc_context()
-        // avformat_open_input sets AVFMT_FLAG_CUSTOM_IO itself when it finds a context that already
-        // has a pb, so there is no flag to set here.
-        context.pb(io)
-        rangeSource = source
-        readPacket = read
-        seekPacket = seek
-        avio = io
-        return context
     }
 
     /** FFmpeg's own words for an AVERROR, so a failure says what it was. */
@@ -448,8 +356,8 @@ internal class DesktopAudioDecoder : DesktopSampleSource {
     /**
      * Jumps to exactly [micros], leaving the decoder with nothing stale in it.
      *
-     * A backward seek lands on the index point at or before the target: a WebM cue, an fMP4/DASH
-     * fragment, an HLS segment, a FLAC seek point — seconds early, routinely. The engine counts
+     * A backward seek lands on the index point at or before the target: a WebM cue, an fMP4
+     * fragment, a FLAC seek point — seconds early, routinely. The engine counts
      * the position from the target it asked for, so audio from the landing point played under a
      * position (and lyrics) that far ahead of it, for the rest of the track. Decoding from the
      * landing point and dropping everything before the target is what Media3 does on the phone.
@@ -482,41 +390,11 @@ internal class DesktopAudioDecoder : DesktopSampleSource {
         outputPlanes = null
         outputBufferSamples = 0
         measuredFormat = null
-        // Custom I/O is not freed by avformat_close_input.
-        avio?.let {
-            av_free(it.buffer())
-            it.buffer(null as BytePointer?)
-            avio_context_free(it)
-        }
-        avio = null
-        readPacket?.deallocate()
-        seekPacket?.deallocate()
-        readPacket = null
-        seekPacket = null
-        rangeSource = null
     }
 
     internal companion object {
-        /** Shared with the canvas decoder, which needs the same one-time init. */
-        fun ensureNetworkReady() = ensureNetwork()
-
-        /** How much FFmpeg buffers between calls into [DesktopRangeStream]. */
-        const val IO_BUFFER_BYTES = 64 * 1024
-
-        /** Further apart than any index point, cue or segment lands before its target. */
+        /** Further apart than any index point or cue lands before its target. */
         const val MAX_SEEK_TRIM_US = 30_000_000L
-
-        /** `whence` values, which FFmpeg takes straight from stdio. */
-        const val SEEK_CUR = 1
-        const val SEEK_END = 2
-
-        private var networkReady = false
-
-        fun ensureNetwork() {
-            if (networkReady) return
-            avformat_network_init()
-            networkReady = true
-        }
     }
 }
 
