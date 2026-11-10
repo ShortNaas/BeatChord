@@ -149,3 +149,81 @@ failure is yours.
   default-off genre lookup.
 - App and desktop build; test suite is at the four known failures and nothing else.
 - AGENTS.md describes the app that actually exists.
+
+---
+
+## 9. Outcome — done
+
+Executed in one session on top of `0743ba9`. The tree after this work:
+
+| Metric | Before | After |
+|---|---|---|
+| Files changed by the removal | — | 258 |
+| Lines removed | — | ~59,700 |
+| `app/` main source (kt) | ~40k | ~21k |
+| `desktopApp/` (kt) | ~27.9k | ~14k |
+| `MainViewModel.kt` | 3,290 | 1,246 |
+| `MainActivity.kt` | 4,764 | ~3,150 |
+| `PlaybackService.kt` | 7,581 | 3,565 |
+| `DesktopApp.kt` | 7,041 | ~5,100 |
+| Unit tests | 853, 4 failing | 487, 3 failing |
+
+The four-item test baseline became three: `ProviderLyricsTest > the imported
+providers are exposed` was counting the two YouTube lyrics providers, so
+removing them (and the expected count in the test) made it pass.
+
+### How each slice landed
+
+1. **Search** — `SearchSource`, the YouTube result/filter/suggestion/typeahead
+   state and pipelines are gone from `MainViewModel`; `SearchScreen` is now a
+   local filter plus the recent-searches list, and the desktop filters its
+   scanned folder the same way.
+2. **Catalogue engine** — `data/sources`, `data/innertube`, `YtMusicRepository`,
+   `LikeState`, `AudioCache`, `ChunkedDataSource`, `QualityUpgrade`,
+   `StreamChoice`, `StreamContainer`, `Autoplay`, `MusicLink`,
+   `OriginalVersion`, `PlaybackFallback`, `PlaybackTracker`, PoToken and the
+   download subsystem are deleted (the offline tag editor stays). The media
+   source chain is now `DefaultDataSource.Factory` → `DefaultMediaSourceFactory`
+   (+ DSD extractors); `PlayerConnection` builds media items from the local
+   file (or copy) only, and a track without one is dropped from the queue
+   rather than streamed. `TrackAnalyzer` analyses the local file.
+3. **Screens** — the Explore/mood-genre page, History, artist/album/channel
+   browse pages, the account/avatar/profile UI, the Discord page, the song
+   menu's radio/download/version actions and the release-library plumbing are
+   deleted. `DetailScreen` is the page for a local collection. Home, Library,
+   Playlists and Search run off local lists.
+4. **Auth** — `app/.../auth` and `shared/.../auth` are deleted, along with the
+   account concept in the view model and UI and the credential/secret storage.
+5. **Manifest & dependencies** — `INTERNET` is the only network permission;
+   `ACCESS_NETWORK_STATE`, `FOREGROUND_SERVICE_DATA_SYNC`, the download service
+   and the "play from search" intent filter are gone. NewPipeExtractor,
+   InnerTubeX, Ktor, Rhino, QuickJS, SMBJ, security-crypto and the HLS/DASH
+   ExoPlayer artifacts are removed from both build files; shared declares
+   OkHttp explicitly now that Ktor no longer brings it.
+
+### Network callers left (audited)
+
+`shared/.../data/Http.kt` (the single OkHttp client), the lyrics providers
+under `shared/.../data/lyrics/`, and `ArtistFacts.fetchGenres` (default-off).
+Nothing else opens a socket — no `HttpURLConnection`, no `URL`, no `OkHttpClient`
+outside that client.
+
+### Known follow-ups, deliberately not done here
+
+- `QueueTier.AUTOPLAY`, `Song.fromAutoplay`, `autoplaySectionStart` and the
+  queue's AutoPlay heading are still in the shared queue model. Nothing ever
+  creates an AutoPlay tier now, so the code is inert; deleting it is a queue
+  refactor with tests of its own, not part of the YouTube removal.
+- `shared/.../data/model/Models.kt` still declares YouTube-shaped types that no
+  screen reads any more (`Account`, `AccountChannel`, `MoodGenre*`, `HomeFeed`,
+  `SongMenu`, `LikeStatus`, `BrowseType`, `SearchResult`, `SearchFilter`, …).
+  They are compile-clean but dead; removing them is a coordinated change across
+  app/sharedUi/desktopApp.
+- `AudioQuality` and a handful of now-unused strings/drawables remain; the
+  `LocaleStringsTest` key-parity rule means string removal must touch all 19
+  locales at once, so it was left out of this change.
+- Cast stays wired but a receiver cannot read this device's files, so cast
+  refuses a local track with the existing "unsupported" message. Removing the
+  cast UI is a separate decision.
+- `settings.gradle.kts` still lists JitPack (its only consumer, NewPipe, is
+  gone). One line, left alone to keep the change reviewable.

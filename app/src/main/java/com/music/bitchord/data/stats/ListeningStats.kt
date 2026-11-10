@@ -8,6 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -56,6 +57,17 @@ import java.util.Locale
 object ListeningStats {
 
     private lateinit var directory: File
+
+    /**
+     * Bumped every time a whole play is added.
+     *
+     * The library's shelves are computed from this file — Most Played,
+     * Recently Played and Never Played all move when a track is listened to —
+     * and they are built when a page is shown, not kept live. Watching this
+     * counter is how a feed knows the numbers behind it have moved without
+     * re-reading the file to find out.
+     */
+    val revision = MutableStateFlow(0L)
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -156,7 +168,10 @@ object ListeningStats {
             if (track.albumId == null) track.albumId = song.albumId
             if (track.artistId == null) track.artistId = song.artistId
             if (track.art == null) track.art = song.thumbnailUrl
-            if (countsAsPlay) track.plays++
+            if (countsAsPlay) {
+                track.plays++
+                revision.value += 1
+            }
 
             // The lead artist, not the credit as a string. A track billed
             // "Cheema Y & Gur Sidhu" is not a third artist who happens to share

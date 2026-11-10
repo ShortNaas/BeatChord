@@ -656,6 +656,17 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     init {
         loadHome()
         loadLibrary()
+        viewModelScope.launch {
+            // A play changes the counts behind three of the Library's five
+            // shelves and the Recents shelf on Home. Both are re-read when the
+            // tab is next shown rather than now: the page that is up is about
+            // the track that is playing, and rebuilding it mid-track would
+            // shuffle rows under the reader.
+            ListeningStats.revision.drop(1).collect {
+                homeStale = true
+                libraryStale = true
+            }
+        }
         loadLibrarySongs()
         viewModelScope.launch {
             // drop(1): the current value is just the setting as it stands, not
