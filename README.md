@@ -13,8 +13,8 @@ you already own.
 
 <br/>
 
-[![Latest release](https://img.shields.io/github/v/release/ShortNaas/BitChord?style=for-the-badge&labelColor=0d1117)](https://github.com/ShortNaas/BitChord/releases)
-[![License](https://img.shields.io/github/license/ShortNaas/BitChord?style=for-the-badge&labelColor=0d1117)](https://github.com/ShortNaas/BitChord/blob/main/LICENSE)
+[![Latest release](https://img.shields.io/github/v/release/ShortNaas/BeatChord?style=for-the-badge&labelColor=0d1117)](https://github.com/ShortNaas/BeatChord/releases)
+[![License](https://img.shields.io/github/license/ShortNaas/BeatChord?style=for-the-badge&labelColor=0d1117)](https://github.com/ShortNaas/BeatChord/blob/main/LICENSE)
 
 <br/>
 
@@ -79,7 +79,7 @@ you already own.
 <h2><a id="download"></a>Download</h2>
 
 Grab the latest APK or desktop package from the
-[Releases](https://github.com/ShortNaas/BitChord/releases) page. Sideloading the
+[Releases](https://github.com/ShortNaas/BeatChord/releases) page. Sideloading the
 APK requires enabling "Install unknown apps" for whichever app you download it
 with.
 
