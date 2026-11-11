@@ -227,9 +227,109 @@ jobs:
           name: macos-${{ matrix.arch }}-artifacts
           path: dist/*
 
+  android:
+    name: Android · APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Work out the version
+        id: version
+        run: |
+          version="${{ inputs.version }}"
+          [ -n "$version" ] || version="${GITHUB_REF_NAME#v}"
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+          echo "Building $version"
+
+      - name: Write local.properties
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          echo "LASTFM_API_KEY=${{ secrets.LASTFM_API_KEY }}" >> local.properties
+          echo "LASTFM_SECRET=${{ secrets.LASTFM_SECRET }}" >> local.properties
+
+      - run: chmod +x gradlew
+
+      # A release APK has to be signed to install. The signing key is optional
+      # here so a test release still ships something installable: without it the
+      # APK is a dev build, signed with the debug key, and named as one.
+      - name: Signing key
+        id: signing
+        run: |
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > beatchord-release.jks
+            {
+              echo "storeFile=beatchord-release.jks"
+              echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}"
+              echo "keyAlias=${{ secrets.KEY_ALIAS }}"
+              echo "keyPassword=${{ secrets.KEY_PASSWORD }}"
+            } > keystore.properties
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo "No release keystore configured — shipping a dev-signed APK." >&2
+          fi
+
+      - name: Tests
+        run: set -o pipefail; ./gradlew testDevDebugUnitTest 2>&1 | tee gradle-tests.log
+
+      - name: Explain the failure
+        if: failure()
+        run: |
+          python3 - <<'PY'
+          import glob, xml.etree.ElementTree as ET
+          def emit(msg):
+              print("::error::" + msg.replace("%", "%25").replace("\r", "").replace("\n", "%0A")[:900])
+          if glob.glob("gradle-tests.log"):
+              for line in open("gradle-tests.log", errors="replace"):
+                  text = line.strip()
+                  if text.startswith("e: ") or " FAILED" in text:
+                      emit(text)
+          for f in glob.glob("**/build/test-results/**/*.xml", recursive=True):
+              try:
+                  root = ET.parse(f).getroot()
+              except Exception:
+                  continue
+              for tc in root.iter("testcase"):
+                  for bad in list(tc.iter("failure")) + list(tc.iter("error")):
+                      emit(f"{tc.get('classname')}.{tc.get('name')}: {(bad.get('message') or '').splitlines()[0] if bad.get('message') else ''}")
+          PY
+
+      - name: Build the signed APK
+        if: steps.signing.outputs.signed == 'true'
+        run: ./gradlew :app:assembleProdRelease -Pbeatchord.version=${{ steps.version.outputs.value }}
+
+      - name: Build a dev-signed APK
+        if: steps.signing.outputs.signed != 'true'
+        run: ./gradlew :app:assembleDevDebug
+
+      - name: Collect
+        run: |
+          mkdir -p dist
+          if [ "${{ steps.signing.outputs.signed }}" = "true" ]; then
+            cp app/build/outputs/apk/prod/release/*universal*.apk "dist/BeatChord-${{ steps.version.outputs.value }}.apk"
+          else
+            cp app/build/outputs/apk/dev/debug/*.apk "dist/BeatChord-${{ steps.version.outputs.value }}-dev.apk"
+          fi
+          ls -lh dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-artifacts
+          path: dist/*
+
   release:
     name: Publish
-    needs: [linux, windows, macos]
+    needs: [linux, windows, macos, android]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4

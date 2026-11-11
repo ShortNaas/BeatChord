@@ -32,7 +32,29 @@ jobs:
       - run: chmod +x gradlew
 
       - name: Tests
-        run: ./gradlew :shared:jvmTest :desktopApp:test
+        run: set -o pipefail; ./gradlew :shared:jvmTest :desktopApp:test 2>&1 | tee gradle-tests.log
+
+      - name: Explain the failure
+        if: failure()
+        run: |
+          python3 - <<'PY'
+          import glob, xml.etree.ElementTree as ET
+          def emit(msg):
+              print("::error::" + msg.replace("%", "%25").replace("\r", "").replace("\n", "%0A")[:900])
+          if glob.glob("gradle-tests.log"):
+              for line in open("gradle-tests.log", errors="replace"):
+                  text = line.strip()
+                  if text.startswith("e: ") or " FAILED" in text:
+                      emit(text)
+          for f in glob.glob("**/build/test-results/**/*.xml", recursive=True):
+              try:
+                  root = ET.parse(f).getroot()
+              except Exception:
+                  continue
+              for tc in root.iter("testcase"):
+                  for bad in list(tc.iter("failure")) + list(tc.iter("error")):
+                      emit(f"{tc.get('classname')}.{tc.get('name')}: {(bad.get('message') or '').splitlines()[0] if bad.get('message') else ''}")
+          PY
 
       - name: Build the distributable
         run: ./gradlew :desktopApp:createDistributable
@@ -152,17 +174,42 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - uses: android-actions/setup-android@v3
+
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Write local.properties
         run: |
-          echo "LASTFM_API_KEY=${{ secrets.LASTFM_API_KEY }}" > local.properties
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          echo "LASTFM_API_KEY=${{ secrets.LASTFM_API_KEY }}" >> local.properties
           echo "LASTFM_SECRET=${{ secrets.LASTFM_SECRET }}" >> local.properties
 
       - run: chmod +x gradlew
 
       - name: Tests
-        run: ./gradlew testDevDebugUnitTest
+        run: set -o pipefail; ./gradlew testDevDebugUnitTest 2>&1 | tee gradle-tests.log
+
+      - name: Explain the failure
+        if: failure()
+        run: |
+          python3 - <<'PY'
+          import glob, xml.etree.ElementTree as ET
+          def emit(msg):
+              print("::error::" + msg.replace("%", "%25").replace("\r", "").replace("\n", "%0A")[:900])
+          if glob.glob("gradle-tests.log"):
+              for line in open("gradle-tests.log", errors="replace"):
+                  text = line.strip()
+                  if text.startswith("e: ") or " FAILED" in text:
+                      emit(text)
+          for f in glob.glob("**/build/test-results/**/*.xml", recursive=True):
+              try:
+                  root = ET.parse(f).getroot()
+              except Exception:
+                  continue
+              for tc in root.iter("testcase"):
+                  for bad in list(tc.iter("failure")) + list(tc.iter("error")):
+                      emit(f"{tc.get('classname')}.{tc.get('name')}: {(bad.get('message') or '').splitlines()[0] if bad.get('message') else ''}")
+          PY
 
       - name: Build the dev APK
         run: ./gradlew assembleDevDebug
