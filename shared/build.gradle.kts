@@ -32,7 +32,7 @@ kotlin {
                 // The lyrics providers' network stack and JSON, at the phone's
                 // versions — both applications call the same code, so they
                 // resolve the same libraries. OkHttp is the one client: see
-                // [com.music.bitchord.data.Http].
+                // [com.music.beatchord.data.Http].
                 api("com.squareup.okhttp3:okhttp:4.12.0")
                 api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
@@ -56,6 +56,6 @@ kotlin {
 }
 
 android {
-    namespace = "com.music.bitchord.shared"
+    namespace = "com.music.beatchord.shared"
     compileSdk = 36
 }

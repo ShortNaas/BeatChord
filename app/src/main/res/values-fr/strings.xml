@@ -96,10 +96,10 @@
     <string name="dolby_atmos_open_failed">Impossible d\'ouvrir les paramètres Dolby Atmos</string>
     <string name="update_available">Mise à jour disponible : v%1$s</string>
     <string name="software_update">Mise à jour logicielle</string>
-    <string name="update_available_body">bitchord %1$s est disponible au téléchargement.</string>
-    <string name="update_downloading_body">Téléchargement de bitchord %1$s…</string>
-    <string name="update_ready_body">bitchord %1$s est prêt à être installé.</string>
-    <string name="update_failed_body">Impossible de télécharger bitchord %1$s.</string>
+    <string name="update_available_body">beatchord %1$s est disponible au téléchargement.</string>
+    <string name="update_downloading_body">Téléchargement de beatchord %1$s…</string>
+    <string name="update_ready_body">beatchord %1$s est prêt à être installé.</string>
+    <string name="update_failed_body">Impossible de télécharger beatchord %1$s.</string>
     <string name="download_now">Télécharger maintenant</string>
     <string name="install_now">Installer maintenant</string>
     <string name="later">Plus tard</string>
@@ -127,7 +127,7 @@
     <string name="widget_previous">Précédent</string>
     <string name="widget_artwork">Pochette d\'album</string>
     <string name="widget_nothing_played">Rien n\'a encore été joué</string>
-    <string name="widget_open_bitchord">Ouvrir BeatChord</string>
+    <string name="widget_open_beatchord">Ouvrir BeatChord</string>
     <string name="widget_preview_title">Titre de la chanson</string>
     <string name="widget_preview_artist">Artiste</string>
     <string name="widget_pill_label">Lecture en cours 4×1</string>
@@ -311,7 +311,7 @@
     <string name="downloads_finished">Téléchargements · terminés</string>
     <string name="downloading_progress">Téléchargement · %1$d%%</string>
     <string name="starting">Démarrage</string>
-    <string name="saved_to_bitchord_folder">Enregistrée dans Musique/BitChord</string>
+    <string name="saved_to_beatchord_folder">Enregistrée dans Musique/BeatChord</string>
     <string name="nothing_downloading">Aucun téléchargement en cours</string>
     <string name="nothing_to_explore">Rien à explorer pour le moment</string>
     <string name="no_youtube_music_results">Aucun résultat de YouTube Music</string>
@@ -606,7 +606,7 @@
     </plurals>
     <string name="no_local_albums">Rien ici n\'appartient encore à un album ou à une playlist. Téléchargez un album complet ou une playlist et il apparaîtra ici.</string>
     <string name="play_your_replay">Lire votre Replay</string>
-    <string name="counted_on_device_with_bitchord">Calculé sur cet appareil avec BeatChord</string>
+    <string name="counted_on_device_with_beatchord">Calculé sur cet appareil avec BeatChord</string>
     <string name="this_month">Ce mois-ci</string>
     <string name="this_year">Cette année</string>
     <string name="all_time">Depuis toujours</string>

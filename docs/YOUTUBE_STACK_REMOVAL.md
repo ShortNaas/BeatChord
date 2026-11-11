@@ -8,8 +8,8 @@ Written at commit `c1985bf`. Start a fresh session from that commit.
 ## 1. Mission
 
 BeatChord is a local-only music player. Everything else that reached the network has
-already been deleted (see §2). What is left is the original BitChord engine: a YouTube
-Music client that the local player was grafted onto. Remove it.
+already been deleted (see §2). What is left is the YouTube Music engine this fork was built on: a client the
+local player was grafted onto. Remove it.
 
 When this is finished the app should be: a library of files on the device, a player, a
 queue, local playlists and favourites, listening stats and a Replay, local search, and

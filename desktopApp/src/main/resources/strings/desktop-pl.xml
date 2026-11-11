@@ -9,13 +9,13 @@
     <string name="d_autoplay_wont_suggest_a_song_already_played_or_suggested">Autoodtwarzanie nie zaproponuje utworu odtworzonego lub zaproponowanego w tej sesji</string>
     <string name="d_available_offline">Dostępne offline</string>
     <string name="d_back_to_explore">Powrót do Odkrywaj</string>
-    <string name="d_bitchord_is_free_software_and_so_is_everything_it_is_bui">BeatChord to wolne oprogramowanie — podobnie jak wszystko, na czym jest zbudowany.</string>
-    <string name="d_bitchord_youtube_music_session">BeatChord — sesja YouTube Music</string>
+    <string name="d_beatchord_is_free_software_and_so_is_everything_it_is_bui">BeatChord to wolne oprogramowanie — podobnie jak wszystko, na czym jest zbudowany.</string>
+    <string name="d_beatchord_youtube_music_session">BeatChord — sesja YouTube Music</string>
     <string name="d_blur_unfocused_lyrics">Rozmywaj tekst poza fokusem</string>
     <string name="d_choose_something_to_play">Wybierz coś do odtworzenia</string>
     <string name="d_close_player">Zamknij odtwarzacz</string>
     <string name="d_close_up_next">Zamknij Następne</string>
-    <string name="d_closing_the_window_leaves_bitchord_in_the_tray_instead_o">Zamknięcie okna zostawia BeatChord w zasobniku zamiast go zamykać</string>
+    <string name="d_closing_the_window_leaves_beatchord_in_the_tray_instead_o">Zamknięcie okna zostawia BeatChord w zasobniku zamiast go zamykać</string>
     <string name="d_continue_playing">Słuchaj dalej</string>
     <string name="d_custom_module">Własny moduł</string>
     <string name="d_dont_repeat_songs_in_current_session">Nie powtarzaj utworów w tej sesji</string>
@@ -47,7 +47,7 @@
     <string name="d_paste_the_cookie_header_for_music_youtube_com">Wklej nagłówek Cookie dla music.youtube.com.</string>
     <string name="d_playback_speed">Prędkość odtwarzania</string>
     <string name="d_playlists_on_this_computer">Playlisty na tym komputerze</string>
-    <string name="d_quit_bitchord">Zamknij BeatChord</string>
+    <string name="d_quit_beatchord">Zamknij BeatChord</string>
     <string name="d_recently_played_on_this_computer">Ostatnio odtwarzane na tym komputerze</string>
     <string name="d_recents">Ostatnie</string>
     <string name="d_remove_from_playlist">Usuń z playlisty</string>
@@ -56,7 +56,7 @@
     <string name="d_scroll_right">Przewiń w prawo</string>
     <string name="d_search_your_music">Szukaj w swojej muzyce</string>
     <string name="d_shorten_long_gaps_rather_than_playing_them_out">Skracaj długie przerwy zamiast odtwarzać je w całości</string>
-    <string name="d_show_bitchord_in_the_system_tray_with_playback_controls">Pokaż BeatChord w zasobniku systemowym, ze sterowaniem odtwarzaniem</string>
+    <string name="d_show_beatchord_in_the_system_tray_with_playback_controls">Pokaż BeatChord w zasobniku systemowym, ze sterowaniem odtwarzaniem</string>
     <string name="d_show_motion_artwork_when_it_is_available">Pokazuj ruchomą okładkę, gdy jest dostępna</string>
     <string name="d_song">UTWÓR</string>
     <string name="d_sort_library">Sortuj bibliotekę</string>

@@ -101,10 +101,10 @@
     <string name="dolby_atmos_open_failed">Dolby Atmos ayarları açılamadı</string>
     <string name="update_available">Güncelleme mevcut: v%1$s</string>
     <string name="software_update">Yazılım Güncellemesi</string>
-    <string name="update_available_body">bitchord %1$s indirilmeye hazır.</string>
-    <string name="update_downloading_body">bitchord %1$s indiriliyor…</string>
-    <string name="update_ready_body">bitchord %1$s yüklenmeye hazır.</string>
-    <string name="update_failed_body">bitchord %1$s indirilemedi.</string>
+    <string name="update_available_body">beatchord %1$s indirilmeye hazır.</string>
+    <string name="update_downloading_body">beatchord %1$s indiriliyor…</string>
+    <string name="update_ready_body">beatchord %1$s yüklenmeye hazır.</string>
+    <string name="update_failed_body">beatchord %1$s indirilemedi.</string>
     <string name="download_now">Şimdi İndir</string>
     <string name="install_now">Şimdi Yükle</string>
     <string name="later">Daha sonra</string>
@@ -136,7 +136,7 @@
     <string name="widget_previous">Önceki</string>
     <string name="widget_artwork">Albüm kapağı</string>
     <string name="widget_nothing_played">Henüz bir şey çalınmadı</string>
-    <string name="widget_open_bitchord">BeatChord\'u Aç</string>
+    <string name="widget_open_beatchord">BeatChord\'u Aç</string>
     <string name="widget_preview_title">Şarkı adı</string>
     <string name="widget_preview_artist">Sanatçı</string>
     <string name="widget_pill_label">Şu an çalıyor 4×1</string>
@@ -338,7 +338,7 @@
     <string name="starting">Başlatılıyor</string>
     <string name="start_radio">Radyoyu başlat</string>
     <string name="radio_started">%1$s radyosu başlatıldı</string>
-    <string name="saved_to_bitchord_folder">Müzik/BitChord klasörüne kaydedildi</string>
+    <string name="saved_to_beatchord_folder">Müzik/BeatChord klasörüne kaydedildi</string>
     <string name="nothing_downloading">İndirilen bir şey yok</string>
     <string name="nothing_to_explore">Şu anda keşfedilecek bir şey yok</string>
     <string name="no_youtube_music_results">YouTube Music\'ten sonuç yok</string>
@@ -636,7 +636,7 @@
     </plurals>
     <string name="no_local_albums">Burada henüz bir albüme veya çalma listesine ait bir şey yok. Tam bir albüm veya çalma listesi indir, burada görünecek.</string>
     <string name="play_your_replay">Replay\'ini çal</string>
-    <string name="counted_on_device_with_bitchord">Bu cihazda BeatChord ile sayıldı</string>
+    <string name="counted_on_device_with_beatchord">Bu cihazda BeatChord ile sayıldı</string>
     <string name="this_month">Bu ay</string>
     <string name="this_year">Bu yıl</string>
     <string name="all_time">Tüm zamanlar</string>

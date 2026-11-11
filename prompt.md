@@ -36,7 +36,7 @@
 ## Settings
 - remove anything related to youtube music, and spotify
 - remove anything that isn't related to local music playing, i prefer to ask me if somethings are for both.
-- the credit should be edited too. it's a BitChord fork for local first music. the website is "naas.work" and use X instead of discord which is "x.com/shortnaas" leave the github as it, i will add after
+- the credit should be edited too. it's a BeatChord fork for local first music. the website is "naas.work" and use X instead of discord which is "x.com/shortnaas" leave the github as it, i will add after
 
 ## extra
 Anything that's not needed for local music playing should be remove

@@ -92,10 +92,10 @@
     <string name="dolby_atmos_open_failed">Tidak dapat membuka pengaturan Dolby Atmos</string>
     <string name="update_available">Pembaruan tersedia: v%1$s</string>
     <string name="software_update">Pembaruan Perangkat Lunak</string>
-    <string name="update_available_body">bitchord %1$s tersedia untuk diunduh.</string>
-    <string name="update_downloading_body">Mengunduh bitchord %1$s…</string>
-    <string name="update_ready_body">bitchord %1$s siap dipasang.</string>
-    <string name="update_failed_body">Gagal mengunduh bitchord %1$s.</string>
+    <string name="update_available_body">beatchord %1$s tersedia untuk diunduh.</string>
+    <string name="update_downloading_body">Mengunduh beatchord %1$s…</string>
+    <string name="update_ready_body">beatchord %1$s siap dipasang.</string>
+    <string name="update_failed_body">Gagal mengunduh beatchord %1$s.</string>
     <string name="download_now">Unduh Sekarang</string>
     <string name="install_now">Pasang Sekarang</string>
     <string name="later">Nanti</string>
@@ -123,7 +123,7 @@
     <string name="widget_previous">Sebelumnya</string>
     <string name="widget_artwork">Sampul album</string>
     <string name="widget_nothing_played">Belum ada yang diputar</string>
-    <string name="widget_open_bitchord">Buka BeatChord</string>
+    <string name="widget_open_beatchord">Buka BeatChord</string>
     <string name="widget_preview_title">Judul lagu</string>
     <string name="widget_preview_artist">Artis</string>
     <string name="widget_pill_label">Sedang diputar 4×1</string>
@@ -307,7 +307,7 @@
     <string name="downloads_finished">Unduhan · selesai</string>
     <string name="downloading_progress">Mengunduh · %1$d%%</string>
     <string name="starting">Memulai</string>
-    <string name="saved_to_bitchord_folder">Disimpan ke Music/BitChord</string>
+    <string name="saved_to_beatchord_folder">Disimpan ke Music/BeatChord</string>
     <string name="nothing_downloading">Tidak ada yang sedang diunduh</string>
     <string name="nothing_to_explore">Belum ada yang bisa dijelajahi saat ini</string>
     <string name="no_youtube_music_results">Tidak ada hasil dari YouTube Music</string>
@@ -587,7 +587,7 @@
     </plurals>
     <string name="no_local_albums">Belum ada yang termasuk album atau playlist di sini. Unduh album atau playlist lengkap dan akan muncul di sini.</string>
     <string name="play_your_replay">Putar Replay Anda</string>
-    <string name="counted_on_device_with_bitchord">Dihitung di perangkat ini dengan BeatChord</string>
+    <string name="counted_on_device_with_beatchord">Dihitung di perangkat ini dengan BeatChord</string>
     <string name="this_month">Bulan ini</string>
     <string name="this_year">Tahun ini</string>
     <string name="all_time">Sepanjang waktu</string>
