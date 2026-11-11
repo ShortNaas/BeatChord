@@ -287,17 +287,9 @@ jobs:
           import glob, xml.etree.ElementTree as ET
           def emit(msg):
               print("::error::" + msg.replace("%", "%25").replace("\r", "").replace("\n", "%0A")[:8000])
-          markers, last = [], []
+          lines = []
           if glob.glob("gradle-tests.log"):
-              lines = open("gradle-tests.log", errors="replace").read().splitlines()
-              last = [l.strip() for l in lines if l.strip()][-25:]
-              for line in lines:
-                  t = line.strip()
-                  if not t:
-                      continue
-                  if (t.startswith("e: ") or t.startswith("* ") or " FAILED" in t
-                          or "What went wrong" in t or "Could not resolve" in t or "Caused by:" in t):
-                      markers.append(t)
+              lines = [l.strip() for l in open("gradle-tests.log", errors="replace") if l.strip()]
           tests = []
           for f in glob.glob("**/build/test-results/**/*.xml", recursive=True):
               try:
@@ -308,11 +300,9 @@ jobs:
                   for bad in list(tc.iter("failure")) + list(tc.iter("error")):
                       msg = (bad.get("message") or "").splitlines()
                       tests.append(f"{tc.get('classname')}.{tc.get('name')}: {msg[0] if msg else ''}")
-          payload = markers[:40] + tests[:40]
+          payload = tests[:20] + lines[-50:]
           if payload:
               emit("\n".join(payload))
-          elif last:
-              emit("\n".join(last))
           PY
 
       - name: Build the signed APK
