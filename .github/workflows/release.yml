@@ -319,7 +319,7 @@ jobs:
           if [ "${{ steps.signing.outputs.signed }}" = "true" ]; then
             cp app/build/outputs/apk/prod/release/*universal*.apk "dist/BeatChord-${{ steps.version.outputs.value }}.apk"
           else
-            cp app/build/outputs/apk/dev/debug/*.apk "dist/BeatChord-${{ steps.version.outputs.value }}-dev.apk"
+            cp app/build/outputs/apk/dev/debug/*universal*.apk "dist/BeatChord-${{ steps.version.outputs.value }}-dev.apk"
           fi
           ls -lh dist
 
