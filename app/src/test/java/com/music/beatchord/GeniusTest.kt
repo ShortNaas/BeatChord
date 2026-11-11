@@ -109,6 +109,13 @@ class GeniusTest {
 
     @Test
     fun `live genius search and scraping test with noisy titles`() = kotlinx.coroutines.runBlocking {
+        // A real request to Genius: it depends on their HTML and on this
+        // machine's access to it, which a CI runner does not always have.
+        // Opt-in, so the suite is about our parsing rather than their uptime.
+        org.junit.Assume.assumeTrue(
+            "set BEATCHORD_LIVE_TESTS=1 to run the live lyrics lookup",
+            System.getenv("BEATCHORD_LIVE_TESTS") != null,
+        )
         println("--- TEST 1: Queen - Bohemian Rhapsody (Official Video) ---")
         val lyrics1 = Genius.lyrics("Bohemian Rhapsody (Official Video)", "Queen")
         assertNotNull(lyrics1)
