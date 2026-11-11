@@ -162,6 +162,8 @@ jobs:
   macos:
     name: macOS · dmg, pkg, zip (${{ matrix.arch }})
     strategy:
+      # One arch's runner going away must not take the other's build with it.
+      fail-fast: false
       matrix:
         include:
           - os: macos-14
@@ -331,6 +333,10 @@ jobs:
   release:
     name: Publish
     needs: [linux, windows, macos, android]
+    # Publish whatever the jobs that could run produced. The arm64 macOS job has
+    # no runner in this repository, and GitHub reports a job that never starts as
+    # cancelled — which otherwise skips Publish with every other artifact ready.
+    if: ${{ always() && github.ref_type == 'tag' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -342,7 +348,6 @@ jobs:
       - run: ls -lh dist
 
       - name: Draft the release
-        if: github.ref_type == 'tag'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
