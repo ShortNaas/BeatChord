@@ -1094,8 +1094,6 @@
     <string name="recent_ep">最近的 EP</string>
     <string name="recent_single">最近的單曲</string>
     <string name="spotify_import_empty_playlist">此播放列表中沒有歌曲</string>
-    <string name="lyrics_original_title">用原標題搜歌詞</string>
-    <string name="lyrics_original_title_desc">先還原 YouTube 原標題再搜歌詞，翻譯過的標題也能找到</string>
     <string name="shelf_recently_added">Recently Added</string>
     <string name="shelf_artists">Artists</string>
     <string name="shelf_albums">Albums</string>
