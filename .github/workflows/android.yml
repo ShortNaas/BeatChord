@@ -20,8 +20,6 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
-    - uses: android-actions/setup-android@v3
-
     - name: Setup Secrets (Keystore & local.properties)
       run: |
         echo "sdk.dir=$ANDROID_HOME" > local.properties
